@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="nocturne.css">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>body{margin:0;background:var(--color-bg);--vida-ok:oklch(0.80 0.12 158);--vida-warn:oklch(0.84 0.12 75);--vida-crit:oklch(0.74 0.14 28);--vida-text-2:var(--color-neutral-400)}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}button{font-family:inherit}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-wrap:wrap;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)">
+
+<aside data-screen-label="Barra lateral" style="flex:1 0 232px;background:var(--color-surface);display:flex;flex-direction:column;gap:20px;padding:20px 14px;box-sizing:border-box">
+<div style="display:flex;align-items:center;gap:10px;padding:0 8px"><span style="width:10px;height:22px;border-radius:3px;background:var(--color-accent);box-shadow:0 0 14px var(--color-accent)"></span><span style="font-size:20px;font-weight:500;letter-spacing:.08em">VIDA</span></div>
+<nav style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:2px">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+<button onClick="{{ n.onClick }}" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:var(--radius-md);border:0;background:{{ n.bg }};color:{{ n.fg }};font-size:14px;cursor:pointer;text-align:left">
+<i class="{{ n.icon }}" style="font-size:18px"></i><span style="flex:1">{{ n.label }}</span><span style="font-size:11px;color:var(--color-accent-300)">{{ n.badge }}</span>
+</button>
+</sc-for>
+</nav>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:0 8px">
+<span style="font-size:11px;font-weight:500;color:var(--color-neutral-500)">Dispositivos</span>
+<sc-for list="{{ devices }}" as="d" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="{{ d.icon }}" style="font-size:16px;color:var(--color-neutral-300)"></i><span style="flex:1;display:flex;flex-direction:column"><span>{{ d.label }}</span><span style="font-size:11px;color:var(--color-neutral-500)">{{ d.when }}</span></span><span style="width:7px;height:7px;border-radius:50%;background:{{ d.dot }};box-shadow:0 0 8px {{ d.dot }}"></span></div>
+</sc-for>
+</div>
+</aside>
+
+<main style="flex:9999 1 640px;min-width:0;padding:28px clamp(16px,3vw,40px) 48px;box-sizing:border-box">
+<div style="max-width:1360px;display:flex;flex-direction:column;gap:22px">
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between">
+<div><div style="font-size:13px;color:var(--color-neutral-500)">Sábado, 24 de octubre · 18:20</div><h2 style="margin:4px 0 0">{{ pageTitle }}</h2></div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<sc-if value="{{ syncLive }}" hint-placeholder-val="{{ false }}"><span style="display:flex;gap:6px;align-items:center;height:30px;padding:0 10px;border-radius:15px;border:1px solid var(--color-accent-700);font-size:12px;color:var(--color-accent-200)"><i class="ph ph-arrows-clockwise"></i>{{ syncLabel }}</span></sc-if>
+<div style="display:flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden"><sc-for list="{{ unitOpts }}" as="u" hint-placeholder-count="2"><button onClick="{{ u.onClick }}" style="border:0;background:{{ u.bg }};color:{{ u.fg }};font-size:12px;padding:7px 12px;cursor:pointer">{{ u.label }}</button></sc-for></div>
+</div>
+</div>
+
+<!-- HOY -->
+<sc-if value="{{ isHoy }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Hoy" style="display:flex;flex-direction:column;gap:36px">
+<section style="display:flex;flex-wrap:wrap;gap:16px">
+<div style="flex:3 1 460px;min-width:0;padding:22px 24px;border-radius:var(--radius-lg);background:linear-gradient(160deg, var(--color-accent-900), var(--color-surface) 70%);box-shadow:var(--shadow-sm);display:flex;flex-wrap:wrap;gap:24px">
+<div style="flex:1 1 240px;display:flex;gap:18px;align-items:center">
+<span style="position:relative;width:112px;height:112px;flex:none;display:block">
+<svg viewBox="0 0 128 128" style="width:112px;height:112px;transform:rotate(-90deg);display:block"><circle cx="64" cy="64" r="56" fill="none" stroke="var(--color-neutral-800)" stroke-width="10"></circle><circle cx="64" cy="64" r="56" fill="none" stroke="var(--color-accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="{{ ready.dash }}"></circle></svg>
+<span style="position:absolute;inset:0;display:grid;place-items:center;font-size:32px;font-weight:500">{{ ready.score }}</span>
+</span>
+<div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+<span style="font-size:13px;font-weight:500;color:var(--color-neutral-300)">Preparación de hoy</span>
+<span style="font-size:22px;font-weight:500">Preparación moderada</span>
+<sc-for list="{{ ready.parts }}" as="p" hint-placeholder-count="3"><span style="font-size:13px;color:var(--color-neutral-400);display:flex;gap:6px;align-items:center"><i class="{{ p.icon }}" style="color:{{ p.fg }}"></i>{{ p.label }} · {{ p.val }}</span></sc-for>
+</div>
+</div>
+<div style="flex:1 1 240px;display:flex;flex-direction:column;gap:8px;padding-left:24px;border-left:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+<span style="font-size:13px;font-weight:500;color:var(--color-neutral-300)">Plan de hoy</span>
+<span style="font-size:20px;font-weight:500">Fuerza B</span>
+<sc-for list="{{ nextItems }}" as="it" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span style="color:var(--color-neutral-300)">{{ it.name }}</span><span style="color:var(--color-neutral-400);font-variant-numeric:tabular-nums">{{ it.scheme }} · {{ it.w }}</span></div></sc-for>
+<sc-if value="{{ liveSes }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--color-accent-300);display:flex;gap:6px;align-items:center"><i class="ph ph-watch"></i>En curso en el reloj · {{ liveSesTxt }}</span></sc-if>
+<div style="display:flex;gap:12px;align-items:center;margin-top:auto;padding-top:8px;flex-wrap:wrap"><button class="btn btn-primary" onClick="{{ ready.open }}"><i class="ph ph-lightbulb-filament"></i>Revisar la recomendación</button><button class="btn btn-ghost" onClick="{{ goTrain }}">Ver rutina</button></div>
+</div>
+</div>
+<div style="flex:2 1 320px;min-width:0;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px 6px"><span style="font-size:16px;font-weight:500">VIDA ve hoy</span><button class="btn btn-ghost" onClick="{{ goCoach }}" style="font-size:13px">Todo el Coach</button></div>
+<sc-for list="{{ topIns }}" as="x" hint-placeholder-count="3">
+<button onClick="{{ x.open }}" style="display:grid;grid-template-columns:22px minmax(0,1fr) 16px;gap:10px;align-items:flex-start;padding:12px;border:0;border-radius:var(--radius-md);background:transparent;color:var(--color-text);text-align:left;cursor:pointer" style-hover="background:var(--color-surface)">
+<i class="{{ x.icon }}" style="font-size:18px;color:{{ x.kindFg }};margin-top:1px"></i>
+<span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:12px;color:var(--color-neutral-400)">{{ x.kindLabel }} · {{ x.domains }}</span><span style="font-size:14px;line-height:1.4;text-wrap:pretty">{{ x.title }}</span></span>
+<i class="ph ph-caret-right" style="color:var(--color-neutral-500);margin-top:4px"></i>
+</button>
+</sc-for>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:12px">
+<span style="font-size:16px;font-weight:500">Progreso de hoy</span>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px">
+<sc-for list="{{ tilesW }}" as="t" hint-placeholder-count="6">
+<button onClick="{{ t.open }}" style="padding:14px 16px;border-radius:var(--radius-lg);background:var(--color-surface);border:1px solid transparent;color:var(--color-text);text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px;min-width:0" style-hover="border-color:var(--color-accent-800)">
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-neutral-400);width:100%"><i class="{{ t.icon }}" style="font-size:15px;color:var(--color-accent-300)"></i><span style="flex:1;color:var(--color-neutral-300)">{{ t.name }}</span><span>{{ t.period }}</span></span>
+<sc-if value="{{ t.hasValue }}" hint-placeholder-val="{{ true }}"><span style="display:flex;align-items:baseline;gap:5px;flex-wrap:wrap"><span style="font-size:26px;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums">{{ t.value }}</span><span style="font-size:13px;color:var(--color-neutral-400)">{{ t.unit }}</span></span></sc-if>
+<sc-if value="{{ t.isEmpty }}" hint-placeholder-val="{{ false }}"><span style="font-size:16px;color:var(--color-neutral-300)">{{ t.emptyTxt }}</span></sc-if>
+<span style="display:flex;align-items:flex-end;gap:3px;height:28px"><sc-for list="{{ t.spark }}" as="b" hint-placeholder-count="7"><span style="flex:1;height:{{ b.h }};border-radius:2px;background:{{ b.bg }}"></span></sc-for></span>
+<span style="display:flex;align-items:center;gap:5px;font-size:12px;line-height:1.3;color:{{ t.cmpFg }}"><i class="{{ t.cmpIcon }}" style="font-size:13px;flex:none"></i>{{ t.cmp }}</span>
+</button>
+</sc-for>
+</div>
+<span style="font-size:12px;color:var(--color-neutral-400)">Barras: últimos 7 días. Toca una tarjeta para ver su tendencia de 28 días.</span>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:12px">
+<span style="font-size:16px;font-weight:500">Profundizar</span>
+<div style="padding:16px 18px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:12px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><span style="font-size:16px;font-weight:500">La semana en números</span><span style="font-size:12px;color:var(--color-neutral-500)">Resaltado: fuera de tu objetivo o línea base</span></div>
+<div style="overflow-x:auto">
+<table class="table" style="width:100%;min-width:760px;font-variant-numeric:tabular-nums">
+<thead><tr><th style="text-align:left">Métrica</th><sc-for list="{{ weekDays }}" as="d" hint-placeholder-count="7"><th style="text-align:right">{{ d }}</th></sc-for><th style="text-align:right">Media</th></tr></thead>
+<tbody>
+<sc-for list="{{ weekRows }}" as="r" hint-placeholder-count="8">
+<tr><td style="color:var(--color-neutral-300);white-space:nowrap">{{ r.label }}</td><sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7"><td style="text-align:right;color:{{ c.fg }};white-space:nowrap">{{ c.v }}</td></sc-for><td style="text-align:right;font-weight:500;white-space:nowrap">{{ r.avg }}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</div>
+
+</section>
+</div>
+</sc-if>
+
+<!-- TENDENCIAS -->
+<sc-if value="{{ isTrends }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Tendencias" style="display:flex;flex-direction:column;gap:16px">
+<p style="margin:0;font-size:14px;line-height:1.5;color:var(--color-neutral-400);max-width:640px;text-wrap:pretty">Cruza dos métricas de los últimos 28 días y mira si se mueven juntas. Lo que encuentres aquí lo puedes mandar al Coach para que lo vigile.</p>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="width:76px;font-size:12px;color:var(--color-neutral-400);display:flex;gap:6px;align-items:center"><span style="width:14px;height:3px;border-radius:2px;background:var(--color-accent)"></span>Métrica A</span><sc-for list="{{ tr.optsA }}" as="o" hint-placeholder-count="8"><button onClick="{{ o.onClick }}" style="height:30px;padding:0 12px;border-radius:15px;border:1px solid {{ o.border }};background:{{ o.bg }};color:{{ o.fg }};font-size:12px;cursor:pointer">{{ o.label }}</button></sc-for></div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="width:76px;font-size:12px;color:var(--color-neutral-400);display:flex;gap:6px;align-items:center"><span style="width:14px;height:3px;border-radius:2px;background:var(--color-neutral-200)"></span>Métrica B</span><sc-for list="{{ tr.optsB }}" as="o" hint-placeholder-count="8"><button onClick="{{ o.onClick }}" style="height:30px;padding:0 12px;border-radius:15px;border:1px solid {{ o.border }};background:{{ o.bg }};color:{{ o.fg }};font-size:12px;cursor:pointer">{{ o.label }}</button></sc-for></div>
+<div style="display:flex;gap:8px;align-items:center"><span style="width:76px;font-size:12px;color:var(--color-neutral-400)">Comparar</span><div style="display:flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden"><sc-for list="{{ tr.lags }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.onClick }}" style="border:0;background:{{ o.bg }};color:{{ o.fg }};font-size:12px;padding:7px 12px;cursor:pointer">{{ o.label }}</button></sc-for></div></div>
+</div>
+<div style="padding:16px 18px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-neutral-400);flex-wrap:wrap;gap:8px"><span style="color:var(--color-accent-300)">{{ tr.aLabel }} · {{ tr.aRange }}</span><span style="color:var(--color-neutral-200)">{{ tr.bLabel }} · {{ tr.bRange }}</span></div>
+<svg viewBox="0 0 800 240" preserveAspectRatio="none" style="width:100%;height:240px;display:block">
+<line x1="0" y1="220" x2="800" y2="220" stroke="var(--color-divider)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+<line x1="0" y1="120" x2="800" y2="120" stroke="var(--color-neutral-800)" stroke-width="1" stroke-dasharray="4 6" vector-effect="non-scaling-stroke"></line>
+<polyline points="{{ tr.ptsB }}" fill="none" stroke="var(--color-neutral-300)" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"></polyline>
+<polyline points="{{ tr.ptsA }}" fill="none" stroke="var(--color-accent)" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline>
+</svg>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-500)"><span>27 sep</span><span>10 oct</span><span>Hoy</span></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+<div style="flex:1 1 280px;max-width:360px;padding:16px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:8px">
+<span style="font-size:12px;color:var(--color-neutral-400)">Cada punto es un día</span>
+<svg viewBox="0 0 300 220" style="width:100%;height:auto;display:block">
+<line x1="20" y1="200" x2="290" y2="200" stroke="var(--color-divider)"></line><line x1="20" y1="10" x2="20" y2="200" stroke="var(--color-divider)"></line>
+<line x1="{{ tr.fit.x1 }}" y1="{{ tr.fit.y1 }}" x2="{{ tr.fit.x2 }}" y2="{{ tr.fit.y2 }}" stroke="var(--color-accent-600)" stroke-width="1.5" stroke-dasharray="4 4"></line>
+<sc-for list="{{ tr.scatter }}" as="p" hint-placeholder-count="20"><circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" fill="var(--color-accent)" fill-opacity=".7"></circle></sc-for>
+</svg>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-500)"><span>{{ tr.aLabel }} →</span><span>↑ {{ tr.bLabel }}</span></div>
+</div>
+<div style="flex:2 1 360px;padding:18px 20px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-size:40px;font-weight:500;letter-spacing:-.03em;line-height:1">{{ tr.r }}</span><span style="font-size:15px;font-weight:500;color:{{ tr.strFg }}">{{ tr.strength }}</span><span style="font-size:12px;color:var(--color-neutral-500)">correlación · {{ tr.n }} días</span></div>
+<span style="font-size:15px;line-height:1.5;text-wrap:pretty">{{ tr.sentence }}</span>
+<div style="display:flex;gap:10px;font-size:13px;line-height:1.5;color:var(--color-neutral-300);text-wrap:pretty"><i class="ph ph-warning-circle" style="font-size:16px;color:var(--color-neutral-400);margin-top:2px;flex:none"></i><span><span style="font-weight:500;color:var(--color-text)">Lo que no sé. </span>Que se muevan juntas no significa que una cause la otra. Con 28 días, una relación débil puede ser casualidad.</span></div>
+<button class="btn btn-primary" onClick="{{ tr.watch }}" disabled="{{ tr.weak }}" style="align-self:flex-start"><i class="ph ph-eye"></i>Pedir al Coach que lo vigile</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<!-- COMIDA -->
+<sc-if value="{{ isFood }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Comida" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;padding:18px 20px;border-radius:var(--radius-lg);background:var(--color-surface)">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:180px"><span style="font-size:12px;color:var(--color-neutral-400)">Restantes hoy</span><span style="font-size:36px;font-weight:500;letter-spacing:-.03em;line-height:1.1">{{ food.remain }} <span style="font-size:14px;color:var(--color-neutral-400);letter-spacing:0">kcal</span></span><span style="font-size:12px;color:var(--color-neutral-500)">{{ food.formula }}</span></div>
+<div style="flex:1 1 360px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+<sc-for list="{{ macros }}" as="m" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--color-neutral-300)">{{ m.label }}</span><span>{{ m.val }}<span style="color:var(--color-neutral-500)"> / {{ m.goal }} g</span></span></div><span style="height:6px;border-radius:3px;background:var(--color-neutral-800);overflow:hidden"><span style="display:block;height:100%;width:{{ m.pct }};background:{{ m.bg }}"></span></span></div></sc-for>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+<div style="flex:3 1 420px;min-width:0;padding:16px 18px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+<div style="display:flex;border:1px solid var(--color-divider);border-radius:var(--radius-md);overflow:hidden"><sc-for list="{{ food.mealTabs }}" as="m" hint-placeholder-count="4"><button onClick="{{ m.onClick }}" style="border:0;background:{{ m.bg }};color:{{ m.fg }};font-size:12px;padding:8px 12px;cursor:pointer">{{ m.label }}</button></sc-for></div>
+<div style="position:relative;flex:1 1 220px"><i class="ph ph-magnifying-glass" style="position:absolute;left:12px;top:11px;color:var(--color-neutral-500)"></i><input class="input" value="{{ food.q }}" onChange="{{ food.onQ }}" placeholder="Añadir a {{ food.mealLabel }}: pollo, avena…" style="padding-left:34px;min-height:38px;width:100%;box-sizing:border-box"></div>
+</div>
+<sc-if value="{{ food.hasQ }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">
+<sc-for list="{{ food.results }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.add }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--color-divider);background:transparent;color:var(--color-text);cursor:pointer;text-align:left" style-hover="border-color:var(--color-accent)"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:13px">{{ f.name }}</span><span style="font-size:11px;color:var(--color-neutral-500)">{{ f.meta }}</span></span><i class="ph ph-plus" style="color:var(--color-accent-300)"></i></button></sc-for>
+</div>
+</sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+<sc-for list="{{ food.meals }}" as="ml" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;border-radius:var(--radius-md);border:1px solid color-mix(in srgb, var(--color-text) 7%, transparent);padding:4px 12px 8px">
+<div style="display:flex;align-items:center;padding:8px 0"><span style="flex:1;font-size:14px;font-weight:500">{{ ml.label }}</span><span style="font-size:12px;color:var(--color-neutral-400)">{{ ml.kcal }}</span></div>
+<sc-for list="{{ ml.items }}" as="f" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid color-mix(in srgb, var(--color-text) 6%, transparent)"><span style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:13px">{{ f.name }}</span><span style="font-size:11px;color:var(--color-neutral-500)">{{ f.meta }}</span></span><span style="font-size:13px">{{ f.kcal }}</span><button class="btn btn-icon btn-ghost" onClick="{{ f.remove }}" style="width:26px;height:26px;color:var(--color-neutral-500)"><i class="ph ph-x"></i></button></div></sc-for>
+<sc-if value="{{ ml.empty }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-neutral-500)">Sin registrar</span></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="flex:2 1 320px;min-width:0;display:flex;flex-direction:column;gap:16px">
+<div style="padding:16px 18px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:12px">
+<span style="font-size:15px;font-weight:500">Foto del plato</span>
+<sc-if value="{{ food.scanIdle }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ food.shoot }}" style="height:150px;border-radius:var(--radius-md);border:1px dashed var(--color-accent-700);background:radial-gradient(ellipse at 50% 60%, var(--color-neutral-800), transparent 75%);color:var(--color-neutral-300);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-size:13px"><i class="{{ food.camIcon }}" style="font-size:28px;color:var(--color-accent-300)"></i>{{ food.camText }}</button>
+</sc-if>
+<sc-if value="{{ food.scanDone }}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{ food.det }}" as="d" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 6%, transparent)"><span style="flex:1;display:flex;flex-direction:column"><span style="font-size:13px">{{ d.name }}</span><span style="font-size:11px;color:var(--color-neutral-500)">Confianza {{ d.conf }} · {{ d.kcal }}</span></span><button class="btn btn-icon btn-secondary" onClick="{{ d.dec }}" style="width:28px;height:28px"><i class="ph ph-minus"></i></button><span style="width:48px;text-align:center;font-size:12px">{{ d.g }}</span><button class="btn btn-icon btn-secondary" onClick="{{ d.inc }}" style="width:28px;height:28px"><i class="ph ph-plus"></i></button></div></sc-for>
+<div style="display:flex;gap:8px"><button class="btn btn-ghost" onClick="{{ food.retry }}">Repetir</button><button class="btn btn-primary" onClick="{{ food.addScan }}" style="flex:1">Añadir a {{ food.mealLabel }} · {{ food.detTotal }}</button></div>
+</sc-if>
+</div>
+<div style="padding:16px 18px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:8px">
+<span style="font-size:15px;font-weight:500">Últimos 7 días</span>
+<table class="table" style="width:100%;font-variant-numeric:tabular-nums"><thead><tr><th style="text-align:left">Día</th><th style="text-align:right">kcal</th><th style="text-align:right">Proteína</th><th style="text-align:right">Objetivo</th></tr></thead>
+<tbody><sc-for list="{{ food.week }}" as="w" hint-placeholder-count="7"><tr><td>{{ w.d }}</td><td style="text-align:right">{{ w.k }}</td><td style="text-align:right;color:{{ w.pFg }}">{{ w.p }}</td><td style="text-align:right"><i class="{{ w.icon }}" style="color:{{ w.iFg }}"></i></td></tr></sc-for></tbody></table>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<!-- ENTRENAMIENTO -->
+<sc-if value="{{ isTrain }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Entrenamiento" style="display:flex;flex-direction:column;gap:16px">
+<sc-if value="{{ liveSes }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:var(--radius-lg);border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 8%, transparent)"><span style="width:8px;height:8px;border-radius:50%;background:var(--color-accent);box-shadow:0 0 10px var(--color-accent)"></span><span style="flex:1;font-size:14px">Sesión en curso en el reloj · {{ liveSesTxt }}</span><span style="font-size:12px;color:var(--color-neutral-400)">Se actualiza sola</span></div>
+</sc-if>
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+<div style="flex:1 1 300px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ routines }}" as="r" hint-placeholder-count="2">
+<div style="padding:16px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:17px;font-weight:500">{{ r.name }}</span><span style="font-size:12px;color:var(--color-neutral-400)">{{ r.days }}</span></div>
+<sc-for list="{{ r.items }}" as="it" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--color-neutral-300)">{{ it.name }}</span><span style="color:var(--color-neutral-500)">{{ it.scheme }} · {{ it.w }}</span></div></sc-for>
+</div>
+</sc-for>
+<span style="font-size:12px;line-height:1.45;color:var(--color-neutral-500);display:flex;gap:6px;text-wrap:pretty"><i class="ph ph-device-mobile" style="margin-top:2px"></i>Las rutinas se editan aquí o en el móvil y se sincronizan con el reloj.</span>
+</div>
+<div style="flex:2 1 440px;min-width:0;padding:16px 18px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><span style="font-size:15px;font-weight:500">1RM estimado · 8 semanas</span><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ exChips }}" as="c" hint-placeholder-count="5"><button onClick="{{ c.onClick }}" style="height:28px;padding:0 10px;border-radius:14px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};font-size:12px;cursor:pointer">{{ c.label }}</button></sc-for></div></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:30px;font-weight:500;letter-spacing:-.02em">{{ prog.last }}</span><span style="font-size:13px;color:var(--color-accent-300)">{{ prog.delta }}</span></div>
+<svg viewBox="0 0 600 180" preserveAspectRatio="none" style="width:100%;height:180px;display:block">
+<line x1="0" y1="170" x2="600" y2="170" stroke="var(--color-divider)" vector-effect="non-scaling-stroke"></line>
+<path d="{{ prog.area }}" fill="var(--color-accent-900)"></path>
+<polyline points="{{ prog.pts }}" fill="none" stroke="var(--color-accent)" stroke-width="2.5" vector-effect="non-scaling-stroke"></polyline>
+</svg>
+<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-neutral-500)"><span>31 ago</span><span>19 oct</span></div>
+</div>
+</div>
+<div style="padding:16px 18px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:8px">
+<span style="font-size:15px;font-weight:500">Historial de sesiones</span>
+<div style="overflow-x:auto"><table class="table" style="width:100%;min-width:720px;font-variant-numeric:tabular-nums">
+<thead><tr><th style="text-align:left">Fecha</th><th style="text-align:left">Rutina</th><th style="text-align:right">Duración</th><th style="text-align:right">Volumen</th><th style="text-align:right">kcal</th><th style="text-align:right">FC media</th><th style="text-align:right">Sueño previo</th><th style="text-align:left">Nota</th></tr></thead>
+<tbody><sc-for list="{{ history }}" as="h" hint-placeholder-count="6"><tr><td style="white-space:nowrap">{{ h.date }}</td><td>{{ h.r }}</td><td style="text-align:right">{{ h.dur }}</td><td style="text-align:right">{{ h.vol }}</td><td style="text-align:right">{{ h.kcal }}</td><td style="text-align:right">{{ h.hr }}</td><td style="text-align:right;color:{{ h.slFg }}">{{ h.sl }}</td><td style="color:var(--color-neutral-400);max-width:280px">{{ h.note }}</td></tr></sc-for></tbody>
+</table></div>
+</div>
+</div>
+</sc-if>
+
+<!-- COACH -->
+<sc-if value="{{ isCoach }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Coach" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+<div style="flex:1 1 340px;min-width:0;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ coachFilters }}" as="f" hint-placeholder-count="6"><button onClick="{{ f.onClick }}" style="height:30px;padding:0 12px;border-radius:15px;border:1px solid {{ f.border }};background:{{ f.bg }};color:{{ f.fg }};font-size:12px;cursor:pointer">{{ f.label }}</button></sc-for></div>
+<sc-for list="{{ coachList }}" as="x" hint-placeholder-count="5">
+<button onClick="{{ x.open }}" style="display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:var(--radius-lg);border:1px {{ x.bs }} {{ x.bc }};background:{{ x.bg }};color:var(--color-text);text-align:left;cursor:pointer">
+<span style="display:flex;align-items:center;gap:8px;width:100%"><i class="{{ x.icon }}" style="font-size:15px;color:{{ x.kindFg }}"></i><span style="flex:1;font-size:11px;font-weight:500;color:{{ x.kindFg }}">{{ x.kindLabel }}</span><span style="display:flex;gap:2px"><sc-for list="{{ x.meter }}" as="m" hint-placeholder-count="4"><span style="width:10px;height:4px;border-radius:1px;background:{{ m.bg }}"></span></sc-for></span></span>
+<span style="font-size:14px;font-weight:500;line-height:1.35;text-wrap:pretty">{{ x.title }}</span>
+<span style="font-size:11px;color:var(--color-neutral-500)">{{ x.domains }}{{ x.status }}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
+<div style="flex:2 1 460px;min-width:0;padding:22px 24px;border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="display:flex;gap:6px;align-items:center;height:26px;padding:0 10px;border-radius:13px;border:1px {{ sel.bs }} {{ sel.bc2 }};font-size:11px;font-weight:500;color:{{ sel.kindFg }}"><i class="{{ sel.icon }}"></i>{{ sel.kindLabel }}</span><span style="font-size:12px;color:var(--color-neutral-500)">{{ sel.domains }}</span><span style="flex:1"></span><sc-if value="{{ sel.hasConf }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-neutral-300)">Confianza: {{ sel.conf }}</span></sc-if></div>
+<h3 style="margin:0;text-wrap:pretty">{{ sel.title }}</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+<sc-for list="{{ sel.rows }}" as="r" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;font-weight:500;color:var(--color-neutral-500)">{{ r.l }}</span><span style="font-size:14px;line-height:1.5;color:var(--color-neutral-200);text-wrap:pretty">{{ r.t }}</span></div></sc-for>
+</div>
+<sc-if value="{{ sel.hasEv }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:var(--radius-md);background:var(--color-bg)"><span style="font-size:12px;color:var(--color-neutral-400)">{{ sel.evCap }}</span><div style="display:flex;align-items:flex-end;gap:5px;height:80px"><sc-for list="{{ sel.ev }}" as="b" hint-placeholder-count="10"><div style="flex:1;height:{{ b.h }};border-radius:3px 3px 0 0;background:{{ b.bg }}"></div></sc-for></div></div>
+</sc-if>
+<sc-if value="{{ sel.hasLimits }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:10px;font-size:13px;line-height:1.5;color:var(--color-neutral-300);text-wrap:pretty"><i class="ph ph-warning-circle" style="font-size:16px;color:var(--color-neutral-400);margin-top:2px;flex:none"></i><span><span style="font-weight:500;color:var(--color-text)">Lo que no sé. </span>{{ sel.limits }}</span></div></sc-if>
+<sc-if value="{{ sel.isResolved }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:var(--color-accent-300);display:flex;gap:6px;align-items:center"><i class="ph ph-check-circle"></i>{{ sel.resolvedTxt }}</div></sc-if>
+<sc-if value="{{ sel.showOpts }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:15px;font-weight:500">¿Qué quieres hacer?</span>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
+<sc-for list="{{ sel.opts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onClick }}" style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:var(--radius-md);border:1px solid {{ o.border }};background:{{ o.bg }};color:var(--color-text);text-align:left;cursor:pointer"><span style="display:flex;gap:8px;align-items:center;font-size:14px;font-weight:500"><span style="width:14px;height:14px;flex:none;border-radius:50%;border:1.5px solid {{ o.ring }};display:grid;place-items:center"><span style="width:6px;height:6px;border-radius:50%;background:{{ o.dot }}"></span></span>{{ o.label }}</span><span style="font-size:12px;line-height:1.45;color:var(--color-neutral-400);text-wrap:pretty">{{ o.est }}</span></button></sc-for>
+</div>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" onClick="{{ sel.apply }}" disabled="{{ sel.noOpt }}">{{ sel.applyLabel }}</button><span style="font-size:12px;color:var(--color-neutral-500)">Se aplica también en el móvil y el reloj. Todo se puede deshacer.</span></div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+</div>
+</main>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;right:24px;bottom:24px;z-index:50;padding:12px 16px;border-radius:var(--radius-md);background:var(--color-surface);border:1px solid var(--color-accent);box-shadow:var(--shadow-lg);display:flex;gap:8px;align-items:center;font-size:14px"><i class="ph ph-check-circle" style="color:var(--color-accent)"></i>{{ toast }}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;hoy&quot;,&quot;trends&quot;,&quot;food&quot;,&quot;train&quot;,&quot;coach&quot;],&quot;default&quot;:&quot;hoy&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;units&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kg&quot;,&quot;lb&quot;],&quot;default&quot;:&quot;kg&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const LB = 2.20462;
+const nf = (n, d = 1) => Number(n).toLocaleString('de-DE', { maximumFractionDigits: d });
+const hm = m => Math.floor(m / 60) + ' h ' + String(Math.round(m % 60)).padStart(2, '0');
+const norm = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const sum = a => a.reduce((x, y) => x + y, 0);
+const SYNC_KEY = 'vida:sync';
+const HD = {
+  sleep:[452,401,468,372,445,388,432], sleepNeed:465, stages:{ deep:78, rem:96, light:238, awake:20 }, sleepScore:76,
+  hrv:[63,60,65,62,64,61,66,63,64,61,66,55,52,51], hrvBase:62, rhr:[55,56,54,58,59,60,59], rhrBase:55,
+  steps:[11240,8420,9870,6230,12050,5410,7842], stepGoal:10000, actKcal:312,
+  weight:[78.9,78.7,78.8,78.6,78.5,78.6,78.4], weight8:[80.6,80.2,79.9,79.7,79.2,78.9,78.8,78.4], goalW:76,
+  mood:[4,3,4,2,3,3], stress:[32,35,30,52,48,44,38],
+  kcal:[2210,2380,2150,2290,2420,2050], prot:[142,118,155,121,150,112], kcalGoal:2300, macroGoal:{ p:150, c:240, g:70 },
+  train:['—','Fuerza A','Fuerza B','—','Fuerza A','—','Pendiente'],
+};
+const DAYS = ['Dom 18','Lun 19','Mar 20','Mié 21','Jue 22','Vie 23','Hoy'];
+const D7 = ['D','L','M','X','J','V','S'];
+const MOODS = [['Muy mal','ph-smiley-sad'],['Mal','ph-smiley-nervous'],['Normal','ph-smiley-meh'],['Bien','ph-smiley'],['Muy bien','ph-smiley-wink']];
+const MEALS = [['desayuno','Desayuno'],['almuerzo','Almuerzo'],['merienda','Merienda'],['cena','Cena']];
+const FOODS = [['Pechuga de pollo','150 g',248,47,0,5],['Salmón a la plancha','150 g',312,34,0,19],['Ternera magra','150 g',255,39,0,10],['Atún al natural','1 lata (80 g)',90,20,0,1],['Huevo cocido','1 unidad',78,6,1,5],['Proteína whey','1 cacito (30 g)',120,24,3,1],['Yogur griego natural','170 g',165,15,6,9],['Queso fresco','100 g',98,12,3,4],['Lentejas cocidas','200 g',232,18,40,1],['Arroz blanco cocido','200 g',260,5,57,1],['Pasta cocida','200 g',314,12,62,2],['Patata asada','200 g',186,5,42,0],['Pan integral','2 rebanadas',160,8,28,2],['Avena','60 g',228,8,40,4],['Plátano','1 mediano',105,1,27,0],['Manzana','1 mediana',95,0,25,0],['Brócoli','100 g',34,3,7,0],['Aguacate','½ unidad',120,1,6,11],['Almendras','30 g',174,6,6,15]];
+const SCAN = [{ name:'Salmón a la plancha', g:150, k:2.08, p:.227, c:0, f:.127, conf:88 }, { name:'Patata asada', g:175, k:.93, p:.025, c:.21, f:.001, conf:71 }, { name:'Brócoli', g:90, k:.34, p:.028, c:.07, f:.004, conf:93 }];
+const F0 = (name, portion, kcal, p, c, g) => ({ name, portion, kcal, p, c, g, uid: name + portion });
+const HIST = { 'Sentadilla':[80,82.5,82.5,85,87.5,87.5,90,92.5], 'Peso muerto':[100,105,105,110,110,115,117.5,120], 'Press banca':[60,60,62.5,62.5,65,65,67.5,70], 'Press militar':[37.5,40,40,42.5,42.5,45,45,45], 'Curl':[22.5,25,25,27.5,27.5,30,30,32.5] };
+const HREPS = { 'Sentadilla':6, 'Peso muerto':5, 'Press banca':8, 'Press militar':8, 'Curl':10 };
+const ROUTINES = [{ name:'Fuerza A', days:'Lun · Jue', items:[['Sentadilla',4,6],['Press banca',4,8],['Curl',3,10]] }, { name:'Fuerza B', days:'Mar · Vie', items:[['Peso muerto',3,5],['Press militar',4,8],['Curl',3,12]] }];
+const HISTORY = [['Jue 22 oct','Fuerza A','1 h 02',5240,438,128,445,'Rodilla izquierda algo cargada en la última serie de sentadilla.'],['Mar 20 oct','Fuerza B','54 min',4620,401,124,468,'Peso muerto muy fluido. Subir a 120 kg.'],['Lun 19 oct','Fuerza A','58 min',4520,412,131,401,''],['Jue 15 oct','Fuerza A','1 h 05',5180,446,127,452,''],['Mar 13 oct','Fuerza B','57 min',3950,372,122,371,'Cansado, poco sueño.'],['Lun 12 oct','Fuerza A','1 h 00',5100,430,129,455,'']];
+const KIND = {
+  hecho: { label:'Hecho', icon:'ph ph-check-square', fg:'var(--color-text)', bg:'var(--color-surface)', bs:'solid', bc:'transparent' },
+  patron: { label:'Patrón observado', icon:'ph ph-chart-scatter', fg:'var(--color-accent-200)', bg:'var(--color-surface)', bs:'solid', bc:'var(--color-accent-800)' },
+  prediccion: { label:'Proyección', icon:'ph ph-trend-up', fg:'var(--color-accent-300)', bg:'linear-gradient(160deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)), var(--color-surface))', bs:'dashed', bc:'var(--color-accent-700)' },
+  hipotesis: { label:'Hipótesis', icon:'ph ph-question', fg:'var(--color-neutral-300)', bg:'transparent', bs:'dashed', bc:'var(--color-neutral-700)' },
+};
+const CONF = { confirmado:['Confirmado',4], emergente:['Emergente',3], validar:['A validar',2] };
+const evH = (arr, mn, mx, hl) => arr.map((v, i) => ({ h: Math.round(Math.max(.06, (v - mn) / (mx - mn)) * 100) + '%', bg: hl(i, v) }));
+const INS = [
+  { key:'hrv', kind:'hecho', domains:['Corazón','Sueño','Entrenamiento'], title:'Tu HRV lleva 3 noches por debajo de tu línea base', sub:'51 ms anoche frente a 62 ms habituales (−18%). La FC en reposo subió 4 lpm.',
+    rows:[['Observación','HRV nocturna de 55, 52 y 51 ms las últimas 3 noches. Tu línea base de 30 días es 62 ms.'],['Contexto','Coincide con 2 noches de menos de 6 h 30 y 3 sesiones de fuerza en 4 días.'],['Impacto','Hoy toca Fuerza B. Con la recuperación baja, buscar récords rinde menos y cuesta más.']],
+    limits:'La HRV también baja con alcohol, estrés, una cena tardía o el inicio de un resfriado. Veo que está baja, no por qué.',
+    ev: evH(HD.hrv, 45, 70, i => i >= 11 ? 'var(--vida-warn)' : 'var(--color-neutral-700)'), evCap:'HRV nocturna, 14 noches',
+    opts:[['Hacer Fuerza B al 90% del peso','Mismas series y repeticiones con ~10% menos de carga.'],['Cambiar por 40 min de caminata','≈ +4.500 pasos y ~180 kcal. Fuerza B pasa a mañana.'],['No hacer nada','Lo ocultaré 7 días.']] },
+  { key:'prot', kind:'hecho', domains:['Comida','Entrenamiento'], title:'Te faltan {P} g de proteína para hoy', sub:'Queda la cena.',
+    rows:[['Observación','Has registrado {Q} g de proteína hoy.'],['Contexto','En días de fuerza tu objetivo es 150 g, unos 1,9 g por kg.'],['Impacto','Esta semana lo cumpliste 2 de 6 días.']],
+    opts:[['Ver cenas altas en proteína','Abro Comida con la cena seleccionada.'],['No hacer nada','Lo ocultaré hoy.']] },
+  { key:'sueno', kind:'patron', conf:'emergente', domains:['Sueño','Entrenamiento'], title:'Cuando duermes menos de 6 h 30, al día siguiente tu volumen también es ~14% menor', sub:'4 de 18 sesiones, comparando cada una con su misma rutina.',
+    rows:[['Observación','Tras las 4 noches de menos de 6 h 30, el volumen fue entre 9% y 19% menor que el promedio de esa rutina.'],['Contexto','El sueño lo mide tu reloj. Comparo Fuerza A con A y B con B.'],['Impacto','Anoche dormiste 7 h 12: hoy no entras en este patrón.']],
+    limits:'No demuestra que el sueño sea la causa: esas noches también pueden coincidir con días de más estrés.',
+    ev: evH([1.02,.86,.98,1.04,.81,1,.91,.97,1.03,.88], .75, 1.07, i => [1,4,6,9].includes(i) ? 'var(--color-accent)' : 'var(--color-neutral-700)'), evCap:'Volumen por sesión frente al promedio de su rutina · resaltadas: noche previa < 6 h 30',
+    opts:[['Avisarme a las 23:00 la noche antes de entrenar','Solo los días con sesión al día siguiente.'],['No hacer nada','Lo ocultaré 7 días.']] },
+  { key:'peso', kind:'prediccion', conf:'emergente', domains:['Cuerpo','Comida'], title:'Llegarías a {GW} hacia el 26 dic', sub:'Si mantienes el déficit medio de ~380 kcal al día.',
+    rows:[['Observación','Bajaste de {W0} a {W1} en 8 semanas, ~0,3 kg por semana.'],['Contexto','La masa muscular subió de 36,1 a 36,4 kg: pierdes sobre todo grasa.'],['Impacto','Llegarías antes de tu fecha objetivo, el 31 de enero.']],
+    limits:'El peso diario varía ±1 kg por agua y sal. Al bajar de peso tu gasto también baja, así que el ritmo suele frenarse.',
+    ev: evH(HD.weight8, 77.5, 81, () => 'var(--color-accent)'), evCap:'Peso medio semanal, 8 semanas',
+    opts:[['Mantener el déficit','Sin cambios.'],['Subir la proteína a 160 g','Protege masa muscular. Actualizo tus macros.'],['No hacer nada','Lo ocultaré 7 días.']] },
+  { key:'militar', kind:'hecho', domains:['Entrenamiento'], title:'Press militar: 3 semanas en {M} × 8', sub:'Sin subir peso ni repeticiones desde el 5 oct.',
+    rows:[['Observación','Tus últimas 3 sesiones de press militar fueron {M} × 8 en la mejor serie.'],['Contexto','Antes subías ~1,25 kg por semana.'],['Impacto','Tu 1RM estimado está fijo.']],
+    ev: evH(HIST['Press militar'], 35, 46, i => i >= 5 ? 'var(--color-accent)' : 'var(--color-neutral-700)'), evCap:'Press militar · peso máximo por semana',
+    opts:[['Cambiar a 5×5 durante 3 semanas','Actualizo Fuerza B en todos tus dispositivos.'],['Subir 1 kg con microdiscos','Próxima sesión con un poco más de carga.'],['No hacer nada','Lo ocultaré 7 días.']] },
+  { key:'pasos', kind:'patron', conf:'emergente', domains:['Actividad','Sueño'], title:'Los días con más de 9.000 pasos, también te duermes ~20 min antes', sub:'14 de 30 días superaron los 9.000 pasos.',
+    rows:[['Observación','Te duermes de media a las 23:21 los días de más de 9.000 pasos y a las 23:42 el resto.'],['Contexto','Hoy llevas 7.842 pasos.'],['Impacto','Te faltan 1.158 para entrar en ese grupo.']],
+    limits:'Los días que caminas más pueden ser distintos en otras cosas: fin de semana, menos pantalla.',
+    opts:[['Recordarme un paseo a las 19:00','≈ +1.700 pasos.'],['No hacer nada','Lo ocultaré 7 días.']] },
+  { key:'rodilla', kind:'hipotesis', conf:'validar', domains:['Notas','Entrenamiento'], title:'La molestia de rodilla podría estar asociada con subir carga cada semana', sub:'2 notas con «Molestia», ambas en semanas de subida en sentadilla.',
+    rows:[['Observación','El 22 oct anotaste: «Rodilla izquierda algo cargada en la última serie de sentadilla».'],['Contexto','Subiste carga 5 de las últimas 7 semanas.'],['Impacto','Si la carga fuera la causa, seguir a este ritmo podría empeorarla.']],
+    limits:'Solo 2 casos. No es un diagnóstico: si el dolor sigue, consulta a un profesional.',
+    opts:[['Ir más lento: +1,25 kg por semana','Llegada al objetivo ~2 semanas más tarde.'],['Registrar la rodilla 0–10 en cada sesión','Con 4 registros podré confirmarlo o descartarlo.'],['No hacer nada','Lo ocultaré 7 días.']] },
+  { key:'estres', kind:'hipotesis', conf:'validar', domains:['Ánimo','Sueño'], title:'Tu ánimo podría ser más bajo los días con más estrés medido por el reloj', sub:'Solo 6 registros de ánimo.',
+    rows:[['Observación','El miércoles registraste «Mal» y el reloj marcó tu estrés más alto de la semana: 52.'],['Contexto','Esa noche dormiste 6 h 12.']],
+    limits:'Un solo caso claro. Registra tu ánimo unos días más.',
+    opts:[['Recordarme registrar el ánimo a las 21:00','Con 14 días podré comprobarlo.'],['No hacer nada','Lo ocultaré 7 días.']] },
+];
+// 28-day synthetic series with built-in relationships
+const TR = (() => {
+  let s = 7; const rnd = () => { s = (s * 16807) % 2147483647; return (s / 2147483647) * 2 - 1; };
+  const out = { sleep:[], steps:[], hrv:[], rhr:[], stress:[], mood:[], kcal:[], prot:[], weight:[], vol:[] };
+  for (let i = 0; i < 28; i++) {
+    const steps = Math.round(8600 + rnd() * 2900), sleep = 7.1 + rnd() * .55 + (steps - 8600) / 2900 * .22;
+    const hrv = 60 + (sleep - 7.1) * 7 + rnd() * 3, rhr = 56 - (hrv - 60) * .22 + rnd() * .8, stress = 40 - (sleep - 7.1) * 10 + rnd() * 8;
+    const mood = Math.max(1, Math.min(5, Math.round(3.4 - (stress - 40) / 14 + rnd() * .6)));
+    out.steps.push(steps); out.sleep.push(sleep); out.hrv.push(hrv); out.rhr.push(rhr); out.stress.push(stress); out.mood.push(mood);
+    out.kcal.push(2250 + rnd() * 220); out.prot.push(132 + rnd() * 24); out.weight.push(79.9 - i * .055 + rnd() * .25);
+    out.vol.push(i % 2 === 1 ? 4500 + ((out.sleep[i - 1] || 7.1) - 7.1) * 900 + rnd() * 260 : null);
+  }
+  return out;
+})();
+const TRM = [['sleep','Sueño','h', v => nf(v, 1)],['hrv','HRV','ms', v => nf(v, 0)],['rhr','FC reposo','lpm', v => nf(v, 0)],['steps','Pasos','', v => nf(v, 0)],['stress','Estrés','', v => nf(v, 0)],['mood','Ánimo','1–5', v => nf(v, 0)],['kcal','Calorías','kcal', v => nf(v, 0)],['prot','Proteína','g', v => nf(v, 0)],['vol','Volumen','kg', v => nf(v, 0)],['weight','Peso','kg', v => nf(v, 1)]];
+const seg = on => ({ bg: on ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent', fg: on ? 'var(--color-accent-200)' : 'var(--color-neutral-400)' });
+const chip = on => ({ bg: on ? 'color-mix(in srgb, var(--color-accent) 14%, transparent)' : 'transparent', fg: on ? 'var(--color-accent-200)' : 'var(--color-neutral-300)', border: on ? 'var(--color-accent)' : 'var(--color-divider)' });
+const ring = (pct, r) => { const c = 2 * Math.PI * r; return (Math.min(1, Math.max(0, pct)) * c).toFixed(1) + ' ' + c.toFixed(1); };
+
+class Component extends DCLogic {
+  state = {
+    view: 'hoy', units: null, sel: 'hrv', opt: null, resolved: {}, filter: 'Todo', toast: '',
+    trA: 'sleep', trB: 'hrv', lag: 0, ex: 'Sentadilla',
+    meal: 'cena', q: '', scan: 'idle', scanItems: null, mood: null, protGoal: null, sync: {},
+    meals: { desayuno:[F0('Avena','60 g',228,8,40,4), F0('Plátano','1 mediano',105,1,27,0), F0('Café con leche','1 taza',60,3,5,3)], almuerzo:[F0('Pechuga de pollo','180 g',297,56,0,6), F0('Arroz blanco cocido','200 g',260,5,57,1), F0('Ensalada mixta','1 plato',45,2,8,1), F0('Aceite de oliva','1 cda',88,0,0,10)], merienda:[F0('Yogur griego natural','170 g',165,15,6,9)], cena:[] },
+  };
+  componentDidMount() {
+    if (this.props.startView) this.setState({ view: this.props.startView });
+    this.readSync(); this.iv = setInterval(() => this.readSync(), 1500);
+    window.addEventListener('storage', this.onStore = e => { if (e.key === SYNC_KEY) this.readSync(); });
+  }
+  componentWillUnmount() { clearInterval(this.iv); window.removeEventListener('storage', this.onStore); clearTimeout(this.tt); clearTimeout(this.scT); }
+  readSync() { try { const raw = localStorage.getItem(SYNC_KEY) || '{}'; if (raw !== this.lastRaw) { this.lastRaw = raw; this.setState({ sync: JSON.parse(raw) }); } } catch (e) {} }
+  writeSync(patch, msg) {
+    try { const cur = JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); const log = [{ t: Date.now(), src: 'web', msg }, ...(cur.log || [])].slice(0, 8); const next = { ...cur, ...patch, log, ts: Date.now() }; localStorage.setItem(SYNC_KEY, JSON.stringify(next)); this.lastRaw = JSON.stringify(next); this.setState({ sync: next }); } catch (e) {}
+  }
+  toast(m) { this.setState({ toast: m }); clearTimeout(this.tt); this.tt = setTimeout(() => this.setState({ toast: '' }), 2600); }
+  units() { return this.state.units || this.props.units || 'kg'; }
+  fw(kg) { return this.units() === 'kg' ? nf(Math.round(kg * 2) / 2) + ' kg' : nf(Math.round(kg * LB)) + ' lb'; }
+  fbw(kg) { return this.units() === 'kg' ? nf(kg, 1) + ' kg' : nf(kg * LB, 1) + ' lb'; }
+
+  renderVals() {
+    const S = this.state, sy = S.sync || {}, units = this.units();
+    const go = v => () => this.setState({ view: v });
+    const ago = t => { if (!t) return ''; const s = Math.round((Date.now() - t) / 1000); return s < 60 ? 'ahora' : 'hace ' + Math.round(s / 60) + ' min'; };
+    const watchRecent = sy.ts && Date.now() - sy.ts < 90000 && (sy.log || []).some(l => l.src === 'reloj');
+    const lastWatch = (sy.log || []).find(l => l.src === 'reloj');
+    const mood = S.mood != null ? S.mood : sy.mood != null ? sy.mood : null;
+
+    // food
+    const T = { kcal:0, p:0, c:0, g:0 }; Object.values(S.meals).forEach(a => a.forEach(f => { T.kcal += f.kcal; T.p += f.p; T.c += f.c; T.g += f.g; }));
+    if (sy.protAdd) T.p += sy.protAdd.p, T.kcal += sy.protAdd.k;
+    const goals = { p: S.protGoal || HD.macroGoal.p, c: HD.macroGoal.c, g: HD.macroGoal.g };
+    const remain = Math.round(HD.kcalGoal - T.kcal + HD.actKcal);
+    const macros = [['Proteína','Proteína','p','var(--color-accent)'],['Carbohidratos','Carbos','c','var(--color-accent-300)'],['Grasa','Grasa','g','var(--color-accent-600)']].map(([label, short, k, bg]) => ({ label, short, val: Math.round(T[k]), goal: goals[k], pct: Math.min(100, Math.round(T[k] / goals[k] * 100)) + '%', bg }));
+    const st = HD.stages, stTot = st.deep + st.rem + st.light + st.awake;
+    const stages = [['deep','var(--color-accent-700)'],['rem','var(--color-accent-400)'],['light','var(--color-accent-200)'],['awake','var(--vida-warn)']].map(([k, bg]) => ({ bg, w: (st[k] / stTot * 100).toFixed(1) + '%' }));
+    const hrv = HD.hrv[13], hrvD = Math.round((hrv / HD.hrvBase - 1) * 100), rhr = HD.rhr[6], rhrD = rhr - HD.rhrBase;
+    const hrvC = Math.max(0, Math.min(100, 100 + (hrv / HD.hrvBase - 1) * 250)), rhrC = Math.max(0, Math.min(100, 100 - rhrD * 6));
+    const score = Math.round(.4 * HD.sleepScore + .4 * hrvC + .2 * rhrC);
+    const bars = (arr, mn, mx, col) => arr.map((v, i) => ({ h: v == null ? '0%' : Math.max(3, Math.round((v - mn) / (mx - mn) * 100)) + '%', bg: col ? col(v, i) : (i === arr.length - 1 ? 'var(--color-accent)' : 'var(--color-neutral-700)') }));
+    const gp = (g, mn, mx) => Math.round((g - mn) / (mx - mn) * 100) + '%';
+    const L7 = D7.map(t => ({ t }));
+    const moodArr = [...HD.mood, mood];
+    const trendTo = k => () => this.setState({ view: 'trends', trA: k });
+    const w8 = HD.weight8, wD = w8[7] - w8[0];
+    const areas = [
+      { icon:'ph ph-moon-stars', title:'Sueño', value: hm(HD.sleep[6]), unit:'anoche', sub:'Puntuación ' + HD.sleepScore, subFg:'var(--color-neutral-400)', hasStages:true, bars: bars(HD.sleep, 300, 500, v => v < 390 ? 'var(--vida-warn)' : 'var(--color-accent)'), hasGoal:true, goalPct: gp(HD.sleepNeed, 300, 500), labels:L7, stats:[{ l:'Media 7 días', v: hm(sum(HD.sleep) / 7) }, { l:'Necesidad', v: hm(HD.sleepNeed) }], trend: trendTo('sleep') },
+      { icon:'ph ph-heartbeat', title:'Corazón', value: String(hrv), unit:'ms HRV', sub: hrvD + '% vs. línea base', subFg:'var(--vida-warn)', bars: bars(HD.hrv, 40, 72, v => v < HD.hrvBase * .92 ? 'var(--vida-warn)' : 'var(--color-accent)'), hasGoal:true, goalPct: gp(HD.hrvBase, 40, 72), labels: HD.hrv.map((_, i) => ({ t: i === 13 ? 'Hoy' : '' })), stats:[{ l:'FC en reposo', v: rhr + ' lpm (+' + rhrD + ')' }, { l:'Estrés', v: HD.stress[6] + ' / 100' }], trend: trendTo('hrv') },
+      { icon:'ph ph-sneaker-move', title:'Actividad', value: nf(HD.steps[6], 0), unit:'pasos', sub:'Faltan ' + nf(HD.stepGoal - HD.steps[6], 0), subFg:'var(--color-accent-300)', bars: bars(HD.steps, 0, 13000, v => v >= HD.stepGoal ? 'var(--color-accent)' : 'var(--color-neutral-700)'), hasGoal:true, goalPct: gp(HD.stepGoal, 0, 13000), labels:L7, stats:[{ l:'Calorías activas', v: HD.actKcal + ' kcal' }, { l:'Media 7 días', v: nf(Math.round(sum(HD.steps) / 7), 0) }], trend: trendTo('steps') },
+      { icon:'ph ph-fork-knife', title:'Comida', value: nf(remain, 0), unit:'kcal restantes', sub: nf(Math.round(T.kcal), 0) + ' comidas', subFg:'var(--color-neutral-400)', hasMacros:true, bars: bars([...HD.kcal, T.kcal], 0, 2800), hasGoal:true, goalPct: gp(HD.kcalGoal, 0, 2800), labels:L7, stats:[{ l:'Objetivo', v: nf(HD.kcalGoal, 0) + ' kcal' }, { l:'Proteína media', v: Math.round(sum(HD.prot) / 6) + ' g' }], trend: trendTo('kcal') },
+      { icon:'ph ph-scales', title:'Cuerpo', value: units === 'kg' ? nf(w8[7], 1) : nf(w8[7] * LB, 1), unit: units, sub: '−' + this.fbw(Math.abs(wD)) + ' en 8 sem.', subFg:'var(--color-accent-300)', bars: bars(w8, 75, 81), hasGoal:true, goalPct: gp(HD.goalW, 75, 81), labels: ['31 ago','','','','','','','Hoy'].map(t => ({ t })), stats:[{ l:'Grasa corporal', v:'17,8 %' }, { l:'Masa muscular', v: this.fbw(36.4) }], trend: trendTo('weight') },
+      { icon:'ph ph-smiley', title:'Ánimo y estrés', value: mood != null ? MOODS[mood - 1][0] : 'Sin registrar', unit:'', sub: sy.mood != null && S.mood == null ? 'Desde el reloj' : 'Estrés ' + HD.stress[6], subFg:'var(--color-neutral-400)', hasMood:true, bars: bars(moodArr, 0, 5, (v, i) => i === 6 ? 'var(--color-accent)' : v <= 2 ? 'var(--vida-warn)' : 'var(--color-neutral-700)'), labels:L7, stats:[{ l:'Estrés medio', v: Math.round(sum(HD.stress) / 7) + ' / 100' }, { l:'Días buenos', v: moodArr.filter(m => m >= 4).length + ' de ' + moodArr.filter(m => m != null).length }], trend: trendTo('mood') },
+    ].map(a => ({ hasStages:false, hasMacros:false, hasMood:false, hasGoal:false, goalPct:'0%', ...a }));
+    const moodOpts = MOODS.map(([label, icon], i) => { const on = mood === i + 1; return { label, icon: (on ? 'ph-fill ' : 'ph ') + icon, ...chip(on), onClick: () => { this.setState({ mood: i + 1 }); this.writeSync({ mood: i + 1 }, 'Ánimo: ' + label); this.toast('Ánimo registrado · sincronizado con el móvil y el reloj'); } }; });
+
+    const f7 = arr => arr;
+    const fg = (bad) => bad ? 'var(--vida-warn)' : 'var(--color-text)';
+    const weekRows = [
+      ['Sueño', HD.sleep.map(v => ({ v: hm(v), fg: fg(v < 390) })), hm(sum(HD.sleep) / 7)],
+      ['HRV (ms)', HD.hrv.slice(7).map(v => ({ v: String(v), fg: fg(v < HD.hrvBase * .92) })), nf(sum(HD.hrv.slice(7)) / 7, 0)],
+      ['FC reposo (lpm)', HD.rhr.map(v => ({ v: String(v), fg: fg(v >= HD.rhrBase + 4) })), nf(sum(HD.rhr) / 7, 0)],
+      ['Pasos', HD.steps.map(v => ({ v: nf(v, 0), fg: fg(v < 7000) })), nf(sum(HD.steps) / 7, 0)],
+      ['Calorías', [...HD.kcal, T.kcal].map((v, i) => ({ v: nf(Math.round(v), 0), fg: fg(i < 6 && v > HD.kcalGoal + 100) })), nf(Math.round(sum([...HD.kcal, T.kcal]) / 7), 0)],
+      ['Proteína (g)', [...HD.prot, T.p].map((v, i) => ({ v: String(Math.round(v)), fg: fg(i < 6 && v < goals.p - 10) })), nf(Math.round(sum([...HD.prot, T.p]) / 7), 0)],
+      ['Entrenamiento', HD.train.map(v => ({ v, fg: v === 'Pendiente' ? 'var(--color-accent-300)' : v === '—' ? 'var(--color-neutral-600)' : 'var(--color-text)' })), '3 de 4'],
+      ['Peso (' + units + ')', HD.weight.map(v => ({ v: units === 'kg' ? nf(v, 1) : nf(v * LB, 1), fg: 'var(--color-text)' })), units === 'kg' ? nf(sum(HD.weight) / 7, 1) : nf(sum(HD.weight) / 7 * LB, 1)],
+      ['Ánimo', moodArr.map(v => ({ v: v == null ? '—' : MOODS[v - 1][0], fg: fg(v != null && v <= 2) })), ''],
+      ['Estrés', HD.stress.map(v => ({ v: String(v), fg: fg(v >= 50) })), nf(sum(HD.stress) / 7, 0)],
+    ].map(([label, cells, avg]) => ({ label, cells, avg }));
+
+    // insights
+    const fill = t => t.replace('{P}', Math.max(0, Math.round(goals.p - T.p))).replace('{Q}', Math.round(T.p)).replace('{GW}', this.fbw(HD.goalW)).replace('{W0}', this.fbw(w8[0])).replace('{W1}', this.fbw(w8[7])).replace(/\{M\}/g, this.fw(45));
+    const watchHrv = sy.coach && sy.coach.hrv;
+    const resolvedOf = k => S.resolved[k] || (k === 'hrv' && watchHrv ? (watchHrv === 'accepted' ? 'Aceptaste en el reloj: Fuerza B al 90%' : 'Descartado en el reloj') : null);
+    const meterOf = c => [1, 2, 3, 4].map(n => ({ bg: c && n <= CONF[c][1] ? 'var(--color-accent-300)' : 'var(--color-neutral-800)' }));
+    const insList = INS.filter(x => !(x.key === 'prot' && goals.p - T.p < 25));
+    const openIns = k => () => this.setState({ view: 'coach', sel: k, opt: null });
+    const card = x => { const K = KIND[x.kind], r = resolvedOf(x.key); return { ...K, kindLabel: K.label, kindFg: K.fg, title: fill(x.title), sub: fill(x.sub), domains: x.domains.join(' · '), meter: meterOf(x.conf), open: openIns(x.key), status: r ? ' · Resuelto' : '' }; };
+    const topIns = insList.filter(x => !resolvedOf(x.key) && x.kind !== 'hipotesis').slice(0, 3).map(card);
+    const FILTERS = ['Todo','Sueño','Comida','Corazón','Entrenamiento','Cuerpo','Ánimo'];
+    const coachList = insList.filter(x => S.filter === 'Todo' || x.domains.includes(S.filter)).map(card);
+    const X = insList.find(x => x.key === S.sel);
+    let sel = {};
+    if (X) {
+      const K = KIND[X.kind], r = resolvedOf(X.key);
+      sel = { ...K, kindLabel: K.label, kindFg: K.fg, bc2: K.bc === 'transparent' ? 'var(--color-divider)' : K.bc, title: fill(X.title), domains: X.domains.join(' · '), hasConf: !!X.conf, conf: X.conf ? CONF[X.conf][0] : '',
+        rows: X.rows.map(([l, t]) => ({ l, t: fill(t) })), hasEv: !!X.ev, ev: X.ev || [], evCap: X.evCap || '', hasLimits: !!X.limits, limits: X.limits || '',
+        isResolved: !!r, resolvedTxt: r || '', showOpts: !r,
+        opts: X.opts.map(([label, est], i) => { const on = S.opt === i; return { label, est, border: on ? 'var(--color-accent)' : 'var(--color-divider)', bg: on ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent', ring: on ? 'var(--color-accent)' : 'var(--color-neutral-600)', dot: on ? 'var(--color-accent)' : 'transparent', onClick: () => this.setState({ opt: i }) }; }),
+        noOpt: S.opt == null, applyLabel: S.opt == null ? 'Elige una opción' : 'Aplicar',
+        apply: () => {
+          if (S.opt == null) return; const [label] = X.opts[S.opt];
+          this.setState(x => ({ resolved: { ...x.resolved, [X.key]: 'Elegiste: ' + label }, opt: null }));
+          if (X.key === 'hrv') this.writeSync({ coach: { ...(sy.coach || {}), hrv: S.opt === 0 ? 'accepted' : 'dismissed' } }, 'Coach: ' + label);
+          if (X.key === 'prot' && S.opt === 0) this.setState({ view: 'food', meal: 'cena', q: 'pollo' });
+          if (X.key === 'peso' && S.opt === 1) this.setState({ protGoal: 160 });
+          this.toast(label + ' · sincronizado');
+        } };
+    }
+
+    // trends
+    const mA = TRM.find(m => m[0] === S.trA), mB = TRM.find(m => m[0] === S.trB);
+    const A = TR[S.trA], B = TR[S.trB], lag = S.lag;
+    const pairs = []; for (let i = 0; i + lag < 28; i++) if (A[i] != null && B[i + lag] != null) pairs.push([A[i], B[i + lag]]);
+    const n = pairs.length, ma = sum(pairs.map(p => p[0])) / n, mb = sum(pairs.map(p => p[1])) / n;
+    let sab = 0, saa = 0, sbb = 0; pairs.forEach(([a, b]) => { sab += (a - ma) * (b - mb); saa += (a - ma) ** 2; sbb += (b - mb) ** 2; });
+    const r = S.trA === S.trB ? 1 : sab / Math.sqrt(saa * sbb || 1), ar = Math.abs(r);
+    const strength = ar < .2 ? 'Sin relación clara' : ar < .4 ? 'Relación débil' : ar < .6 ? 'Relación moderada' : 'Relación fuerte';
+    const rng = arr => { const v = arr.filter(x => x != null); return [Math.min(...v), Math.max(...v)]; };
+    const [a0, a1] = rng(A), [b0, b1] = rng(B);
+    const line = (arr, lo, hi, off) => arr.map((v, i) => v == null ? null : ((i + off) / 27 * 800).toFixed(1) + ',' + (210 - (v - lo) / ((hi - lo) || 1) * 190).toFixed(1)).filter(Boolean).join(' ');
+    const lagDays = lag ? ' al día siguiente' : ' ese mismo día';
+    const sentence = ar < .2 ? 'En estos 28 días, ' + mA[1].toLowerCase() + ' y ' + mB[1].toLowerCase() + lagDays + ' no se mueven juntos de forma reconocible.'
+      : 'Cuando ' + mA[1].toLowerCase() + ' sube, ' + mB[1].toLowerCase() + lagDays + ' tiende a ' + (r > 0 ? 'subir' : 'bajar') + ' también.';
+    const slope = sab / (saa || 1), ix = v => 20 + (v - a0) / ((a1 - a0) || 1) * 270, iy = v => 200 - (v - b0) / ((b1 - b0) || 1) * 190;
+    const tr = {
+      optsA: TRM.map(([k, label]) => ({ label, ...chip(S.trA === k), onClick: () => this.setState({ trA: k }) })),
+      optsB: TRM.map(([k, label]) => ({ label, ...chip(S.trB === k), onClick: () => this.setState({ trB: k }) })),
+      lags: [[0,'Mismo día'],[1,'B al día siguiente']].map(([v, label]) => ({ label, ...seg(S.lag === v), onClick: () => this.setState({ lag: v }) })),
+      aLabel: mA[1], bLabel: mB[1], aRange: mA[3](a0) + '–' + mA[3](a1) + ' ' + mA[2], bRange: mB[3](b0) + '–' + mB[3](b1) + ' ' + mB[2],
+      ptsA: line(A, a0, a1, 0), ptsB: line(B, b0, b1, -lag),
+      scatter: pairs.map(([a, b]) => ({ x: ix(a).toFixed(1), y: iy(b).toFixed(1) })),
+      fit: { x1: ix(a0).toFixed(1), y1: iy(mb + slope * (a0 - ma)).toFixed(1), x2: ix(a1).toFixed(1), y2: iy(mb + slope * (a1 - ma)).toFixed(1) },
+      r: (r < 0 ? '−' : '') + nf(ar, 2), strength, strFg: ar >= .4 ? 'var(--color-accent-200)' : 'var(--color-neutral-300)', n, sentence, weak: ar < .4,
+      watch: () => this.toast('El Coach vigilará ' + mA[1].toLowerCase() + ' → ' + mB[1].toLowerCase()),
+    };
+
+    // food view
+    const q = norm(S.q.trim()), res = q ? FOODS.filter(f => norm(f[0]).includes(q)).slice(0, 8) : [];
+    const mealLabel = (MEALS.find(m => m[0] === S.meal) || MEALS[3])[1];
+    const scanItems = S.scanItems || [];
+    const add = it => this.setState(x => ({ meals: { ...x.meals, [x.meal]: [...x.meals[x.meal], { ...it, uid: Date.now() + Math.random() }] } }));
+    const meals = MEALS.map(([k, label]) => { const a = S.meals[k]; const extra = k === 'merienda' && sy.protAdd ? [{ name: sy.protAdd.name + ' · reloj', portion: '1 porción', kcal: sy.protAdd.k, p: sy.protAdd.p, uid: 'w' }] : [];
+      const all = [...a, ...extra];
+      return { label, kcal: nf(Math.round(sum(all.map(f => f.kcal))), 0) + ' kcal', empty: all.length === 0, items: all.map(f => ({ name: f.name, meta: f.portion + ' · P ' + Math.round(f.p) + ' g', kcal: Math.round(f.kcal), remove: () => f.uid === 'w' ? this.writeSync({ protAdd: null }, 'Quitado: ' + f.name) : this.setState(x => ({ meals: { ...x.meals, [k]: x.meals[k].filter(y => y.uid !== f.uid) } })) })) }; });
+    const food = {
+      remain: nf(remain, 0), formula: nf(HD.kcalGoal, 0) + ' objetivo − ' + nf(Math.round(T.kcal), 0) + ' comidas + ' + HD.actKcal + ' actividad',
+      mealTabs: MEALS.map(([k, label]) => ({ label, ...seg(S.meal === k), onClick: () => this.setState({ meal: k }) })), mealLabel,
+      q: S.q, onQ: e => this.setState({ q: e.target.value }), hasQ: !!q,
+      results: res.map(([name, portion, kcal, p, c, g]) => ({ name, meta: portion + ' · ' + kcal + ' kcal · P ' + p + ' g', add: () => { add({ name, portion, kcal, p, c, g }); this.toast(name + ' añadido a ' + mealLabel); } })),
+      meals,
+      scanIdle: S.scan !== 'result', scanDone: S.scan === 'result',
+      camIcon: S.scan === 'scanning' ? 'ph ph-circle-notch' : 'ph ph-upload-simple', camText: S.scan === 'scanning' ? 'Analizando el plato…' : 'Arrastra una foto o haz clic para subirla',
+      shoot: () => { if (S.scan === 'scanning') return; this.setState({ scan: 'scanning', scanItems: SCAN.map(x => ({ ...x })) }); clearTimeout(this.scT); this.scT = setTimeout(() => this.setState({ scan: 'result' }), 1500); },
+      retry: () => this.setState({ scan: 'idle' }),
+      det: scanItems.map((x, i) => { const mod = d => this.setState(y => ({ scanItems: y.scanItems.map((z, j) => j === i ? { ...z, g: Math.max(0, z.g + d) } : z).filter(z => z.g > 0) })); return { name: x.name, g: x.g + ' g', kcal: Math.round(x.k * x.g) + ' kcal', conf: x.conf + '%', inc: () => mod(25), dec: () => mod(-25) }; }),
+      detTotal: nf(Math.round(sum(scanItems.map(x => x.k * x.g))), 0) + ' kcal',
+      addScan: () => { this.setState(x => ({ meals: { ...x.meals, [x.meal]: [...x.meals[x.meal], ...scanItems.map(z => ({ name: z.name, portion: z.g + ' g · foto', kcal: z.k * z.g, p: z.p * z.g, c: z.c * z.g, g: z.f * z.g, uid: Date.now() + Math.random() }))] }, scan: 'idle' })); this.toast('Plato añadido a ' + mealLabel); },
+      week: [...HD.kcal, T.kcal].map((k, i) => { const p = i < 6 ? HD.prot[i] : T.p, ok = p >= goals.p - 10 && k <= HD.kcalGoal + 100; return { d: DAYS[i], k: nf(Math.round(k), 0), p: Math.round(p) + ' g', pFg: p < goals.p - 10 ? 'var(--vida-warn)' : 'var(--color-text)', icon: i === 6 ? 'ph ph-hourglass-medium' : ok ? 'ph ph-check-circle' : 'ph ph-minus-circle', iFg: i === 6 ? 'var(--color-neutral-400)' : ok ? 'var(--color-accent-300)' : 'var(--color-neutral-500)' }; }),
+    };
+
+    // training
+    const H = HIST[S.ex], e1 = H.map(w => w * (1 + HREPS[S.ex] / 30)), lo = Math.min(...e1) * .97, hi = Math.max(...e1) * 1.01;
+    const pts = e1.map((v, i) => [(i / 7 * 600), 165 - (v - lo) / (hi - lo) * 150]);
+    const ses = sy.session && sy.session.active ? sy.session : null;
+    const cmp = (txt, icon, fgc) => ({ cmp: txt, cmpIcon: 'ph ' + icon, cmpFg: fgc || 'var(--color-neutral-400)' });
+    const sp = (arr, mn, mx) => arr.map((v, i) => ({ h: v == null ? '6%' : Math.max(8, Math.round((v - mn) / (mx - mn) * 100)) + '%', bg: v == null ? 'var(--color-neutral-800)' : i === arr.length - 1 ? 'var(--color-accent)' : 'var(--color-neutral-700)' }));
+    const tilesW = [
+      { icon:'ph ph-fork-knife', name:'Comida', period:'Hoy', value: nf(Math.round(T.kcal), 0), unit:'de ' + nf(HD.kcalGoal, 0) + ' kcal', spark: sp([...HD.kcal, T.kcal], 0, 2800), ...cmp('Proteína ' + Math.round(T.p) + ' de ' + goals.p + ' g', 'ph-info'), open: go('food') },
+      { icon:'ph ph-sneaker-move', name:'Pasos', period:'Hoy', value: nf(HD.steps[6], 0), unit:'de ' + nf(HD.stepGoal, 0), spark: sp(HD.steps, 0, 13000), ...cmp('Faltan ' + nf(HD.stepGoal - HD.steps[6], 0), 'ph-arrow-up-right'), open: trendTo('steps') },
+      { icon:'ph ph-moon-stars', name:'Sueño', period:'Anoche', value: hm(HD.sleep[6]), unit:'', spark: sp(HD.sleep, 300, 500), ...cmp((HD.sleepNeed - HD.sleep[6]) + ' min menos de lo que necesitas', 'ph-arrow-down'), open: trendTo('sleep') },
+      { icon:'ph ph-heartbeat', name:'Corazón', period:'Anoche', value: String(hrv), unit:'ms HRV', spark: sp(HD.hrv.slice(7), 40, 72), ...cmp(hrvD + '% frente a tu base', 'ph-warning', 'var(--vida-warn)'), open: trendTo('hrv') },
+      { icon:'ph ph-scales', name:'Cuerpo', period:'Hoy', value: units === 'kg' ? nf(HD.weight[6], 1) : nf(HD.weight[6] * LB, 1), unit: units, spark: sp(HD.weight, 78, 79.1), ...cmp('−' + this.fbw(Math.abs(wD)) + ' en 8 semanas', 'ph-trend-down', 'var(--vida-ok)'), open: trendTo('weight') },
+      mood != null ? { icon:'ph ph-smiley', name:'Ánimo', period:'Hoy', value: MOODS[mood - 1][0], unit:'', spark: sp(moodArr, 0, 5), ...cmp('Estrés ' + HD.stress[6] + ', bajo', 'ph-check-circle', 'var(--vida-ok)'), open: trendTo('mood') }
+        : { icon:'ph ph-smiley', name:'Ánimo', period:'Hoy', isEmpty:true, emptyTxt:'Sin registrar', spark: sp(moodArr, 0, 5), ...cmp('Regístralo desde el móvil o el reloj', 'ph-info'), open: trendTo('mood') },
+    ].map(t => ({ isEmpty:false, ...t, hasValue: !t.isEmpty }));
+    return {
+      pageTitle: { hoy: 'Buenas tardes, Álex', trends: 'Tendencias', food: 'Comida', train: 'Entrenamiento', coach: 'Coach' }[S.view],
+      isHoy: S.view === 'hoy', isTrends: S.view === 'trends', isFood: S.view === 'food', isTrain: S.view === 'train', isCoach: S.view === 'coach',
+      nav: [['hoy','Hoy','ph-squares-four'],['trends','Tendencias','ph-chart-line'],['food','Comida','ph-fork-knife'],['train','Entrenamiento','ph-barbell'],['coach','Coach','ph-lightbulb-filament']].map(([k, label, icon]) => { const on = S.view === k; return { label, icon: (on ? 'ph-fill ' : 'ph ') + icon, bg: on ? 'var(--color-accent-900)' : 'transparent', fg: on ? 'var(--color-accent-200)' : 'var(--color-neutral-300)', badge: k === 'coach' ? String(topIns.length || '') : '', onClick: go(k) }; }),
+      devices: [{ icon:'ph ph-watch', label:'Galaxy Watch6', when: lastWatch ? 'Último dato ' + ago(lastWatch.t) : 'Hace 3 min · 72%', dot: 'var(--color-accent)' }, { icon:'ph ph-device-mobile', label:'Teléfono', when:'Hace 1 min', dot:'var(--color-accent)' }, { icon:'ph ph-desktop', label:'Esta web', when:'Ahora', dot:'var(--color-accent)' }],
+      syncLive: !!watchRecent, syncLabel: lastWatch ? 'Reloj: ' + lastWatch.msg : '',
+      unitOpts: ['kg','lb'].map(u => ({ label: u, ...seg(u === units), onClick: () => this.setState({ units: u }) })),
+      ready: { score, dash: ring(score / 100, 56), open: openIns('hrv'), parts: [['Sueño', HD.sleepScore, 'puntuación ' + HD.sleepScore], ['HRV', hrvC, hrvD + '% frente a tu base'], ['FC en reposo', rhrC, '+' + rhrD + ' lpm']].map(([label, v, val]) => ({ label, val, icon: v >= 70 ? 'ph ph-check-circle' : 'ph ph-warning', fg: v >= 70 ? 'var(--vida-ok)' : 'var(--vida-warn)' })) },
+      tilesW,
+      topIns, goCoach: go('coach'), goTrain: go('train'), areas, stages, macros, moodOpts,
+      liveSes: !!ses, liveSesTxt: ses ? ses.ex + ' · serie ' + ses.set + ' de ' + ses.of + ' · ' + this.fw(ses.w) + ' × ' + ses.reps : '',
+      nextItems: ROUTINES[1].items.map(([name, s2, r2]) => ({ name, scheme: s2 + '×' + r2, w: this.fw(HIST[name][7] * (watchHrv === 'accepted' ? .9 : 1)) })),
+      weekDays: DAYS, weekRows,
+      coachFilters: FILTERS.map(f => ({ label: f, ...chip(S.filter === f), onClick: () => this.setState({ filter: f }) })), coachList, hasSel: !!X, sel,
+      tr, food,
+      routines: ROUTINES.map(r2 => ({ name: r2.name, days: r2.days, items: r2.items.map(([name, s2, rr]) => ({ name, scheme: s2 + '×' + rr, w: this.fw(HIST[name][7]) })) })),
+      exChips: Object.keys(HIST).map(k => ({ label: k, ...chip(S.ex === k), onClick: () => this.setState({ ex: k }) })),
+      prog: { last: this.fw(e1[7]), delta: '+' + this.fw(e1[7] - e1[0]) + ' en 8 semanas', pts: pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' '), area: 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') + ' L600 170 L0 170 Z' },
+      history: HISTORY.map(([date, r2, dur, vol, kcal, hr, sl, note]) => ({ date, r: r2, dur, vol: units === 'kg' ? nf(vol, 0) + ' kg' : nf(vol * LB, 0) + ' lb', kcal, hr: hr + ' lpm', sl: hm(sl), slFg: sl < 390 ? 'var(--vida-warn)' : 'var(--color-text)', note: note || '—' })),
+      toast: S.toast, hasToast: !!S.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="nocturne.css">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>body{margin:0;background:var(--color-bg);--vida-ok:oklch(0.80 0.12 158);--vida-warn:oklch(0.84 0.12 75);--vida-crit:oklch(0.74 0.14 28)}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}button{font-family:inherit}</style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);padding:48px clamp(16px,5vw,72px) 80px;box-sizing:border-box">
+<div style="max-width:1120px;display:flex;flex-direction:column;gap:56px">
+
+<header style="display:flex;flex-direction:column;gap:10px;max-width:680px">
+<span style="font-size:13px;font-weight:500;color:var(--color-accent-300)">VIDA · Sistema de diseño 1.0</span>
+<h1 style="margin:0;font-size:40px">Una fuente de verdad para web, móvil y reloj</h1>
+<p style="margin:0;font-size:15px;line-height:1.6;color:var(--color-neutral-400);text-wrap:pretty">Fondo oscuro, violeta como acento e Inter. Lo nuevo está en el orden: cada color tiene un propósito, cada cifra tiene su unidad y su período, y cada estado se entiende sin depender del color.</p>
+<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:14px;padding-top:4px"><a href="VIDA Web v2.dc.html">Web</a><a href="VIDA Health v2.dc.html">Móvil</a><a href="VIDA Watch v2.dc.html">Reloj</a></div>
+</header>
+
+<section data-screen-label="Color" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">1 · Color</h3><span style="font-size:14px;color:var(--color-neutral-400)">Contraste calculado sobre el fondo y la superficie. Mínimo: 4,5 para texto, 3 para iconos y líneas.</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px">
+<sc-for list="{{ colors }}" as="c" hint-placeholder-count="8">
+<div style="border-radius:var(--radius-lg);background:var(--color-surface);overflow:hidden;display:flex;flex-direction:column">
+<div style="height:64px;background:{{ c.css }};border-bottom:1px solid var(--color-divider)"></div>
+<div style="padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font-size:15px;font-weight:500">{{ c.name }}</span><code style="font-size:12px;color:var(--color-neutral-400)">{{ c.hex }}</code></div>
+<code style="font-size:12px;color:var(--color-accent-300)">{{ c.token }}</code>
+<span style="font-size:13px;line-height:1.45;color:var(--color-neutral-300);text-wrap:pretty">{{ c.use }}</span>
+<sc-if value="{{ c.hasRatio }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:{{ c.ratioFg }};display:flex;gap:5px;align-items:center"><i class="{{ c.ratioIcon }}"></i>{{ c.ratio }}</span></sc-if>
+<span style="font-size:12px;color:var(--color-neutral-400)">Modo claro: <code>{{ c.light }}</code></span>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+<sc-for list="{{ colorRules }}" as="r" hint-placeholder-count="3"><div style="display:flex;gap:10px;font-size:14px;line-height:1.5;color:var(--color-neutral-300);text-wrap:pretty"><i class="ph ph-check" style="color:var(--color-accent-300);margin-top:4px;flex:none"></i>{{ r }}</div></sc-for>
+</div>
+</section>
+
+<section data-screen-label="Tipografía" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">2 · Tipografía</h3><span style="font-size:14px;color:var(--color-neutral-400)">Solo Inter. La jerarquía sale del tamaño y del peso, no de mayúsculas ni de tracking.</span></div>
+<div style="border-radius:var(--radius-lg);background:var(--color-surface);padding:4px 20px;overflow-x:auto">
+<table class="table" style="width:100%;min-width:720px">
+<thead><tr><th style="text-align:left">Rol</th><th style="text-align:left">Muestra</th><th style="text-align:right">Web</th><th style="text-align:right">Móvil</th><th style="text-align:right">Reloj</th><th style="text-align:right">Peso</th></tr></thead>
+<tbody><sc-for list="{{ type }}" as="t" hint-placeholder-count="7"><tr><td style="color:var(--color-neutral-300);white-space:nowrap">{{ t.role }}</td><td><span style="font-size:{{ t.px }};font-weight:{{ t.w }};line-height:1.2;color:{{ t.fg }};font-variant-numeric:tabular-nums;letter-spacing:{{ t.ls }}">{{ t.sample }}</span></td><td style="text-align:right">{{ t.web }}</td><td style="text-align:right">{{ t.mob }}</td><td style="text-align:right">{{ t.watch }}</td><td style="text-align:right;color:var(--color-neutral-400)">{{ t.wl }}</td></tr></sc-for></tbody>
+</table>
+</div>
+</section>
+
+<section data-screen-label="Espacio" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">3 · Espacio, radios e iconos</h3><span style="font-size:14px;color:var(--color-neutral-400)">Más aire entre secciones, compacto dentro de una tarjeta.</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+<div style="flex:2 1 420px;padding:18px 20px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ spaces }}" as="s" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:52px 140px minmax(0,1fr);gap:12px;align-items:center;font-size:13px"><code style="color:var(--color-accent-300)">{{ s.v }}</code><span style="height:10px;width:{{ s.v }};border-radius:2px;background:var(--color-accent-700)"></span><span style="color:var(--color-neutral-300)">{{ s.use }}</span></div></sc-for>
+</div>
+<div style="flex:1 1 280px;padding:18px 20px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:12px;align-items:flex-end">
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:56px;height:40px;border:1px solid var(--color-accent);border-radius:8px"></span><span style="font-size:12px;color:var(--color-neutral-400)">8 · controles</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:72px;height:56px;background:var(--color-neutral-800);border-radius:14px"></span><span style="font-size:12px;color:var(--color-neutral-400)">14 · tarjetas</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:72px;height:40px;border:1px solid var(--color-accent);border-radius:20px"></span><span style="font-size:12px;color:var(--color-neutral-400)">Píldora · reloj</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.45;color:var(--color-neutral-300)">
+<span style="display:flex;gap:8px;align-items:center"><i class="ph ph-heartbeat" style="font-size:20px;color:var(--color-accent-300)"></i>Phosphor, trazo normal, 16–20 px</span>
+<span style="display:flex;gap:8px;align-items:center"><i class="ph-fill ph-house" style="font-size:20px;color:var(--color-accent-200)"></i>Relleno solo para «seleccionado»</span>
+<span style="display:flex;gap:8px;align-items:center"><i class="ph ph-prohibit" style="font-size:20px;color:var(--color-neutral-400)"></i>Sin emojis ni otros sets</span>
+</div>
+</div>
+</div>
+</section>
+
+<section data-screen-label="Componentes" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">4 · Componentes</h3><span style="font-size:14px;color:var(--color-neutral-400)">La tarjeta de métrica es la pieza que más se repite: siempre en el mismo orden.</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+<div style="flex:1 1 340px;padding:18px 20px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:14px">
+<span style="font-size:15px;font-weight:500">Tarjeta de métrica</span>
+<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+<div style="width:190px;padding:12px 14px;border-radius:var(--radius-lg);background:var(--color-bg);display:flex;flex-direction:column;gap:6px">
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-neutral-400)"><i class="ph ph-sneaker-move" style="font-size:15px;color:var(--color-accent-300)"></i><span style="flex:1;color:var(--color-neutral-300)">Pasos</span><span>Hoy</span></span>
+<span style="display:flex;align-items:baseline;gap:4px"><span style="font-size:22px;font-weight:500">7.842</span><span style="font-size:12px;color:var(--color-neutral-400)">de 10.000</span></span>
+<span style="height:4px;border-radius:2px;background:var(--color-neutral-800);overflow:hidden"><span style="display:block;height:100%;width:78%;background:var(--color-accent)"></span></span>
+<span style="font-size:12px;color:var(--color-neutral-400);display:flex;gap:4px;align-items:center"><i class="ph ph-arrow-up-right"></i>Faltan 2.158</span>
+</div>
+<ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--color-neutral-300)"><li>Nombre e icono</li><li>Período, a la derecha</li><li>Valor y unidad</li><li>Progreso al objetivo, si lo hay</li><li>Comparación con icono y texto</li></ol>
+</div>
+</div>
+<div style="flex:1 1 340px;padding:18px 20px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:14px">
+<span style="font-size:15px;font-weight:500">Botones y estados</span>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px">
+<sc-for list="{{ btnStates }}" as="b" hint-placeholder-count="6"><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><button class="{{ b.cls }}" disabled="{{ b.disabled }}" style="outline:{{ b.outline }};outline-offset:2px"><i class="{{ b.icon }}"></i>{{ b.label }}</button><span style="font-size:12px;color:var(--color-neutral-400)">{{ b.state }}</span></div></sc-for>
+</div>
+<span style="font-size:13px;line-height:1.45;color:var(--color-neutral-400);text-wrap:pretty">Una acción primaria por sección. Las secundarias van como texto o con borde neutro.</span>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+<sc-for list="{{ notices }}" as="n" hint-placeholder-count="4">
+<div style="display:flex;gap:10px;padding:12px 14px;border-radius:var(--radius-md);background:var(--color-surface);border:1px solid {{ n.border }}"><i class="{{ n.icon }}" style="font-size:18px;color:{{ n.fg }};flex:none;margin-top:1px"></i><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:500">{{ n.t }}</span><span style="font-size:13px;line-height:1.45;color:var(--color-neutral-400)">{{ n.d }}</span></span></div>
+</sc-for>
+</div>
+<div style="padding:18px 20px;border-radius:var(--radius-lg);border:1px dashed var(--color-neutral-700);display:flex;gap:14px;align-items:flex-start;max-width:520px">
+<i class="ph ph-chart-line" style="font-size:24px;color:var(--color-neutral-400);flex:none"></i>
+<span style="display:flex;flex-direction:column;gap:6px"><span style="font-size:15px;font-weight:500">Estado vacío</span><span style="font-size:13px;line-height:1.5;color:var(--color-neutral-400);text-wrap:pretty">«Aún no hay datos de sueño. Ponte el reloj esta noche y mañana verás tu primera noche aquí.» Explica cómo empezar y no muestra cifras de ejemplo.</span></span>
+</div>
+</section>
+
+<section data-screen-label="Correcto e incorrecto" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">5 · Correcto e incorrecto</h3><span style="font-size:14px;color:var(--color-neutral-400)">Los errores que más se repetían en la versión anterior.</span></div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ dos }}" as="d" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+<div style="padding:16px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:10px">
+<span style="font-size:13px;font-weight:500;color:var(--vida-crit);display:flex;gap:6px;align-items:center"><i class="ph ph-x-circle"></i>Evitar</span>
+<div style="padding:12px;border-radius:var(--radius-md);background:var(--color-bg);display:flex;flex-direction:column;gap:4px"><span style="font-size:{{ d.badSize }};font-weight:500;color:{{ d.badFg }};letter-spacing:{{ d.badLs }};text-transform:{{ d.badTt }}">{{ d.bad }}</span><span style="font-size:{{ d.badSubSize }};color:{{ d.badSubFg }}">{{ d.badSub }}</span></div>
+<span style="font-size:13px;line-height:1.45;color:var(--color-neutral-400)">{{ d.badWhy }}</span>
+</div>
+<div style="padding:16px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:10px">
+<span style="font-size:13px;font-weight:500;color:var(--vida-ok);display:flex;gap:6px;align-items:center"><i class="ph ph-check-circle"></i>Mejor</span>
+<div style="padding:12px;border-radius:var(--radius-md);background:var(--color-bg);display:flex;flex-direction:column;gap:4px"><span style="font-size:15px;font-weight:500">{{ d.good }}</span><span style="font-size:13px;color:{{ d.goodSubFg }};display:flex;gap:5px;align-items:center"><i class="{{ d.goodIcon }}"></i>{{ d.goodSub }}</span></div>
+<span style="font-size:13px;line-height:1.45;color:var(--color-neutral-400)">{{ d.goodWhy }}</span>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section data-screen-label="Plataformas" style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="margin:0">6 · Reglas por plataforma</h3><span style="font-size:14px;color:var(--color-neutral-400)">Misma marca, distinta función.</span></div>
+<div style="border-radius:var(--radius-lg);background:var(--color-surface);padding:4px 20px;overflow-x:auto">
+<table class="table" style="width:100%;min-width:720px">
+<thead><tr><th style="text-align:left"></th><th style="text-align:left">Web</th><th style="text-align:left">Móvil</th><th style="text-align:left">Reloj</th></tr></thead>
+<tbody><sc-for list="{{ platforms }}" as="p" hint-placeholder-count="6"><tr><td style="color:var(--color-neutral-300);white-space:nowrap;vertical-align:top">{{ p.k }}</td><td style="vertical-align:top">{{ p.web }}</td><td style="vertical-align:top">{{ p.mob }}</td><td style="vertical-align:top">{{ p.watch }}</td></tr></sc-for></tbody>
+</table>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const lum = hex => { const c = hex.replace('#', '').match(/../g).map(x => parseInt(x, 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+const BG = '#161826', SURF = '#232532';
+const nf = (n, d = 1) => Number(n).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+class Component extends DCLogic {
+  renderVals() {
+    const C = [
+      ['Fondo', '--color-bg', '#161826', 'Lienzo general de todas las pantallas.', null, '#F6F6FA'],
+      ['Superficie', '--color-surface', '#232532', 'Tarjetas y paneles. Separa bloques sin sombras fuertes.', null, '#FFFFFF'],
+      ['Violeta VIDA', '--color-accent', '#9184D9', 'Marca, selección y la acción principal. Nunca relleno de grandes áreas.', 'icon', '#6A5CC0'],
+      ['Texto principal', '--color-text', '#E9E9ED', 'Títulos, valores y contenido prioritario.', 'text', '#1B1D29'],
+      ['Texto secundario', '--color-neutral-400', '#B2B6CA', 'Descripciones, períodos y metadatos.', 'text', '#5A5E70'],
+      ['Positivo', '--vida-ok', '#6FD6A3', 'Objetivo cumplido, tendencia deseada. Siempre con icono de check.', 'text', '#1F8A5B'],
+      ['Atención', '--vida-warn', '#EFC173', 'Algo fuera de tu base que conviene mirar. Con icono de aviso.', 'text', '#9A6A12'],
+      ['Crítico', '--vida-crit', '#F08A78', 'Errores de técnica o fallos reales. No para decorar.', 'text', '#B4432F'],
+    ];
+    const colors = C.map(([name, token, hex, use, kind, light]) => {
+      const r = kind ? Math.min(ratio(hex, BG), ratio(hex, SURF)) : 0, min = kind === 'text' ? 4.5 : 3, ok = r >= min;
+      return { name, token, hex, use, light, css: 'var(' + token + ')', hasRatio: !!kind, ratio: kind ? nf(r) + ':1 sobre superficie · ' + (ok ? 'cumple' : 'no cumple') + ' ' + (kind === 'text' ? 'texto' : 'iconos') : '', ratioFg: ok ? 'var(--vida-ok)' : 'var(--vida-crit)', ratioIcon: ok ? 'ph ph-check-circle' : 'ph ph-x-circle' };
+    });
+    const T = [
+      ['Título de página', 'Hoy', '28px', 500, '28', '22', '—', 'Medium', 'var(--color-text)', '-.015em'],
+      ['Cifra principal', '7.842', '40px', 500, '32–40', '22–40', '40–76', 'Medium', 'var(--color-text)', '-.03em'],
+      ['Título de sección', 'Progreso de hoy', '16px', 500, '16', '16', '16–18', 'Medium', 'var(--color-text)', '0'],
+      ['Cuerpo', 'Entrena, pero hoy no es día de récords.', '15px', 400, '15', '14–15', '14', 'Regular', 'var(--color-text)', '0'],
+      ['Etiqueta', 'Preparación de hoy', '13px', 500, '13', '13', '13', 'Medium', 'var(--color-neutral-300)', '0'],
+      ['Unidad y período', 'de 10.000 · Hoy', '12px', 400, '12–13', '12', '12–14', 'Regular', 'var(--color-neutral-400)', '0'],
+      ['Mínimo absoluto', '11 px solo en ejes de gráficos', '11px', 400, '11', '11', '12', 'Regular', 'var(--color-neutral-400)', '0'],
+    ];
+    return {
+      colors,
+      colorRules: ['El violeta marca VIDA y lo seleccionado; no colorea todo.', 'Positivo, atención y crítico solo para estados reales, siempre con icono y texto.', 'Texto auxiliar en neutral-400 o más claro: neutral-600 ya no pasa 4,5:1.'],
+      type: T.map(([role, sample, px, w, web, mob, watch, wl, fg, ls]) => ({ role, sample, px, w, web, mob, watch, wl, fg, ls })),
+      spaces: [['4px','Icono y texto dentro de una fila'],['8px','Elementos dentro de una tarjeta'],['12px','Entre tarjetas de una misma grilla'],['16px','Relleno interno de tarjetas'],['28px','Entre secciones en móvil'],['36px','Entre secciones en web']].map(([v, use]) => ({ v, use })),
+      btnStates: [
+        { cls:'btn btn-primary', label:'Empezar', icon:'ph ph-play', state:'Primaria', disabled:false, outline:'none' },
+        { cls:'btn btn-secondary', label:'Editar', icon:'ph ph-pencil-simple', state:'Secundaria', disabled:false, outline:'none' },
+        { cls:'btn btn-ghost', label:'Ver todo', icon:'ph ph-caret-right', state:'Texto', disabled:false, outline:'none' },
+        { cls:'btn btn-primary', label:'Empezar', icon:'ph ph-play', state:'Foco (teclado)', disabled:false, outline:'2px solid var(--color-accent)' },
+        { cls:'btn btn-primary', label:'Aplicar', icon:'ph ph-check', state:'Deshabilitada', disabled:true, outline:'none' },
+        { cls:'btn btn-primary', label:'Guardando', icon:'ph ph-circle-notch', state:'Cargando', disabled:true, outline:'none' },
+      ],
+      notices: [
+        { icon:'ph ph-check-circle', fg:'var(--vida-ok)', border:'transparent', t:'Objetivo cumplido', d:'10.214 pasos hoy.' },
+        { icon:'ph ph-warning', fg:'var(--vida-warn)', border:'transparent', t:'HRV 18% bajo tu base', d:'Tercera noche seguida.' },
+        { icon:'ph ph-x-circle', fg:'var(--vida-crit)', border:'var(--vida-crit)', t:'Rodillas hacia adentro', d:'Error de técnica en el modelo 3D.' },
+        { icon:'ph ph-cloud-arrow-up', fg:'var(--color-neutral-300)', border:'var(--color-divider)', t:'3 series sin enviar', d:'Se envían al recuperar la conexión.' },
+      ],
+      dos: [
+        { bad:'51', badSub:'', badSize:'28px', badFg:'var(--vida-warn)', badLs:'0', badTt:'none', badSubSize:'12px', badSubFg:'var(--color-neutral-500)', badWhy:'Sin unidad, sin período y el aviso solo es un color.',
+          good:'51 ms HRV · anoche', goodSub:'−18% frente a tu base', goodSubFg:'var(--vida-warn)', goodIcon:'ph ph-warning', goodWhy:'Unidad, período y comparación; el icono dice lo mismo que el color.' },
+        { bad:'PREPARACIÓN DE HOY', badSub:'', badSize:'10px', badFg:'var(--color-accent)', badLs:'.1em', badTt:'uppercase', badSubSize:'12px', badSubFg:'var(--color-neutral-500)', badWhy:'10 px en mayúsculas espaciadas y en violeta: se lee mal y compite con la marca.',
+          good:'Preparación de hoy', goodSub:'Etiqueta de 13 px, Medium', goodSubFg:'var(--color-neutral-400)', goodIcon:'ph ph-text-aa', goodWhy:'Misma jerarquía con tamaño y peso.' },
+        { bad:'Empezar · Añadir · Registrar', badSub:'Tres botones con borde violeta en la misma tarjeta', badSize:'15px', badFg:'var(--color-accent-300)', badLs:'0', badTt:'none', badSubSize:'12px', badSubFg:'var(--color-neutral-400)', badWhy:'Si todo es primario, nada lo es.',
+          good:'Empezar Fuerza B', goodSub:'Lo demás se abre al tocar la tarjeta', goodSubFg:'var(--color-neutral-400)', goodIcon:'ph ph-hand-tap', goodWhy:'Una acción primaria por sección.' },
+      ],
+      platforms: [
+        ['Función', 'Analizar, planificar y comparar', 'Actuar en el día y guiar en el gimnasio', 'Registrar y decidir con un toque'],
+        ['Composición', 'Barra lateral fija y grillas de 2 a 4 columnas', 'Una columna; métricas en 2 columnas', 'Una sola cosa por pantalla, centrada'],
+        ['Gráficos', '28 días, comparación y dispersión', '7 días; el detalle al tocar', 'Solo anillos de progreso'],
+        ['Objetivo táctil', 'Normal; foco visible con teclado', '44 px como mínimo', '48–56 px y separados'],
+        ['Texto mínimo', '12 px (11 px en ejes)', '12 px (11 px en ejes)', '12 px; cifras de 40 px o más'],
+        ['Densidad', 'Moderada, sin llenar cada hueco', 'Baja a moderada', 'Mínima'],
+      ].map(([k, web, mob, watch]) => ({ k, web, mob, watch })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="nocturne.css">
+<script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+<style>body{margin:0;background:var(--color-bg);--vida-ok:oklch(0.80 0.12 158);--vida-warn:oklch(0.84 0.12 75);--vida-crit:oklch(0.74 0.14 28)}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}button{font-family:inherit}</style>
+</helmet>
+<div style="min-height:100vh;background:radial-gradient(ellipse at 50% 0%, var(--color-accent-900), var(--color-bg) 60%);color:var(--color-text);font-family:var(--font-body);padding:40px clamp(16px,4vw,56px) 64px;box-sizing:border-box;display:flex;flex-direction:column;gap:40px">
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:8px;max-width:680px">
+<span style="font-size:13px;font-weight:500;color:var(--color-accent-300)">VIDA para Wear OS</span>
+<h2 style="margin:0">Un vistazo, un toque</h2>
+<p style="margin:0;font-size:15px;line-height:1.55;color:var(--color-neutral-400);text-wrap:pretty">El reloj muestra solo lo que necesitas en ese momento. En el gimnasio, la serie y el descanso ocupan la pantalla entera. Lo que registres aquí aparece en <a href="VIDA Web v2.dc.html">VIDA Web</a> si la tienes abierta en otra pestaña.</p>
+</div>
+<button onClick="{{ toggleNet }}" style="height:40px;padding:0 14px;border-radius:20px;border:1px solid {{ netBorder }};background:transparent;color:var(--color-text);font-size:13px;cursor:pointer;display:flex;gap:8px;align-items:center"><i class="{{ netIcon }}"></i>{{ netLabel }}</button>
+</div>
+
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+<section style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:17px;font-weight:500">{{ g.title }}</span><span style="font-size:13px;color:var(--color-neutral-400)">{{ g.sub }}</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:48px 64px;padding:14px 22px 0 14px">
+<sc-for list="{{ g.watches }}" as="w" hint-placeholder-count="2">
+<div data-screen-label="{{ w.label }}" style="display:flex;flex-direction:column;align-items:center;gap:14px;width:280px">
+<div style="position:relative;width:280px;height:280px;flex:none">
+<div style="position:absolute;inset:-14px;border-radius:50%;background:linear-gradient(145deg, var(--color-neutral-600), var(--color-neutral-800) 60%);box-shadow:var(--shadow-lg)"></div>
+<div style="position:absolute;right:-22px;top:90px;width:10px;height:34px;border-radius:4px;background:var(--color-neutral-700)"></div>
+<div style="position:absolute;right:-22px;top:156px;width:10px;height:34px;border-radius:4px;background:var(--color-neutral-700)"></div>
+<div style="position:absolute;inset:0;border-radius:50%;background:var(--color-neutral-900);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+
+<sc-if value="{{ w.showSync }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:22px;left:50%;transform:translateX(-50%);display:flex;gap:5px;align-items:center;font-size:12px;color:{{ syncFg }}"><i class="{{ syncIcon }}"></i>{{ syncTxt }}</span></sc-if>
+
+<sc-if value="{{ w.isFace }}" hint-placeholder-val="{{ false }}">
+<svg viewBox="0 0 280 280" style="position:absolute;inset:0;width:280px;height:280px;transform:rotate(-90deg)"><circle cx="140" cy="140" r="130" fill="none" stroke="var(--color-neutral-800)" stroke-width="6"></circle><circle cx="140" cy="140" r="130" fill="none" stroke="var(--color-accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="{{ readyDash }}"></circle></svg>
+<span style="font-size:13px;color:var(--color-accent-300)">Preparación 68</span>
+<span style="font-size:76px;font-weight:500;letter-spacing:-.04em;line-height:1;margin:6px 0 4px;font-variant-numeric:tabular-nums">18:20</span>
+<span style="font-size:14px;color:var(--color-neutral-400)">Sáb 24</span>
+<span style="font-size:13px;margin-top:16px;display:flex;gap:6px;align-items:center;color:var(--color-neutral-200)"><i class="ph ph-barbell" style="color:var(--color-accent-300)"></i>{{ faceNext }}</span>
+</sc-if>
+
+<sc-if value="{{ w.isToday }}" hint-placeholder-val="{{ false }}">
+<span style="position:relative;width:110px;height:110px;display:block">
+<svg viewBox="0 0 104 104" style="width:110px;height:110px;transform:rotate(-90deg);display:block"><circle cx="52" cy="52" r="44" fill="none" stroke="var(--color-neutral-800)" stroke-width="9"></circle><circle cx="52" cy="52" r="44" fill="none" stroke="var(--color-accent)" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ readyDash2 }}"></circle></svg>
+<span style="position:absolute;inset:0;display:grid;place-items:center;font-size:34px;font-weight:500">68</span>
+</span>
+<span style="font-size:16px;font-weight:500;margin-top:10px">Moderada</span>
+<span style="font-size:13px;color:var(--color-neutral-300);margin-top:4px;display:flex;gap:5px;align-items:center"><i class="ph ph-warning" style="color:var(--vida-warn)"></i>HRV −18%</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:2px">Entrena sin buscar récords</span>
+</sc-if>
+
+<sc-if value="{{ w.isWorkout }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ wk.idle }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:13px;color:var(--color-neutral-400)">Plan de hoy</span>
+<span style="font-size:22px;font-weight:500;margin-top:4px">Fuerza B</span>
+<span style="font-size:13px;color:var(--color-accent-300);margin-top:4px">{{ wk.loadNote }}</span>
+<button onClick="{{ wk.start }}" style="margin-top:18px;height:56px;padding:0 30px;border-radius:28px;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 18%, transparent);color:var(--color-accent-100);font-size:16px;cursor:pointer;display:flex;gap:8px;align-items:center"><i class="ph ph-play"></i>Empezar</button>
+</sc-if>
+
+<sc-if value="{{ wk.lifting }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ wk.pause }}" aria-label="Pausar" style="position:absolute;top:18px;left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:var(--color-neutral-400);cursor:pointer;display:grid;place-items:center"><i class="ph ph-pause" style="font-size:18px"></i></button>
+<span style="font-size:14px;color:var(--color-accent-300);margin-top:22px">{{ wk.exName }}</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:2px">Serie {{ wk.set }} de {{ wk.of }}</span>
+<button onClick="{{ wk.edit }}" aria-label="Ajustar carga y repeticiones" style="margin-top:6px;border:0;background:transparent;color:var(--color-text);cursor:pointer;padding:4px 8px;border-radius:12px;display:flex;align-items:baseline;gap:6px"><span style="font-size:42px;font-weight:500;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums">{{ wk.w }}</span><span style="font-size:14px;color:var(--color-neutral-400)">{{ wk.unit }} × {{ wk.reps }}</span><i class="ph ph-pencil-simple" style="font-size:14px;color:var(--color-neutral-500)"></i></button>
+<button onClick="{{ wk.done }}" style="margin-top:12px;width:168px;height:56px;border-radius:28px;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 20%, transparent);color:var(--color-accent-100);font-size:16px;font-weight:500;cursor:pointer;display:flex;gap:8px;align-items:center;justify-content:center"><i class="ph-bold ph-check"></i>Serie hecha</button>
+<span style="font-size:12px;color:var(--color-neutral-500);margin-top:10px;display:flex;gap:4px;align-items:center"><i class="ph ph-heart"></i>{{ hr }} lpm</span>
+</sc-if>
+
+<sc-if value="{{ wk.editing }}" hint-placeholder-val="{{ false }}">
+<span style="font-size:13px;color:var(--color-neutral-400)">{{ wk.exName }}</span>
+<div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+<button onClick="{{ wk.decW }}" aria-label="Menos peso" style="width:48px;height:48px;border-radius:50%;border:1px solid var(--color-divider);background:transparent;color:var(--color-text);cursor:pointer;display:grid;place-items:center"><i class="ph ph-minus" style="font-size:18px"></i></button>
+<span style="display:flex;flex-direction:column;align-items:center;min-width:80px"><span style="font-size:34px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums">{{ wk.w }}</span><span style="font-size:12px;color:var(--color-neutral-400)">{{ wk.unit }}</span></span>
+<button onClick="{{ wk.incW }}" aria-label="Más peso" style="width:48px;height:48px;border-radius:50%;border:1px solid var(--color-divider);background:transparent;color:var(--color-text);cursor:pointer;display:grid;place-items:center"><i class="ph ph-plus" style="font-size:18px"></i></button>
+</div>
+<div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+<button onClick="{{ wk.decR }}" aria-label="Menos repeticiones" style="width:48px;height:48px;border-radius:50%;border:1px solid var(--color-divider);background:transparent;color:var(--color-text);cursor:pointer;display:grid;place-items:center"><i class="ph ph-minus" style="font-size:18px"></i></button>
+<span style="display:flex;flex-direction:column;align-items:center;min-width:80px"><span style="font-size:28px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums">{{ wk.reps }}</span><span style="font-size:12px;color:var(--color-neutral-400)">reps</span></span>
+<button onClick="{{ wk.incR }}" aria-label="Más repeticiones" style="width:48px;height:48px;border-radius:50%;border:1px solid var(--color-divider);background:transparent;color:var(--color-text);cursor:pointer;display:grid;place-items:center"><i class="ph ph-plus" style="font-size:18px"></i></button>
+</div>
+<button onClick="{{ wk.closeEdit }}" style="margin-top:10px;height:44px;padding:0 24px;border-radius:22px;border:1px solid var(--color-accent);background:transparent;color:var(--color-accent-200);font-size:14px;cursor:pointer">Listo</button>
+</sc-if>
+
+<sc-if value="{{ wk.resting }}" hint-placeholder-val="{{ false }}">
+<svg viewBox="0 0 280 280" style="position:absolute;inset:0;width:280px;height:280px;transform:rotate(-90deg)"><circle cx="140" cy="140" r="128" fill="none" stroke="var(--color-neutral-800)" stroke-width="8"></circle><circle cx="140" cy="140" r="128" fill="none" stroke="var(--color-accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="{{ wk.restDash }}"></circle></svg>
+<span style="font-size:14px;color:var(--color-neutral-300)">Descanso</span>
+<span style="font-size:64px;font-weight:500;letter-spacing:-.04em;line-height:1.05;font-variant-numeric:tabular-nums">{{ wk.restClock }}</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:4px;max-width:170px">{{ wk.nextTxt }}</span>
+<div style="display:flex;gap:10px;margin-top:14px">
+<button onClick="{{ wk.addRest }}" style="height:48px;padding:0 16px;border-radius:24px;border:1px solid var(--color-divider);background:transparent;color:var(--color-text);font-size:14px;cursor:pointer">+15 s</button>
+<button onClick="{{ wk.skip }}" style="height:48px;padding:0 18px;border-radius:24px;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 16%, transparent);color:var(--color-accent-100);font-size:14px;cursor:pointer">Siguiente</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ wk.paused }}" hint-placeholder-val="{{ false }}">
+<i class="ph ph-pause-circle" style="font-size:34px;color:var(--color-neutral-300)"></i>
+<span style="font-size:18px;font-weight:500;margin-top:6px">Sesión en pausa</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:2px">{{ wk.pausedTxt }}</span>
+<button onClick="{{ wk.resume }}" style="margin-top:16px;height:56px;padding:0 28px;border-radius:28px;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 18%, transparent);color:var(--color-accent-100);font-size:16px;cursor:pointer;display:flex;gap:8px;align-items:center"><i class="ph ph-play"></i>Reanudar</button>
+<button onClick="{{ wk.finish }}" style="margin-top:6px;height:44px;padding:0 18px;border:0;background:transparent;color:var(--color-neutral-300);font-size:13px;cursor:pointer">Terminar sesión</button>
+</sc-if>
+
+<sc-if value="{{ wk.finished }}" hint-placeholder-val="{{ false }}">
+<i class="ph ph-check-circle" style="font-size:34px;color:var(--vida-ok)"></i>
+<span style="font-size:18px;font-weight:500;margin-top:6px">Sesión completada</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:4px">{{ wk.summary }}</span>
+<button onClick="{{ wk.reset }}" style="margin-top:14px;height:44px;padding:0 18px;border-radius:22px;border:1px solid var(--color-divider);background:transparent;color:var(--color-neutral-300);font-size:13px;cursor:pointer">Reiniciar demo</button>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ w.isCoach }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ coach.pending }}" hint-placeholder-val="{{ true }}">
+<span style="font-size:13px;color:var(--color-accent-300);display:flex;gap:5px;align-items:center"><i class="ph ph-lightbulb-filament"></i>Coach</span>
+<span style="font-size:17px;font-weight:500;line-height:1.3;max-width:190px;margin-top:6px;text-wrap:pretty">¿Fuerza B al 90% hoy?</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:4px;max-width:180px">Tu HRV lleva 3 noches baja</span>
+<div style="display:flex;gap:16px;margin-top:16px">
+<button onClick="{{ coach.no }}" aria-label="Ahora no" style="width:56px;height:56px;border-radius:50%;border:1px solid var(--color-divider);background:transparent;color:var(--color-neutral-300);cursor:pointer;display:grid;place-items:center"><i class="ph ph-x" style="font-size:22px"></i></button>
+<button onClick="{{ coach.yes }}" aria-label="Sí, al 90%" style="width:56px;height:56px;border-radius:50%;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 20%, transparent);color:var(--color-accent-100);cursor:pointer;display:grid;place-items:center"><i class="ph-bold ph-check" style="font-size:22px"></i></button>
+</div>
+</sc-if>
+<sc-if value="{{ coach.done }}" hint-placeholder-val="{{ false }}">
+<i class="ph ph-check-circle" style="font-size:32px;color:var(--vida-ok)"></i>
+<span style="font-size:16px;font-weight:500;margin-top:8px;max-width:180px;text-wrap:pretty">{{ coach.doneTxt }}</span>
+<button onClick="{{ coach.undo }}" style="margin-top:14px;height:44px;padding:0 18px;border-radius:22px;border:1px solid var(--color-divider);background:transparent;color:var(--color-neutral-300);font-size:13px;cursor:pointer">Deshacer</button>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ w.isMood }}" hint-placeholder-val="{{ false }}">
+<span style="font-size:15px;font-weight:500">¿Cómo te sientes?</span>
+<div style="display:grid;grid-template-columns:repeat(3,52px);gap:10px;margin-top:12px;justify-content:center">
+<sc-for list="{{ moodOpts }}" as="m" hint-placeholder-count="5"><button onClick="{{ m.onClick }}" aria-label="{{ m.label }}" style="width:52px;height:52px;border-radius:50%;border:1px solid {{ m.border }};background:{{ m.bg }};color:{{ m.fg }};cursor:pointer;display:grid;place-items:center"><i class="{{ m.icon }}" style="font-size:26px"></i></button></sc-for>
+</div>
+<span style="font-size:13px;color:var(--color-accent-300);margin-top:10px;min-height:16px">{{ moodLabel }}</span>
+</sc-if>
+
+<sc-if value="{{ w.isFood }}" hint-placeholder-val="{{ false }}">
+<span style="font-size:15px;font-weight:500">Añadir proteína</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:2px">Te faltan {{ protLeft }} g hoy</span>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;width:190px">
+<sc-for list="{{ quick }}" as="q" hint-placeholder-count="2"><button onClick="{{ q.onClick }}" style="height:48px;border-radius:24px;border:1px solid {{ q.border }};background:{{ q.bg }};color:var(--color-text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 16px"><span>{{ q.name }}</span><span style="color:var(--color-accent-300)">{{ q.p }}</span></button></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ w.isPending }}" hint-placeholder-val="{{ false }}">
+<i class="ph ph-cloud-arrow-up" style="font-size:32px;color:var(--vida-warn)"></i>
+<span style="font-size:17px;font-weight:500;margin-top:8px">3 series sin enviar</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:4px;max-width:180px;text-wrap:pretty">Se guardan en el reloj y se envían al volver la conexión</span>
+</sc-if>
+
+<sc-if value="{{ w.isOffline }}" hint-placeholder-val="{{ false }}">
+<span style="position:absolute;top:22px;left:50%;transform:translateX(-50%);display:flex;gap:5px;align-items:center;font-size:12px;color:var(--vida-warn)"><i class="ph ph-cloud-slash"></i>Sin conexión</span>
+<span style="font-size:14px;color:var(--color-accent-300)">Press militar</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:2px">Serie 3 de 4</span>
+<span style="display:flex;align-items:baseline;gap:6px;margin-top:6px"><span style="font-size:42px;font-weight:500;letter-spacing:-.03em;line-height:1">45</span><span style="font-size:14px;color:var(--color-neutral-400)">kg × 8</span></span>
+<span style="margin-top:12px;width:168px;height:56px;border-radius:28px;border:1px solid var(--color-accent);background:color-mix(in srgb, var(--color-accent) 20%, transparent);color:var(--color-accent-100);font-size:16px;font-weight:500;display:flex;gap:8px;align-items:center;justify-content:center"><i class="ph-bold ph-check"></i>Serie hecha</span>
+<span style="font-size:12px;color:var(--color-neutral-400);margin-top:10px">Puedes seguir entrenando</span>
+</sc-if>
+
+<sc-if value="{{ w.isEmptyCoach }}" hint-placeholder-val="{{ false }}">
+<i class="ph ph-lightbulb-filament" style="font-size:30px;color:var(--color-neutral-400)"></i>
+<span style="font-size:16px;font-weight:500;margin-top:8px">Nada por ahora</span>
+<span style="font-size:13px;color:var(--color-neutral-400);margin-top:4px;max-width:180px;text-wrap:pretty">Solo te aviso cuando hay algo que decidir</span>
+</sc-if>
+
+</div>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:3px"><span style="font-size:14px;font-weight:500">{{ w.label }}</span><span style="font-size:13px;color:var(--color-neutral-400);text-align:center;text-wrap:pretty">{{ w.desc }}</span></div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+
+<section style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+<div style="flex:2 1 520px;padding:18px 20px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:12px">
+<span style="font-size:15px;font-weight:500">Reglas del reloj</span>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+<sc-for list="{{ rules }}" as="r" hint-placeholder-count="4"><div style="display:flex;gap:10px"><i class="{{ r.icon }}" style="font-size:18px;color:var(--color-accent-300);flex:none;margin-top:1px"></i><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:500">{{ r.t }}</span><span style="font-size:13px;line-height:1.45;color:var(--color-neutral-400);text-wrap:pretty">{{ r.d }}</span></span></div></sc-for>
+</div>
+</div>
+<div style="flex:1 1 300px;padding:18px 20px;border-radius:var(--radius-lg);background:var(--color-surface);display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:15px;font-weight:500">Registro de sincronización</span><button class="btn btn-ghost" onClick="{{ clearLog }}" style="font-size:13px">Reiniciar</button></div>
+<sc-for list="{{ log }}" as="l" hint-placeholder-count="3"><div style="display:flex;gap:8px;font-size:13px;padding:6px 0;border-top:1px solid color-mix(in srgb, var(--color-text) 6%, transparent)"><i class="{{ l.icon }}" style="color:{{ l.fg }};font-size:15px;margin-top:2px"></i><span style="flex:1;color:var(--color-neutral-200)">{{ l.msg }}</span><span style="color:var(--color-neutral-400);white-space:nowrap">{{ l.when }}</span></div></sc-for>
+<sc-if value="{{ logEmpty }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:var(--color-neutral-400)">Toca algo en un reloj para ver cómo se envía.</span></sc-if>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;units&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kg&quot;,&quot;lb&quot;],&quot;default&quot;:&quot;kg&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const LB = 2.20462;
+const SYNC_KEY = 'vida:sync';
+const nf = (n, d = 1) => Number(n).toLocaleString('de-DE', { maximumFractionDigits: d });
+const MOODS = [['Muy mal','ph-smiley-sad'],['Mal','ph-smiley-nervous'],['Normal','ph-smiley-meh'],['Bien','ph-smiley'],['Muy bien','ph-smiley-wink']];
+const PLAN = [['Peso muerto', 120, 5, 3], ['Press militar', 45, 8, 4], ['Curl', 32.5, 12, 3]];
+const QUICK = [['Proteína whey', 24, 120], ['Yogur griego', 15, 165]];
+const ring = (pct, r) => { const c = 2 * Math.PI * r; return (Math.min(1, Math.max(0, pct)) * c).toFixed(1) + ' ' + c.toFixed(1); };
+const clock = s => Math.floor(s / 60) + ':' + String(Math.max(0, Math.floor(s % 60))).padStart(2, '0');
+
+class Component extends DCLogic {
+  state = { sync: {}, hr: 78, rest: 0, restMax: 90, now: Date.now(), editing: false, offline: false, queue: [] };
+  componentDidMount() {
+    this.read();
+    this.iv = setInterval(() => {
+      this.read();
+      const rest = Math.max(0, this.state.rest - 1), s = this.state.sync.session;
+      const base = s && s.active && !s.paused ? (rest > 0 ? 96 + rest * .35 : 118) : 76;
+      this.setState({ rest, hr: Math.round(this.state.hr + (base - this.state.hr) * .25 + (Math.random() * 4 - 2)), now: Date.now() });
+    }, 1000);
+    window.addEventListener('storage', this.onStore = e => { if (e.key === SYNC_KEY) this.read(); });
+  }
+  componentWillUnmount() { clearInterval(this.iv); window.removeEventListener('storage', this.onStore); }
+  read() { if (this.state.offline) return; try { const raw = localStorage.getItem(SYNC_KEY) || '{}'; if (raw !== this.raw) { this.raw = raw; this.setState({ sync: JSON.parse(raw) }); } } catch (e) {} }
+  persist(next) { try { const raw = JSON.stringify(next); localStorage.setItem(SYNC_KEY, raw); this.raw = raw; } catch (e) {} }
+  write(patch, msg) {
+    const cur = this.state.sync || {};
+    const entry = msg ? { t: Date.now(), src: 'reloj', msg, pending: this.state.offline } : null;
+    const next = { ...cur, ...patch, log: entry ? [entry, ...(cur.log || [])].slice(0, 10) : (cur.log || []), ts: Date.now() };
+    this.setState({ sync: next, queue: this.state.offline && entry ? [...this.state.queue, entry] : this.state.queue });
+    if (!this.state.offline) this.persist(next);
+  }
+  units() { return this.props.units || 'kg'; }
+  renderVals() {
+    const S = this.state, sy = S.sync || {}, units = this.units();
+    const fwN = kg => units === 'kg' ? nf(Math.round(kg * 2) / 2) : nf(Math.round(kg * LB));
+    const light = sy.coach && sy.coach.hrv === 'accepted';
+    const ses = sy.session || null;
+    const plan = PLAN.map(([n, wt, r, of]) => [n, Math.round(wt * (light ? .9 : 1) / 2.5) * 2.5, r, of]);
+    const upd = patch => this.write({ session: { ...ses, ...patch } });
+    const step = units === 'kg' ? 2.5 : 5 / LB;
+    const resting = S.rest > 0 && ses && ses.active && !ses.paused;
+    const wk = {
+      idle: !ses || (!ses.active && !ses.finished),
+      lifting: !!(ses && ses.active && !ses.paused && !resting && !S.editing),
+      editing: !!(ses && ses.active && !ses.paused && !resting && S.editing),
+      resting: !!resting, paused: !!(ses && ses.active && ses.paused), finished: !!(ses && ses.finished),
+      loadNote: light ? 'Carga al 90% por tu HRV' : '3 ejercicios · ~55 min',
+      start: () => { const [ex, wt, reps, of] = plan[0]; this.write({ session: { active: true, i: 0, ex, set: 1, of, w: wt, reps, done: 0, vol: 0, paused: false } }, 'Fuerza B iniciada'); },
+      exName: ses ? ses.ex : '', set: ses ? ses.set : 0, of: ses ? ses.of : 0, w: ses ? fwN(ses.w) : '', unit: units, reps: ses ? ses.reps : 0,
+      edit: () => this.setState({ editing: true }), closeEdit: () => this.setState({ editing: false }),
+      incW: () => upd({ w: ses.w + step }), decW: () => upd({ w: Math.max(0, ses.w - step) }), incR: () => upd({ reps: ses.reps + 1 }), decR: () => upd({ reps: Math.max(1, ses.reps - 1) }),
+      done: () => {
+        const vol = ses.vol + ses.w * ses.reps, d = ses.done + 1, msg = ses.ex + ' · serie ' + ses.set + ': ' + fwN(ses.w) + ' ' + units + ' × ' + ses.reps;
+        if (ses.set < ses.of) { this.write({ session: { ...ses, set: ses.set + 1, done: d, vol } }, msg); this.setState({ rest: 90, restMax: 90 }); return; }
+        const ni = ses.i + 1;
+        if (ni < plan.length) { const [ex, wt, reps, of] = plan[ni]; this.write({ session: { ...ses, i: ni, ex, set: 1, of, w: wt, reps, done: d, vol } }, msg); this.setState({ rest: 120, restMax: 120 }); return; }
+        this.write({ session: { ...ses, active: false, finished: true, done: d, vol } }, 'Fuerza B completada'); this.setState({ rest: 0 });
+      },
+      restClock: clock(S.rest), restDash: ring(S.rest / S.restMax, 128),
+      nextTxt: ses ? 'Sigue: ' + (ses.set === 1 && ses.i > 0 ? ses.ex + ', ' : '') + fwN(ses.w) + ' × ' + ses.reps : '',
+      addRest: () => this.setState(x => ({ rest: x.rest + 15, restMax: Math.max(x.restMax, x.rest + 15) })), skip: () => this.setState({ rest: 0 }),
+      pause: () => { upd({ paused: true }); this.setState({ rest: 0 }); }, resume: () => upd({ paused: false }),
+      pausedTxt: ses ? ses.done + ' series hechas' : '',
+      finish: () => this.write({ session: { ...ses, active: false, finished: true, paused: false } }, 'Sesión terminada'),
+      summary: ses ? ses.done + ' series · ' + (units === 'kg' ? nf(ses.vol, 0) + ' kg' : nf(ses.vol * LB, 0) + ' lb') : '',
+      reset: () => { this.write({ session: null }, 'Sesión reiniciada'); this.setState({ editing: false, rest: 0 }); },
+    };
+    const ch = sy.coach && sy.coach.hrv;
+    const coach = { pending: !ch, done: !!ch, doneTxt: ch === 'accepted' ? 'Fuerza B ajustada al 90%' : 'Mantengo tu peso habitual',
+      yes: () => this.write({ coach: { ...(sy.coach || {}), hrv: 'accepted' } }, 'Coach: Fuerza B al 90%'),
+      no: () => this.write({ coach: { ...(sy.coach || {}), hrv: 'dismissed' } }, 'Coach: ahora no'),
+      undo: () => this.write({ coach: { ...(sy.coach || {}), hrv: null } }, 'Coach: deshecho') };
+    const moodOpts = MOODS.map(([label, icon], i) => { const on = sy.mood === i + 1; return { label, icon: (on ? 'ph-fill ' : 'ph ') + icon, bg: on ? 'color-mix(in srgb, var(--color-accent) 20%, transparent)' : 'transparent', fg: on ? 'var(--color-accent-100)' : 'var(--color-neutral-300)', border: on ? 'var(--color-accent)' : 'var(--color-divider)', onClick: () => this.write({ mood: i + 1 }, 'Ánimo: ' + label) }; });
+    const protAdd = sy.protAdd;
+    const quick = QUICK.map(([name, p, k]) => { const on = protAdd && protAdd.name === name; return { name, p: on ? 'Añadido' : '+' + p + ' g', bg: on ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent', border: on ? 'var(--color-accent)' : 'var(--color-divider)', onClick: () => this.write({ protAdd: on ? null : { name, p, k } }, on ? 'Quitado: ' + name : name + ' (+' + p + ' g de proteína)') }; });
+    const ago = t => { const s = Math.round((S.now - t) / 1000); return s < 10 ? 'ahora' : s < 60 ? 'hace ' + s + ' s' : 'hace ' + Math.round(s / 60) + ' min'; };
+    const SRC = { reloj: 'ph ph-watch', web: 'ph ph-desktop' };
+    const log = (sy.log || []).map(l => ({ icon: l.pending && S.offline ? 'ph ph-clock' : SRC[l.src] || 'ph ph-dot', fg: l.pending && S.offline ? 'var(--vida-warn)' : 'var(--color-neutral-400)', msg: l.msg, when: l.pending && S.offline ? 'en cola' : ago(l.t) }));
+    const pend = S.queue.length;
+    const W = (k, label, desc, sync) => ({ label, desc, showSync: !!sync, isFace: k === 'face', isToday: k === 'today', isWorkout: k === 'workout', isCoach: k === 'coach', isMood: k === 'mood', isFood: k === 'food', isPending: k === 'pending', isOffline: k === 'offline', isEmptyCoach: k === 'emptyCoach' });
+    return {
+      groups: [
+        { title: 'De un vistazo', sub: 'Una métrica principal y lo siguiente que toca.', watches: [W('face', 'Esfera', 'Preparación en el bisel y tu próxima sesión'), W('today', 'Hoy', 'El dato que más pesa en tu preparación')] },
+        { title: 'Entrenar', sub: 'Serie y descanso en la misma pantalla: un toque por serie.', watches: [W('workout', 'Entreno en vivo', 'Toca el peso para ajustarlo. Al marcar la serie empieza el descanso.', true)] },
+        { title: 'Acciones rápidas', sub: 'Solo llegan al reloj las decisiones que se resuelven con un toque.', watches: [W('coach', 'Aviso del Coach', 'Sí o no, sin leer de más'), W('mood', 'Ánimo', 'Una vez al día'), W('food', 'Proteína', 'Atajos para lo que falta hoy')] },
+        { title: 'Estados', sub: 'Cómo se ve el reloj cuando algo no va como siempre.', watches: [W('offline', 'Sin conexión', 'El entreno sigue igual; solo cambia el aviso arriba'), W('pending', 'Pendiente de enviar', 'Lo registrado se guarda en el reloj'), W('emptyCoach', 'Coach sin avisos', 'Un estado vacío que no inventa datos')] },
+      ],
+      readyDash: ring(.68, 130), readyDash2: ring(.68, 44),
+      faceNext: ses && ses.active ? ses.ex + ' · serie ' + ses.set : ses && ses.finished ? 'Fuerza B hecha' : 'Fuerza B · hoy',
+      hr: S.hr, wk, coach, moodOpts, moodLabel: sy.mood ? MOODS[sy.mood - 1][0] : '', quick, protLeft: Math.max(0, 60 - (protAdd ? protAdd.p : 0)),
+      syncIcon: S.offline ? (pend ? 'ph ph-cloud-arrow-up' : 'ph ph-cloud-slash') : 'ph ph-cloud-check', syncFg: S.offline ? 'var(--vida-warn)' : 'var(--color-neutral-500)',
+      syncTxt: S.offline ? (pend ? pend + ' sin enviar' : 'Sin conexión') : 'Sincronizado',
+      netLabel: S.offline ? 'Volver a conectar' + (pend ? ' · enviar ' + pend : '') : 'Simular sin conexión', netIcon: S.offline ? 'ph ph-wifi-high' : 'ph ph-wifi-slash', netBorder: S.offline ? 'var(--vida-warn)' : 'var(--color-divider)',
+      toggleNet: () => {
+        if (!S.offline) { this.setState({ offline: true, queue: [] }); return; }
+        const next = { ...S.sync, log: (S.sync.log || []).map(l => ({ ...l, pending: false })), ts: Date.now() };
+        this.persist(next); this.setState({ offline: false, queue: [], sync: next });
+      },
+      log, logEmpty: log.length === 0, clearLog: () => { try { localStorage.removeItem(SYNC_KEY); } catch (e) {} this.raw = '{}'; this.setState({ sync: {}, rest: 0, queue: [], editing: false }); },
+      rules: [
+        { icon:'ph ph-hand-tap', t:'Objetivos de 48 px', d:'Las acciones frecuentes miden 48–56 px y nunca hay dos pegadas.' },
+        { icon:'ph ph-text-aa', t:'Mínimo 12 px', d:'Las cifras principales van a 40 px o más; las etiquetas, a 13 px.' },
+        { icon:'ph ph-target', t:'Una acción por pantalla', d:'La serie, el descanso o la respuesta: lo demás queda en segundo plano.' },
+        { icon:'ph ph-heart', t:'El pulso acompaña', d:'Se muestra pequeño y en gris: no compite con la serie.' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
