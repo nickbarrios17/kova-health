@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.111.0
+
+      - run: npm ci
+
+      - name: Typecheck and unit tests
+        run: |
+          npm run typecheck
+          npm run test:unit
+
+      - name: Start local Supabase
+        run: supabase start -x studio,imgproxy,vector,logflare
+
+      - name: Apply migrations + seed
+        run: supabase db reset
+
+      - name: Database lint
+        run: supabase db lint --level warning --fail-on error
+
+      - name: pgTAP (schema, RLS, business rules)
+        run: supabase test db
+
+      - name: Serve Edge Functions
+        run: |
+          supabase functions serve > functions.log 2>&1 &
+          for i in $(seq 1 30); do curl -s -o /dev/null http://127.0.0.1:54321/functions/v1/delete-account && break; sleep 2; done
+
+      - name: Integration tests (api-client against local stack)
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          SUPABASE_URL="$API_URL" SUPABASE_ANON_KEY="$ANON_KEY" npm run test:integration
+
+      - if: failure()
+        run: cat functions.log || true
