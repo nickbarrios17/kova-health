@@ -12,54 +12,40 @@ Health and fitness platform: web (analysis), mobile (daily actions and the gym),
 | `supabase/` | Migrations, seed (local only), pgTAP tests, `delete-account` Edge Function |
 | `packages/domain` | Zod contracts, units, time zones, workout math, session state machine |
 | `packages/api-client` | Typed Supabase data access, retries, offline outbox |
-| `apps/web` | Next.js web app (first cut: sign-in, Hoy, Entrenamiento), markup ported from the Web v2 prototype |
+| `apps/web` | Next.js web app (sign-in, Hoy, Tendencias, Comida, Entrenamiento, Coach), markup ported from the Web v2 prototype |
+| `apps/mobile` | Expo / React Native Android app (Hoy, Entrenar + live session, Comida, Progreso, Health Connect) |
+| `apps/watch` | Native Wear OS app in Kotlin + Compose (live workout, rest timer, mood, Health Services heart rate) |
+| `docs/android.md`, `docs/cloud.md` | Building/installing the APKs (phone + Wear OS); cloud backend and web deployment |
+| `docs/guia-de-uso.md` | User guide (Spanish): install, accounts, daily use, what is left to do |
 
 Quick start: see [docs/setup.md](docs/setup.md) (requires Docker Desktop and the Supabase CLI).
 
-## Status (Phases 1–4)
+## Status (all phases, 2026-10-27)
 
-**Done**
-- Phases 1–3: audit and architecture; profiles/preferences, devices, entitlements (subscription-ready), exercise catalog with VIDA's 5 exercises, versioned routines, workout sessions/sets with idempotent RPCs, history/PR/summary views, account export and deletion.
-- Phase 4:
-  - Nutrition: foods with provenance, recipes, meals with frozen nutrient snapshots, dated goals.
-  - Habits with dated schedule versions, plus streaks and completion in `@vida/domain`.
-  - Body measurements, health observations (ready for Health Connect / HealthKit imports), goals.
-  - Daily summaries computed on read; export of every user table.
-- RLS on every table. Domain and api-client packages, offline outbox for all logging operations, docs.
+| Phase | State |
+| --- | --- |
+| 1 Audit & architecture | Done (`docs/audit.md`, `docs/architecture.md`, ADRs) |
+| 2 Backend foundation | Done: auth, profiles, preferences, devices, entitlements, RLS everywhere, export, account deletion |
+| 3 Core fitness | Done: exercise catalog, versioned routines, idempotent sessions/sets, history/PR views |
+| 4 Nutrition, habits, body | Done: foods with provenance, snapshotted meals, dated habit schedules, measurements, goals, daily summaries |
+| 5 Clients | Web (Next.js): Hoy, Tendencias, Comida, Entrenamiento, Coach. Mobile (Expo): Hoy, Entrenar + live session, Comida, Progreso. Watch (Kotlin/Wear OS): live workout, rest timer, mood, offline queue. |
+| 6 Health & sync | Health Connect import on mobile (steps, sleep, weight, resting HR, HRV); Health Services heart rate on the watch; offline outbox on mobile and watch |
+| 7 Intelligence & ops | VIDA Intelligence v1 (deterministic insights with kind/evidence, novelty/fatigue memory). Cloud Supabase deployed. Billing intentionally not implemented (no provider chosen). |
 
-**Verified on 2026-10-27 (local Supabase stack, Docker)**
-- `supabase db reset` applies all 11 migrations and the seed cleanly.
-- `supabase test db`: 6 files, 115 assertions, all pass.
-- `supabase db lint --level warning`: no schema errors.
-- `npm run typecheck` passes.
-- `npm test` with the stack and `supabase functions serve` running: 40 domain + 10 api-client unit + 12 integration tests, all pass.
-- Real-stack testing found and fixed two bugs: account deletion failed during GoTrue's cascade (`20261027000100_touch_parent_definer.sql`), and client validation errors were thrown synchronously instead of as rejected promises.
+**Artifacts**
+- `dist/VIDA-movil-0.1.0.apk` and `dist/VIDA-reloj-wearos-0.1.0.apk` (not in git; rebuild with `docs/android.md`).
+- Cloud backend: Supabase project `vida` (`docs/cloud.md`).
 
-**Not yet verified**
-- CI has not run (the repository isn't on GitHub yet).
-- Nothing is deployed to a hosted Supabase project.
-- No real Health Connect / HealthKit data has been imported yet. Only the import contract is tested.
+**Verified**
+- Local stack: 12 migrations, `supabase test db` (7 files, 121 assertions), `db lint`, typecheck of all workspaces, 48 domain + 23 api-client tests (incl. integration), web checked in the browser.
+- Cloud: migrations pushed; `supabase test db --linked` 121/121.
+- APKs: build successfully; metadata checked with `aapt2`.
 
-**Phase 5, first web cut (2026-10-27)**
-- `apps/web` (Next.js 15, React 19).
-  - Sign-in, sign-up and password recovery.
-  - Shell with real devices and a kg/lb toggle saved to preferences.
-  - **Hoy**: daily summaries, today's routine, the week table.
-  - **Entrenamiento**: routines, weekly e1RM chart, session history.
-- Markup and styles are ported from `VIDA Web v2` with `nocturne.css` verbatim.
-- Readiness and "VIDA ve hoy" need VIDA Intelligence, so they show facts or empty states instead of the prototype's sample numbers.
-- Tendencias, Comida and Coach are "coming soon" empty states.
-- Verified in the browser against the local stack: empty states, populated data and the unit switch, with no console errors. `npm run build:web` passes.
-- Generated DB types are now in `packages/domain/src/db.types.ts`.
+**Not verified**
+- APKs on a real phone or watch (no device connected).
+- Health Connect and Health Services on hardware.
+- Web on Vercel (waiting for the owner's Vercel login). CI on GitHub (not pushed).
 
-**Next**
-- Web: Tendencias, Comida, Coach. Server-side sessions (`@supabase/ssr`) when SSR is needed.
-- Expo mobile app (VIDA Health v2), including the live session.
-- Kotlin Wear OS app on the same RPC contract, with Health Connect / HealthKit integration.
+**User guide:** [docs/guia-de-uso.md](docs/guia-de-uso.md) (in Spanish), including what is still up to the owner.
 
-**Open decisions**
-- Launch markets and health-data compliance.
-- Billing provider.
-- Social sign-in (Google/Apple).
-- Source and licence for a verified food catalog (the system catalog is empty for now).
-- Licence of the third-party exercise GIF catalog the prototype hot-links (not imported).
+**Open decisions:** launch markets and health-data compliance, billing provider, social sign-in, verified food catalog source and licence, licence of the third-party exercise GIF catalog (not imported).

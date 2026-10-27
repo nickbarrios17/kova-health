@@ -38,7 +38,7 @@ All clients call Supabase (PostgREST + RPC) **with the signed-in user's JWT**. A
 | `record_body_measurements(p_rows)` | Batch of ≤ 500 measurements. Returns how many were new. | `id` and (`source`, `external_id`) |
 | `record_observations(p_rows)` | Batch of ≤ 500 health observations. Returns how many were new. | `id` and (`source`, `external_id`) |
 | `daily_summaries(p_from, p_to)` | One row per day (≤ 93 days), computed from source records | read-only |
-| `export_my_data()` | Full JSON export of the caller's data (`vida-export/2`, every user table) | read-only |
+| `export_my_data()` | Full JSON export of the caller's data (`vida-export/3`, every user table) | read-only |
 | `has_entitlement(p_code)` | Server-side premium check | read-only |
 
 All RPCs are `security invoker`: they run as the caller, under RLS.
@@ -58,6 +58,7 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 | `meal_items` | read, insert, soft-delete own. Snapshot values cannot be updated: to change a quantity, remove the item and log it again. |
 | `habits`, `habit_schedules`, `habit_logs` | CRUD own |
 | `body_measurements`, `health_observations`, `goals` | CRUD own |
+| `shown_insights` | read, insert (one row per insight per day), update `feedback`/`dismissed_at` only |
 | Views `nutrition_daily`, `recipe_nutrition`, `frequent_foods` | read own (`security_invoker`) |
 | `muscle_groups`, `equipment_types`, `entitlements` | read |
 | `user_entitlements` | read own (server writes only) |
@@ -119,3 +120,6 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 | mood | Latest check-in of the day |
 
 Missing data is `null`, never `0` or a default (except counts of zero events). Change `calc_version` whenever a rule changes.
+
+## VIDA Intelligence (client-side)
+`vida.insights.today(localDate, limit)` loads 60 days of `daily_summaries` + `habit_days`, runs `generateInsights` from `@vida/domain`, ranks with novelty/fatigue from `shown_insights` (last 14 days) and records what was shown (idempotent per day). `vida.insights.feedback(key, localDate, 'useful'|'not_useful')` stores feedback. Insights are never computed by an LLM; see `docs/architecture.md`.

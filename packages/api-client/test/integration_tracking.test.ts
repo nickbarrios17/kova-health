@@ -110,6 +110,16 @@ describe.skipIf(!run)('VIDA phase 4 (local Supabase)', () => {
     expect(other!.kcal).toBeNull();
   });
 
+  it('computes today’s insights and remembers what was shown (idempotent per day)', async () => {
+    const first = await a.insights.today(day);
+    const again = await a.insights.today(day);
+    expect(again.map((i) => i.key)).toEqual(first.map((i) => i.key));
+    const counts = await a.insights.shownCounts('2025-10-01');
+    for (const i of first) expect(counts[i.key]).toBe(1); // shown twice the same day → one row
+    for (const i of first) expect(['fact', 'pattern', 'prediction', 'hypothesis']).toContain(i.kind);
+    expect(await b.insights.shownCounts('2025-10-01')).toEqual({});
+  });
+
   it('sets goals and pulls phase 4 tables with the sync cursor', async () => {
     const g = (await a.goals.create({ id: newId(), kind: 'weight', title: 'Llegar a 76 kg', target_value: 76, start_value: 78.4, unit: 'kg', start_date: day })) as { status: string };
     expect(g.status).toBe('active');

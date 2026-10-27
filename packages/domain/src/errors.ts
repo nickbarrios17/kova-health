@@ -9,6 +9,7 @@ export const ERROR_CODES = [
   'CONFLICT',
   'FORBIDDEN',
   'UNAUTHENTICATED',
+  'EMAIL_NOT_CONFIRMED',
   'NETWORK',
   'RATE_LIMITED',
   'INTERNAL',
@@ -30,6 +31,13 @@ const SQLSTATE: Record<string, ErrorCode> = {
   '22003': 'INVALID_INPUT', // numeric_value_out_of_range
   '42501': 'FORBIDDEN', // insufficient_privilege / RLS violation
   PGRST301: 'UNAUTHENTICATED',
+  // Supabase Auth error codes
+  email_not_confirmed: 'EMAIL_NOT_CONFIRMED',
+  invalid_credentials: 'UNAUTHENTICATED',
+  over_request_rate_limit: 'RATE_LIMITED',
+  over_email_send_rate_limit: 'RATE_LIMITED',
+  weak_password: 'INVALID_INPUT',
+  user_already_exists: 'CONFLICT',
   PGRST116: 'NOT_FOUND',
 };
 
@@ -59,6 +67,7 @@ const SAFE_MESSAGES: Record<ErrorCode, string> = {
   CONFLICT: 'Ese registro ya existe.',
   FORBIDDEN: 'No tienes permiso para esta acción.',
   UNAUTHENTICATED: 'Inicia sesión de nuevo.',
+  EMAIL_NOT_CONFIRMED: 'Confirma tu correo: abre el enlace que te enviamos al crear la cuenta.',
   NETWORK: 'Sin conexión. Lo intentaremos de nuevo.',
   RATE_LIMITED: 'Demasiados intentos. Espera un momento.',
   INTERNAL: 'Algo salió mal.',

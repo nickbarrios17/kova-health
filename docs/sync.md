@@ -58,6 +58,11 @@ Supabase Realtime can later push "something changed" hints, so the web shows the
 | Routine edited after a session started | No conflict: the session uses its own snapshot (`workout_session_exercises`). |
 | Anything else | Last write wins on server time (`updated_at`). |
 
+## Clients implementing the outbox
+- **Mobile** (`apps/mobile/src/client.ts`, `workout.ts`): `Outbox` from `@vida/api-client` persisted in AsyncStorage. Flushes on enqueue, on app start and when the app returns to the foreground. The live session is saved on every change.
+- **Watch** (`apps/watch/.../Store.kt`): the same ordered, idempotent RPC queue in SharedPreferences. Flushes on every enqueue and every 30 s while items are pending. Network errors keep items pending; 4xx marks them failed. A local `__patch_session_hr` op sets `avg_hr` after completion.
+- **Health Connect import** (`apps/mobile/src/health.ts`): batches deduplicated by (`source`, `external_id`), so re-syncing is safe.
+
 ## Recovery after restart
 1. Load the outbox and `flush()`.
 2. Call `workouts.active()` to resume the in-progress session (rest timer state is derived from the last set's `completed_at` and planned rest).

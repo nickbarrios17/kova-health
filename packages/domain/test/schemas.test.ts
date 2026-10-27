@@ -65,6 +65,8 @@ describe('error mapping', () => {
     expect(codeFromSqlState('VD001')).toBe('ACTIVE_SESSION_EXISTS');
     expect(codeFromSqlState('42501')).toBe('FORBIDDEN');
     expect(codeFromSqlState('XX000')).toBe('INTERNAL');
+    expect(codeFromSqlState('email_not_confirmed')).toBe('EMAIL_NOT_CONFIRMED'); // Supabase Auth error code
+    expect(codeFromSqlState('invalid_credentials')).toBe('UNAUTHENTICATED');
     expect(new VidaError('NETWORK').retryable).toBe(true);
     expect(new VidaError('VERSION_CONFLICT').retryable).toBe(false);
   });

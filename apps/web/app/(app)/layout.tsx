@@ -40,8 +40,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    if (status === 'signedOut') router.replace('/login');
-  }, [status, router]);
+    if (status === 'signedOut') router.replace(path === '/' ? '/login' : '/login?next=' + encodeURIComponent(path));
+  }, [status, router, path]);
   useEffect(() => {
     const iv = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(iv);
