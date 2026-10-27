@@ -1,7 +1,13 @@
 -- Exercise catalog visibility and routine ownership / versioning.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(19);
+
+-- Regression: GoTrue deletes users as supabase_auth_admin; the cascade fires this trigger,
+-- so it must not depend on the deleting role's table privileges.
+select is((select prosecdef from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'private' and p.proname = 'touch_parent_routine'),
+  true, 'touch_parent_routine runs with owner privileges (account deletion cascade)');
 
 insert into auth.users (id, instance_id, aud, role, email) values
   ('11111111-1111-4111-8111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@test.local'),
