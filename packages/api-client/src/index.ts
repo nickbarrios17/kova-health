@@ -130,6 +130,7 @@ export function createVidaClient(opts: VidaClientOptions) {
   };
 
   const devices = {
+    list: () => call(sb.from('devices').select('*').order('last_seen_at', { ascending: false, nullsFirst: false })),
     /** Idempotent on the device id; also refreshes last_seen_at. */
     register: async (input: DeviceRegister) => {
       const d = parse(DeviceRegisterSchema, input);
@@ -287,6 +288,14 @@ export function createVidaClient(opts: VidaClientOptions) {
     history: (exerciseId: string, limit = 200) =>
       call(sb.from('exercise_history').select('*').eq('exercise_id', exerciseId).order('completed_at', { ascending: false }).limit(limit)),
     personalRecords: () => call(sb.from('personal_records').select('*')),
+    /** Latest working sets across exercises (e.g. "last weight used" per exercise). */
+    recentHistory: (limit = 500) =>
+      call(sb.from('exercise_history').select('*').order('completed_at', { ascending: false }).limit(Math.min(limit, 1000))),
+    /** Notes, tags and heart rate for sessions listed in summaries. */
+    sessionDetails: (ids: string[]) =>
+      ids.length === 0
+        ? Promise.resolve([] as Array<{ id: string; notes: string | null; tags: string[]; avg_hr: number | null }>)
+        : call(sb.from('workout_sessions').select('id, notes, tags, avg_hr').in('id', ids)),
   };
 
   const sync = {
