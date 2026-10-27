@@ -12,6 +12,7 @@ Health and fitness platform: web (analysis), mobile (daily actions and the gym),
 | `supabase/` | Migrations, seed (local only), pgTAP tests, `delete-account` Edge Function |
 | `packages/domain` | Zod contracts, units, time zones, workout math, session state machine |
 | `packages/api-client` | Typed Supabase data access, retries, offline outbox |
+| `apps/web` | Next.js web app (first cut: sign-in, Hoy, Entrenamiento), markup ported from the Web v2 prototype |
 
 Quick start: see [docs/setup.md](docs/setup.md) (requires Docker Desktop and the Supabase CLI).
 
@@ -39,9 +40,22 @@ Quick start: see [docs/setup.md](docs/setup.md) (requires Docker Desktop and the
 - Nothing is deployed to a hosted Supabase project.
 - No real Health Connect / HealthKit data has been imported yet. Only the import contract is tested.
 
-**Next (Phase 5+)**
-- Port the prototypes to Next.js (web) and Expo (mobile), wired to `@vida/api-client`.
-- Kotlin Wear OS app on the same RPC contract (Phase 6), with Health Connect / HealthKit integration.
+**Phase 5, first web cut (2026-10-27)**
+- `apps/web` (Next.js 15, React 19).
+  - Sign-in, sign-up and password recovery.
+  - Shell with real devices and a kg/lb toggle saved to preferences.
+  - **Hoy**: daily summaries, today's routine, the week table.
+  - **Entrenamiento**: routines, weekly e1RM chart, session history.
+- Markup and styles are ported from `VIDA Web v2` with `nocturne.css` verbatim.
+- Readiness and "VIDA ve hoy" need VIDA Intelligence, so they show facts or empty states instead of the prototype's sample numbers.
+- Tendencias, Comida and Coach are "coming soon" empty states.
+- Verified in the browser against the local stack: empty states, populated data and the unit switch, with no console errors. `npm run build:web` passes.
+- Generated DB types are now in `packages/domain/src/db.types.ts`.
+
+**Next**
+- Web: Tendencias, Comida, Coach. Server-side sessions (`@supabase/ssr`) when SSR is needed.
+- Expo mobile app (VIDA Health v2), including the live session.
+- Kotlin Wear OS app on the same RPC contract, with Health Connect / HealthKit integration.
 
 **Open decisions**
 - Launch markets and health-data compliance.

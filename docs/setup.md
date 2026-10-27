@@ -31,10 +31,24 @@ SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_ANON_KEY=<anon key from supabase st
 ```
 Without these variables the integration suite is **skipped**. Vitest reports it as skipped, which is different from passing.
 
-## Regenerating DB types (optional)
+## Web app (Next.js)
+1. Create `apps/web/.env.local` from `apps/web/.env.example`. Use the API URL and the anon key from `supabase status`. Only these two public values go in the web app.
+2. Start it:
+```bash
+npm run dev:web
+```
+3. Open http://localhost:3000 and sign in with the local demo account (credentials in `supabase/seed.sql`), or create a new one. With local Supabase, sign-up needs no email confirmation.
+
+Production build check:
+```bash
+npm run build:web
+```
+
+## Regenerating DB types
 ```bash
 npm run db:types                  # writes packages/domain/src/db.types.ts from the local schema
 ```
+Run it after every migration and commit the result. `@vida/domain` exports `Database`, `Tables`, etc. from it.
 
 ## Migrations
 - Add one with `supabase migration new <name>`. Never edit a migration that has been applied anywhere shared.

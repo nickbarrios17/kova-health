@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -27,6 +28,13 @@ jobs:
         run: |
           npm run typecheck
           npm run test:unit
+
+      - name: Build web
+        env:
+          # Public placeholders: the build only embeds them; no request is made at build time.
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+        run: npm run build:web
 
       - name: Start local Supabase
         run: supabase start -x studio,imgproxy,vector,logflare
