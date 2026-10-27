@@ -26,7 +26,7 @@ user taps "Serie hecha"
 
 ## Pull: keyset cursor
 `sync.pull(table, cursor)` returns rows with `(updated_at, id) > cursor`, ordered, including tombstones (`deleted_at` not null). Clients keep one cursor per table:
-`routines`, `routine_exercises`, `exercises`, `workout_sessions`, `workout_session_exercises`, `workout_sets`.
+`routines`, `routine_exercises`, `exercises`, `workout_sessions`, `workout_session_exercises`, `workout_sets`, `foods`, `recipes`, `recipe_ingredients`, `meals`, `meal_items`, `nutrition_goals`, `habits`, `habit_schedules`, `habit_logs`, `body_measurements`, `health_observations`, `goals` (`SYNC_TABLES` in `@vida/api-client`).
 
 Supabase Realtime can later push "something changed" hints, so the web shows the watch's sets live. The pull stays the source of correctness.
 
@@ -37,6 +37,10 @@ Supabase Realtime can later push "something changed" hints, so the web shows the
 | Start a session | Yes | Send `exercises` with client ids (the snapshot), so sets can reference them before the first sync. |
 | Record / edit set | Yes | `record_set` is idempotent. Edits made after confirmation are a plain `update`. |
 | Pause / resume / complete / abandon | Yes | Replayed in order. Repeats are no-ops. |
+| Log food | Yes | `log_food` is idempotent on the item id. The client picks the `local_date`. |
+| Log a habit | Yes | Idempotent on the log id. Undoing is a soft delete. |
+| Record weight / measurements / mood | Yes | Idempotent on id, or on (`source`, `external_id`) for imports |
+| Health Connect / HealthKit import | Yes (batched) | Up to 500 rows per call. Replays are skipped. |
 | Edit routines | No (v1) | Requires `expected_version` against the server. Show "conectar para guardar". |
 | Profile / preferences | No (v1) | Low frequency. |
 | Account export / delete | No | Server-only. |

@@ -3,6 +3,7 @@ import { newId, VidaError } from '@vida/domain';
 import { MemoryOutboxStorage, Outbox, type OutboxOp } from '../src/outbox.js';
 import { withRetry } from '../src/retry.js';
 import { toVidaError } from '../src/errors.js';
+import { createVidaClient } from '../src/index.js';
 
 const sessionId = newId();
 const exId = newId();
@@ -87,6 +88,17 @@ describe('withRetry', () => {
     const fn = vi.fn(async () => { throw new VidaError('NETWORK'); });
     await expect(withRetry(fn, { sleep, attempts: 3 })).rejects.toMatchObject({ code: 'NETWORK' });
     expect(fn).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('client validation', () => {
+  it('reports invalid input as a rejected promise, before any request', async () => {
+    const c = createVidaClient({ url: 'http://127.0.0.1:1', anonKey: 'unused' });
+    const call = c.workouts.recordSet({ id: newId(), session_exercise_id: exId, set_index: 0 });
+    expect(call).toBeInstanceOf(Promise);
+    await expect(call).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+    await expect(c.nutrition.logFood({ id: newId(), local_date: '2025-10-25', slot: 'lunch', quantity: 1 }))
+      .rejects.toMatchObject({ code: 'INVALID_INPUT' });
   });
 });
 
