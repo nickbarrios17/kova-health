@@ -227,3 +227,185 @@ export type TransitionSessionInput = z.input<typeof TransitionSessionSchema>;
 export type RoutineRow = z.infer<typeof RoutineRowSchema>;
 export type SessionRow = z.infer<typeof SessionRowSchema>;
 export type SetRow = z.infer<typeof SetRowSchema>;
+
+// ── Nutrition ──────────────────────────────────────────────────────────────
+const localDateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD');
+const grams = z.number().min(0).max(2000);
+
+export const FoodUnitSchema = z.enum(['g', 'ml', 'serving']);
+export const MealSlotSchema = z.enum(['breakfast', 'lunch', 'afternoon_snack', 'dinner', 'snack']);
+/** Users can only create 'label', 'user' or 'estimated' foods; 'verified' is catalog-only. */
+export const UserNutritionSourceSchema = z.enum(['label', 'user', 'estimated']);
+
+export const FoodCreateSchema = z
+  .object({
+    id: uuid,
+    name: z.string().trim().min(1).max(120),
+    brand: text(80).nullish(),
+    barcode: z.string().regex(/^[0-9]{8,14}$/).nullish(),
+    ref_amount: z.number().positive().max(10_000),
+    ref_unit: FoodUnitSchema,
+    serving_label: text(60).nullish(),
+    default_quantity: z.number().positive().max(10_000).nullish(),
+    kcal: z.number().min(0).max(20_000),
+    protein_g: grams,
+    carbs_g: grams,
+    fat_g: grams,
+    fiber_g: grams.nullish(),
+    data_source: UserNutritionSourceSchema.default('user'),
+  })
+  .refine((f) => f.ref_unit === 'serving' || f.protein_g + f.carbs_g + f.fat_g + (f.fiber_g ?? 0) <= f.ref_amount * 1.02, {
+    message: 'Macros exceed the reference amount',
+  });
+
+export const LogFoodSchema = z
+  .object({
+    id: uuid,
+    local_date: localDateStr,
+    slot: MealSlotSchema,
+    quantity: z.number().positive().max(10_000),
+    food_id: uuid.nullish(),
+    recipe_id: uuid.nullish(),
+    name: z.string().trim().min(1).max(120).nullish(),
+    kcal: z.number().min(0).max(20_000).nullish(),
+    protein_g: grams.nullish(),
+    carbs_g: grams.nullish(),
+    fat_g: grams.nullish(),
+    logged_at: isoTs.nullish(),
+    device_id: uuid.nullish(),
+  })
+  .refine((l) => [l.food_id, l.recipe_id, l.name].filter((x) => x != null).length === 1, {
+    message: 'Give exactly one of food_id, recipe_id or a manual entry',
+  })
+  .refine((l) => l.name == null || (l.kcal != null && l.protein_g != null && l.carbs_g != null && l.fat_g != null), {
+    message: 'Manual entries need kcal and macros',
+  });
+
+export const SaveRecipeSchema = z.object({
+  id: uuid,
+  name: z.string().trim().min(1).max(120),
+  servings: z.number().positive().max(100).default(1),
+  notes: text(2000).nullish(),
+  ingredients: z.array(z.object({ food_id: uuid, quantity: z.number().positive().max(10_000) })).min(1).max(50),
+});
+
+export const NutritionGoalSchema = z
+  .object({
+    effective_from: localDateStr,
+    kcal: z.number().int().min(500).max(10_000).nullish(),
+    protein_g: z.number().int().min(0).max(1000).nullish(),
+    carbs_g: z.number().int().min(0).max(1500).nullish(),
+    fat_g: z.number().int().min(0).max(1000).nullish(),
+  })
+  .refine((g) => g.kcal != null || g.protein_g != null || g.carbs_g != null || g.fat_g != null, 'Set at least one goal');
+
+// ── Habits ─────────────────────────────────────────────────────────────────
+export const SaveHabitSchema = z
+  .object({
+    id: uuid,
+    name: z.string().trim().min(1).max(80),
+    effective_from: localDateStr,
+    kind: z.enum(['check', 'count', 'duration']).default('check'),
+    unit: text(20).nullish(),
+    icon: z.string().regex(/^[a-z0-9-]{1,40}$/).nullish(),
+    frequency: z.enum(['daily', 'weekly']).default('daily'),
+    days: z.array(z.number().int().min(1).max(7)).max(7).refine((d) => new Set(d).size === d.length, 'Duplicate day').default([]),
+    times_per_week: z.number().int().min(1).max(7).nullish(),
+    target_value: z.number().positive().max(100_000).nullish(),
+  })
+  .refine((h) => (h.frequency === 'weekly') === (h.times_per_week != null), {
+    message: 'times_per_week is required for weekly habits and only for them',
+  });
+
+export const LogHabitSchema = z.object({
+  id: uuid,
+  habit_id: uuid,
+  local_date: localDateStr,
+  value: z.number().positive().max(100_000).default(1),
+  note: text(500).nullish(),
+  device_id: uuid.nullish(),
+});
+
+// ── Body, health, goals ────────────────────────────────────────────────────
+export const DataOriginSchema = z.enum(['manual', 'health_connect', 'healthkit', 'wear_os', 'import']);
+export const BodyMetricSchema = z.enum([
+  'weight_kg', 'body_fat_pct', 'muscle_mass_kg', 'lean_mass_kg',
+  'waist_cm', 'hip_cm', 'chest_cm', 'arm_cm', 'thigh_cm', 'neck_cm',
+]);
+export const HealthMetricSchema = z.enum([
+  'sleep_session', 'resting_hr_bpm', 'hrv_rmssd_ms', 'steps', 'distance_m',
+  'active_energy_kcal', 'active_minutes', 'mood', 'stress',
+]);
+
+const BODY_RANGE: Record<z.infer<typeof BodyMetricSchema>, [number, number]> = {
+  weight_kg: [20, 400], body_fat_pct: [2, 75], muscle_mass_kg: [5, 150], lean_mass_kg: [10, 250],
+  waist_cm: [10, 250], hip_cm: [10, 250], chest_cm: [10, 250], arm_cm: [10, 250], thigh_cm: [10, 250], neck_cm: [10, 250],
+};
+const HEALTH_RANGE: Record<z.infer<typeof HealthMetricSchema>, [number, number, boolean?]> = {
+  sleep_session: [0, 1440], resting_hr_bpm: [20, 250], hrv_rmssd_ms: [1, 400], steps: [0, 200_000, true],
+  distance_m: [0, 500_000], active_energy_kcal: [0, 20_000], active_minutes: [0, 1440], mood: [1, 5, true], stress: [0, 100],
+};
+const INTERVAL_METRICS = new Set(['sleep_session', 'steps', 'distance_m', 'active_energy_kcal', 'active_minutes']);
+
+const provenance = {
+  source: DataOriginSchema.default('manual'),
+  source_app: text(80).nullish(),
+  external_id: text(200).nullish(),
+  is_estimated: z.boolean().default(false),
+  time_zone: TimeZoneSchema.nullish(),
+  device_id: uuid.nullish(),
+};
+
+export const BodyMeasurementSchema = z
+  .object({ id: uuid, metric: BodyMetricSchema, value: z.number(), measured_at: isoTs, note: text(500).nullish(), ...provenance })
+  .refine((m) => m.value >= BODY_RANGE[m.metric][0] && m.value <= BODY_RANGE[m.metric][1], { message: 'Value out of range for this metric' });
+
+export const HealthObservationSchema = z
+  .object({
+    id: uuid,
+    metric: HealthMetricSchema,
+    value: z.number(),
+    start_at: isoTs,
+    end_at: isoTs.nullish(),
+    details: z.record(z.unknown()).default({}),
+    ...provenance,
+  })
+  .refine((o) => {
+    const [min, max, integer] = HEALTH_RANGE[o.metric];
+    return o.value >= min && o.value <= max && (!integer || Number.isInteger(o.value));
+  }, { message: 'Value out of range for this metric' })
+  .refine((o) => !INTERVAL_METRICS.has(o.metric) || o.end_at != null, { message: 'This metric needs end_at' })
+  .refine((o) => o.end_at == null || Date.parse(o.end_at) > Date.parse(o.start_at), { message: 'end_at must be after start_at' })
+  .refine(
+    (o) => o.metric !== 'sleep_session' || o.end_at == null ||
+      (Date.parse(o.end_at) - Date.parse(o.start_at) <= 86_400_000 && o.value <= (Date.parse(o.end_at) - Date.parse(o.start_at)) / 60_000),
+    { message: 'Sleep minutes cannot exceed the session length (max 24 h)' },
+  );
+
+export const GoalSchema = z
+  .object({
+    id: uuid,
+    kind: z.enum(['weight', 'steps_daily', 'sleep_minutes_daily', 'workouts_weekly', 'custom']),
+    title: z.string().trim().min(1).max(120),
+    target_value: z.number().min(0),
+    start_value: z.number().nullish(),
+    unit: text(20).nullish(),
+    start_date: localDateStr,
+    target_date: localDateStr.nullish(),
+    notes: text(2000).nullish(),
+  })
+  .refine((g) => g.target_date == null || g.target_date >= g.start_date, { message: 'target_date before start_date' });
+
+export const DateRangeSchema = z
+  .object({ from: localDateStr, to: localDateStr })
+  .refine((r) => r.to >= r.from, 'to must be on or after from');
+
+export type FoodCreate = z.input<typeof FoodCreateSchema>;
+export type LogFoodInput = z.input<typeof LogFoodSchema>;
+export type SaveRecipeInput = z.input<typeof SaveRecipeSchema>;
+export type NutritionGoalInput = z.input<typeof NutritionGoalSchema>;
+export type SaveHabitInput = z.input<typeof SaveHabitSchema>;
+export type LogHabitInput = z.input<typeof LogHabitSchema>;
+export type BodyMeasurementInput = z.input<typeof BodyMeasurementSchema>;
+export type HealthObservationInput = z.input<typeof HealthObservationSchema>;
+export type GoalInput = z.input<typeof GoalSchema>;

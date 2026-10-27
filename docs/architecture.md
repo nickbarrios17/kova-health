@@ -20,12 +20,16 @@
 
 | Migration | Module | Tables / functions |
 | --- | --- | --- |
-| `…_foundation.sql` | Accounts, devices, entitlements | `profiles`, `user_preferences`, `devices`, `entitlements`, `user_entitlements`, `has_entitlement()`, `export_my_data()` |
+| `…_foundation.sql` | Accounts, devices, entitlements | `profiles`, `user_preferences`, `devices`, `entitlements`, `user_entitlements`, `has_entitlement()` |
 | `…_exercises.sql` | Exercise library | `muscle_groups`, `equipment_types`, `exercises`, `exercise_muscles`, `exercise_equipment` |
 | `…_routines.sql` | Routines | `routines`, `routine_exercises`, `save_routine()`, `duplicate_routine()` |
-| `…_workouts.sql` | Sessions and sets | `workout_sessions`, `workout_session_exercises`, `workout_sets`, `start_session()`, `record_set()`, `update_set()`, `delete_set()`, `transition_session()`, views `exercise_history`, `personal_records`, `session_summaries` |
-
-Phase 4 adds nutrition (`foods`, `recipes`, `meals`, `meal_items` with snapshotted nutrients and `data_source`), habits (`habits`, `habit_logs`), `body_measurements`, `health_observations` and `goals`, plus daily summaries.
+| `…_workouts.sql` | Sessions and sets | `workout_sessions`, `workout_session_exercises`, `workout_sets`, `start_session()`, `record_set()`, `transition_session()`, views `exercise_history`, `personal_records`, `session_summaries` |
+| `…_account.sql` | Account | `export_my_data()` |
+| `…_touch_parent_definer.sql` | Fix | Account-deletion cascade privileges |
+| `…_nutrition.sql` | Nutrition | `foods` (with provenance), `recipes`, `recipe_ingredients`, `meals`, `meal_items` (snapshots), `nutrition_goals`, `log_food()`, views `nutrition_daily`, `recipe_nutrition`, `frequent_foods` |
+| `…_habits.sql` | Habits | `habits`, `habit_schedules` (dated versions), `habit_logs`, `save_habit()`, `habit_days()` |
+| `…_body_health_goals.sql` | Body and health | `body_measurements`, `health_observations`, `goals`, `record_body_measurements()`, `record_observations()` |
+| `…_daily_summaries.sql` | Summaries | `daily_summaries()`, full `export_my_data()` |
 
 ## Cross-cutting conventions
 

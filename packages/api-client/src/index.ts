@@ -31,6 +31,7 @@ import type { z } from 'zod';
 import { toVidaError, unwrap, type SupabaseResult } from './errors.js';
 import { Outbox, type OutboxOp, type OutboxStorage } from './outbox.js';
 import { withRetry, type RetryOptions } from './retry.js';
+import { createTracking } from './tracking.js';
 
 export { toVidaError } from './errors.js';
 export { withRetry } from './retry.js';
@@ -57,6 +58,18 @@ export const SYNC_TABLES = [
   'workout_session_exercises',
   'workout_sets',
   'exercises',
+  'foods',
+  'recipes',
+  'recipe_ingredients',
+  'meals',
+  'meal_items',
+  'nutrition_goals',
+  'habits',
+  'habit_schedules',
+  'habit_logs',
+  'body_measurements',
+  'health_observations',
+  'goals',
 ] as const;
 export type SyncTable = (typeof SYNC_TABLES)[number];
 
@@ -118,7 +131,7 @@ export function createVidaClient(opts: VidaClientOptions) {
 
   const devices = {
     /** Idempotent on the device id; also refreshes last_seen_at. */
-    register: (input: DeviceRegister) => {
+    register: async (input: DeviceRegister) => {
       const d = parse(DeviceRegisterSchema, input);
       return idempotent(() =>
         call(sb.from('devices').upsert({ ...d, last_seen_at: new Date().toISOString() }, { onConflict: 'id' }).select().single()),
@@ -127,7 +140,7 @@ export function createVidaClient(opts: VidaClientOptions) {
   };
 
   const exercises = {
-    search: (params: ExerciseSearch = {}) => {
+    search: async (params: ExerciseSearch = {}) => {
       const p = parse(ExerciseSearchSchema, params);
       const muscles = p.muscle ? 'exercise_muscles!inner(muscle_code, role)' : 'exercise_muscles(muscle_code, role)';
       const equipment = p.equipment ? 'exercise_equipment!inner(equipment_code)' : 'exercise_equipment(equipment_code)';
@@ -178,7 +191,7 @@ export function createVidaClient(opts: VidaClientOptions) {
     get: (id: string) =>
       call(sb.from('routines').select('*, routine_exercises(*)').eq('id', id).order('position', { referencedTable: 'routine_exercises' }).single()),
     /** Create (expected_version omitted) or replace (expected_version = last seen). VERSION_CONFLICT on stale edits. */
-    save: (input: SaveRoutineInput) => {
+    save: async (input: SaveRoutineInput) => {
       const r = parse(SaveRoutineSchema, input);
       return idempotent(async () =>
         RoutineRowSchema.parse(
@@ -202,7 +215,7 @@ export function createVidaClient(opts: VidaClientOptions) {
   };
 
   const workouts = {
-    start: (input: StartSessionInput) => {
+    start: async (input: StartSessionInput) => {
       const s = parse(StartSessionSchema, input);
       return idempotent(async () =>
         SessionRowSchema.parse(
@@ -218,7 +231,7 @@ export function createVidaClient(opts: VidaClientOptions) {
         ),
       );
     },
-    recordSet: (input: RecordSetInput) => {
+    recordSet: async (input: RecordSetInput) => {
       const s = parse(RecordSetSchema, input);
       return idempotent(async () =>
         SetRowSchema.parse(
@@ -239,7 +252,7 @@ export function createVidaClient(opts: VidaClientOptions) {
         ),
       );
     },
-    transition: (input: TransitionSessionInput) => {
+    transition: async (input: TransitionSessionInput) => {
       const t = parse(TransitionSessionSchema, input);
       return idempotent(async () =>
         SessionRowSchema.parse(await rpc('transition_session', { p_id: t.id, p_action: t.action, p_at: t.at ?? null })),
@@ -289,7 +302,9 @@ export function createVidaClient(opts: VidaClientOptions) {
     },
   };
 
-  const sendOp = (op: OutboxOp) => {
+  const tracking = createTracking({ sb, call, rpc, idempotent, parse, uid });
+
+  const sendOp = (op: OutboxOp): Promise<unknown> => {
     switch (op.kind) {
       case 'start_session':
         return workouts.start(op.input);
@@ -297,6 +312,14 @@ export function createVidaClient(opts: VidaClientOptions) {
         return workouts.recordSet(op.input);
       case 'transition_session':
         return workouts.transition(op.input);
+      case 'log_food':
+        return tracking.nutrition.logFood(op.input);
+      case 'log_habit':
+        return tracking.habits.log(op.input);
+      case 'record_measurement':
+        return tracking.body.record([op.input]);
+      case 'record_observation':
+        return tracking.health.record([op.input]);
     }
   };
 
@@ -319,6 +342,7 @@ export function createVidaClient(opts: VidaClientOptions) {
     exercises,
     routines,
     workouts,
+    ...tracking,
     sync,
     account,
     entitlements: { has: (code: string) => rpc<boolean>('has_entitlement', { p_code: code }) },

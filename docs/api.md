@@ -32,7 +32,13 @@ All clients call Supabase (PostgREST + RPC) **with the signed-in user's JWT**. A
 | `start_session(p_id, p_routine_id, p_name, p_exercises, p_started_at, p_time_zone, p_device_id)` | Start a workout. Snapshots the routine, or uses the client's `p_exercises`. | `p_id` |
 | `record_set(p_id, p_session_exercise_id, p_set_index, p_weight_kg, p_reps, p_duration_s, p_distance_m, p_rpe, p_rest_s, p_set_type, p_completed_at, p_device_id)` | Log a set | `p_id` |
 | `transition_session(p_id, p_action, p_at)` | `pause\|resume\|complete\|abandon` | state (repeat = no-op) |
-| `export_my_data()` | Full JSON export of the caller's data | read-only |
+| `log_food(p_item_id, p_local_date, p_slot, p_quantity, p_food_id \| p_recipe_id \| p_name+macros, p_logged_at, p_device_id)` | Log food into the (day, slot) meal and snapshot its nutrients | `p_item_id` |
+| `save_habit(p_id, p_name, p_effective_from, p_kind, p_unit, p_icon, p_frequency, p_days, p_times_per_week, p_target_value)` | Create a habit, or set its schedule version from a date | `p_id` + `p_effective_from` |
+| `habit_days(p_from, p_to)` | Per habit and day: scheduled, value, target, completed (≤ 366 days) | read-only |
+| `record_body_measurements(p_rows)` | Batch of ≤ 500 measurements. Returns how many were new. | `id` and (`source`, `external_id`) |
+| `record_observations(p_rows)` | Batch of ≤ 500 health observations. Returns how many were new. | `id` and (`source`, `external_id`) |
+| `daily_summaries(p_from, p_to)` | One row per day (≤ 93 days), computed from source records | read-only |
+| `export_my_data()` | Full JSON export of the caller's data (`vida-export/2`, every user table) | read-only |
 | `has_entitlement(p_code)` | Server-side premium check | read-only |
 
 All RPCs are `security invoker`: they run as the caller, under RLS.
@@ -47,6 +53,12 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 | `exercises` (+ `exercise_muscles`, `exercise_equipment`) | read system + own. Write own only. Archive rather than delete. |
 | `routines`, `routine_exercises` | CRUD own. Soft delete via `deleted_at`. |
 | `workout_sessions`, `workout_session_exercises`, `workout_sets` | CRUD own. Status changes are validated by trigger even on direct updates. |
+| `foods` | read catalog + own. Write own only; `verified` is catalog-only and needs `source_ref`. |
+| `recipes`, `recipe_ingredients`, `meals`, `nutrition_goals` | CRUD own |
+| `meal_items` | read, insert, soft-delete own. Snapshot values cannot be updated: to change a quantity, remove the item and log it again. |
+| `habits`, `habit_schedules`, `habit_logs` | CRUD own |
+| `body_measurements`, `health_observations`, `goals` | CRUD own |
+| Views `nutrition_daily`, `recipe_nutrition`, `frequent_foods` | read own (`security_invoker`) |
 | `muscle_groups`, `equipment_types`, `entitlements` | read |
 | `user_entitlements` | read own (server writes only) |
 | Views `exercise_history`, `personal_records`, `session_summaries` | read own (`security_invoker`) |
@@ -64,3 +76,46 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 - **Active duration** = (ended or now − started) − paused time.
 - **Energy** (`energy_kcal`) is stored only when a client provides it. `energy_is_estimated` defaults to `true` and must be labelled "estimado" in the UI.
 - All of these are computed on read (views) and never stored.
+
+## Nutrition rules
+- A food's nutrients are given for `ref_amount` of `ref_unit` (`g`, `ml` or `serving`). Portions without known grams ("1 mediano") stay as servings; grams are never invented.
+- **Provenance** (`data_source`):
+
+  | Value | Meaning |
+  | --- | --- |
+  | `verified` | From a trusted database. Catalog only, with `source_ref`. |
+  | `label` | Copied from the product label |
+  | `user` | Entered by the user |
+  | `estimated` | E.g. a photo estimate |
+
+  Show non-verified values with `nutritionSourceLabel()`. Recipes take their least reliable ingredient's source.
+- **Snapshots.** `log_food` freezes kcal and macros for the logged quantity. Later edits to the food never change past days.
+- **Goals** are user-set numbers in `nutrition_goals`. A change adds a row from a date, so past days keep their goal. VIDA does not calculate or prescribe diets.
+- The system food catalog is **empty** until a verified source is chosen (e.g. USDA FoodData Central or BEDCA), with its licence checked.
+
+## Habit rules
+- A habit's schedule and target are versioned by `effective_from`. `habit_days` judges each day with the version in force that day, so editing a habit never rewrites history.
+- `daily` habits apply on the listed ISO weekdays (empty means every day). `weekly` habits need `times_per_week`.
+- Several logs per day add up. A day is complete when the sum is at least the target (default 1).
+- Streaks and rates are computed client-side with `dailyStreak` (optional `allowedMissesPerWeek` for flexible streaks), `weeklyStreak`, `weeklyProgress` and `completionRate`. An unfinished *today* never breaks a streak.
+
+## Body and health data
+- Every row has `source` (`manual`, `health_connect`, `healthkit`, `wear_os`, `import`), an optional `source_app`, an `external_id` for de-duplication, and `is_estimated`.
+- Units are fixed per metric: weight in kg, circumferences in cm, sleep and active time in minutes, HRV in ms (RMSSD), heart rate in bpm, distance in m, energy in kcal, mood 1–5, stress 0–100.
+- `local_date` comes from the event time in the user's time zone. Sleep is assigned to the **wake-up** day.
+- Vendor sleep scores are stored only when the vendor provides them (`details.vendor_score`). They are never computed by VIDA.
+
+## Daily summaries (`calc_version` 1)
+
+| Field | Rule |
+| --- | --- |
+| workouts_* | Completed sessions of that `local_date` (count, active seconds, volume) |
+| kcal, macros | Sum of non-deleted meal item snapshots. `nutrition_has_unverified` is true if any item is `user`/`estimated`. |
+| *_goal | The `nutrition_goals` row with the latest `effective_from` on or before the day |
+| habits_* | Daily habits scheduled that day, and how many were completed |
+| weight_kg | Last weight measurement of the day |
+| steps, sleep_min | Summed per source, then the **largest** source total, so the phone and the watch aren't double-counted |
+| resting_hr_bpm, hrv_rmssd_ms | Average of that day's readings |
+| mood | Latest check-in of the day |
+
+Missing data is `null`, never `0` or a default (except counts of zero events). Change `calc_version` whenever a rule changes.
