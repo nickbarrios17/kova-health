@@ -2,12 +2,13 @@
 /**
  * "Hoy" — markup ported from design/prototypes/VIDA Web v2.dc.html (isHoy). Every number comes from
  * daily_summaries / routines / history; missing data shows the design system's empty state.
- * Readiness and "VIDA ve hoy" need VIDA Intelligence (not built yet), so they show facts or an
- * empty state instead of the prototype's sample score and insights.
+ * Readiness needs an HRV/sleep baseline model (not built), so it shows the raw facts instead of a
+ * score. "VIDA ve hoy" shows VIDA Intelligence v1 insights (deterministic rules, @vida/domain).
  */
 import { formatWeight, localDate, toDisplayWeight, type WeightUnit } from '@vida/domain';
 import Link from 'next/link';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
+import { InsightCard } from '@/components/InsightCard';
 import { vida } from '@/lib/client';
 import { addDays, dayShort, hm, MOODS, nf, ring, sp, warnFg } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -65,6 +66,7 @@ export default function HoyPage() {
       c.workouts.recentHistory(500),
       c.goals.list(),
     ]);
+    const insights = await c.insights.today(today, 3).catch(() => []);
     return {
       days: days.map((d) => Object.fromEntries(Object.entries(d).map(([k, v]) => [k, k === 'local_date' ? v : num(v) ?? v])) as unknown as Summary),
       routines: routines as RoutineRow[],
@@ -72,12 +74,13 @@ export default function HoyPage() {
       exercises: exercises as ExerciseRow[],
       history: history as HistoryRow[],
       goals: goals as Array<{ kind: string; status: string; target_value: number }>,
+      insights,
     };
   }, [today]);
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <ErrorNotice message={q.error} onRetry={q.reload} />;
-  const { days, routines, active, exercises, history, goals } = q.data!;
+  const { days, routines, active, exercises, history, goals, insights } = q.data!;
 
   const t = days[days.length - 1]!;
   const prev = days.slice(0, -1);
@@ -231,11 +234,16 @@ export default function HoyPage() {
         <div style={{ flex: '2 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px 6px' }}>
             <span style={{ fontSize: 16, fontWeight: 500 }}>VIDA ve hoy</span>
+            <Link className="btn btn-ghost" href="/coach" style={{ fontSize: 13 }}>Todo el Coach</Link>
           </div>
-          <EmptyState icon="ph ph-lightbulb-filament" title="Todavía no hay observaciones">
-            Cuando haya suficientes días de sueño, entrenamiento y comida, VIDA te mostrará aquí hechos y patrones de tus datos.
-            No mostramos ejemplos inventados.
-          </EmptyState>
+          {insights.length === 0 ? (
+            <EmptyState icon="ph ph-lightbulb-filament" title="Todavía no hay observaciones">
+              Cuando haya suficientes días de sueño, entrenamiento y comida, VIDA te mostrará aquí hechos y patrones de tus datos.
+              No mostramos ejemplos inventados.
+            </EmptyState>
+          ) : (
+            insights.map((i) => <InsightCard key={i.key} insight={i} compact />)
+          )}
         </div>
       </section>
 

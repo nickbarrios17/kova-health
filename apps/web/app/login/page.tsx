@@ -24,7 +24,10 @@ export default function LoginPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'signedIn') router.replace('/');
+    if (status !== 'signedIn') return;
+    // Only internal paths, never an external URL from the query string.
+    const next = new URLSearchParams(window.location.search).get('next');
+    router.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : '/');
   }, [status, router]);
 
   const submit = async (e: FormEvent) => {

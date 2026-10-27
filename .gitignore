@@ -11,3 +11,11 @@ supabase/functions/.env
 .DS_Store
 .next/
 next-env.d.ts
+*.log
+apps/watch/secrets.properties
+apps/watch/local.properties
+apps/watch/.gradle/
+apps/watch/.kotlin/
+apps/watch/build/
+apps/watch/app/build/
+dist/

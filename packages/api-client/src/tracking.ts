@@ -1,6 +1,10 @@
 /** Nutrition, habits, body, health, goals and daily summaries (phase 4). See docs/api.md. */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  addDays,
+  generateInsights,
+  type DaySummary,
+  type HabitDayLite,
   BodyMeasurementSchema,
   DateRangeSchema,
   FoodCreateSchema,
@@ -192,5 +196,48 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
     },
   };
 
-  return { nutrition, habits, body, health, goals, summaries };
+  const insights = {
+    /** Times each insight was shown since `sinceLocalDate` (for novelty/fatigue scoring). */
+    shownCounts: async (sinceLocalDate: string) => {
+      const rows = (await call(
+        sb.from('shown_insights').select('insight_key').gte('shown_on', sinceLocalDate),
+      )) as Array<{ insight_key: string }>;
+      return rows.reduce<Record<string, number>>((acc, r) => ({ ...acc, [r.insight_key]: (acc[r.insight_key] ?? 0) + 1 }), {});
+    },
+    /** Records that these insights were shown today. Idempotent per insight and day. */
+    markShown: (items: Array<{ key: string; kind: string }>, localDate: string) =>
+      items.length === 0
+        ? Promise.resolve(null)
+        : call(
+            sb.from('shown_insights').upsert(
+              items.map((i) => ({ insight_key: i.key, kind: i.kind, shown_on: localDate })),
+              { onConflict: 'user_id,insight_key,shown_on', ignoreDuplicates: true },
+            ),
+          ),
+    feedback: (key: string, localDate: string, value: 'useful' | 'not_useful') =>
+      call(sb.from('shown_insights').update({ feedback: value }).eq('insight_key', key).eq('shown_on', localDate)),
+    /**
+     * Today's insights: deterministic rules over the last 60 days (computed on the device, no AI),
+     * ranked with novelty/fatigue, and recorded as shown. Returns [] when there is not enough data.
+     */
+    today: async (today: string, limit = 5) => {
+      const from = addDays(today, -59);
+      const [days, habitDays, shown] = await Promise.all([
+        rpc<Array<Record<string, unknown>>>('daily_summaries', { p_from: from, p_to: today }),
+        rpc<HabitDayLite[]>('habit_days', { p_from: from, p_to: today }),
+        insights.shownCounts(addDays(today, -13)),
+      ]);
+      const num = (v: unknown) => (v == null ? null : Number(v));
+      const summaries: DaySummary[] = days.map((d) => ({
+        local_date: String(d.local_date), workouts_completed: Number(d.workouts_completed ?? 0), kcal: num(d.kcal),
+        protein_g: num(d.protein_g), protein_goal_g: num(d.protein_goal_g), weight_kg: num(d.weight_kg),
+        steps: num(d.steps), sleep_min: num(d.sleep_min), mood: num(d.mood),
+      }));
+      const list = generateInsights(summaries, habitDays, shown, limit);
+      await insights.markShown(list.map((i) => ({ key: i.key, kind: i.kind })), today).catch(() => undefined);
+      return list;
+    },
+  };
+
+  return { nutrition, habits, body, health, goals, summaries, insights };
 }
