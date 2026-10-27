@@ -23,14 +23,17 @@ Quick start: see [docs/setup.md](docs/setup.md) (requires Docker Desktop and the
 - RLS on every table.
 - Domain and api-client packages, and docs.
 
-**Verified on 2026-10-26**
+**Verified on 2026-10-26 (local Supabase stack, Docker)**
+- `supabase db reset` applies all 7 migrations and the seed cleanly.
+- `supabase test db`: 3 files, 69 assertions, all pass.
+- `supabase db lint --level warning`: no schema errors.
 - `npm run typecheck` passes.
-- `npm test` passes: 27 domain + 9 api-client unit tests. The 8 integration tests were **skipped**, since they need a running local stack.
-- All migrations, the seed and the 3 pgTAP files (68 assertions) pass on an **embedded Postgres 16 (PGlite) with a stubbed Supabase auth/pgTAP**. That smoke check caught and fixed one privilege bug.
+- `npm test` with the stack and `supabase functions serve` running: 27 domain + 9 api-client unit + 8 integration tests, all pass. The integration tests cover sign-up, RLS isolation between two users, routine version conflicts, a full workout with lost-response retries and offline replay, history/PRs, sync pull, export, the password-recovery email and account deletion.
+- Running against the real stack found one bug the stubbed check could not: account deletion failed because a trigger fired during GoTrue's cascade lacked privileges. It is fixed in `20261027000100_touch_parent_definer.sql`, with a regression check.
 
 **Not yet verified**
-- These need Docker: `supabase db reset`, `supabase test db` on the real stack, `supabase db lint`, the integration suite, and the Edge Function.
 - CI has not run (the repository isn't on GitHub yet).
+- Nothing is deployed to a hosted Supabase project.
 
 **Next (Phase 4+)**
 - Nutrition (foods with provenance, meals with snapshotted nutrients), habits and logs, body measurements, health observations, goals, daily summaries.
