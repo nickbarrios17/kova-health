@@ -22,7 +22,7 @@ Ambos se conectan al proyecto de Supabase en la nube (`docs/cloud.md`), así que
 Alternativa con cable, con la depuración USB activada en el teléfono:
 
 ```bash
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" install -r dist\VIDA-movil-0.1.0.apk
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\VIDA-movil-0.1.0.apk"
 ```
 
 **Actualizar:** instala el APK nuevo encima del anterior. Los datos se conservan porque están en la nube y la firma es la misma (ver §5).
@@ -42,10 +42,10 @@ Los relojes Wear OS no tienen navegador de archivos, así que el APK se instala 
 
 ### 2.2 Emparejar y conectar (Wear OS 3+)
 1. En el reloj: **Opciones de desarrollador → Depuración por Wi-Fi → Emparejar dispositivo nuevo**. Verás una **IP:puerto de emparejamiento** y un **código de 6 dígitos**.
-2. En el PC, en PowerShell, desde la carpeta del proyecto:
+2. En el PC, en **PowerShell** (los comandos llevan `&` delante porque la ruta va entre comillas):
 
 ```bash
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" pair IP_DEL_RELOJ:PUERTO_DE_EMPAREJAMIENTO
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" pair IP_DEL_RELOJ:PUERTO_DE_EMPAREJAMIENTO
 ```
 
    Escribe el código de 6 dígitos cuando lo pida.
@@ -53,22 +53,22 @@ Los relojes Wear OS no tienen navegador de archivos, así que el APK se instala 
 3. Vuelve a la pantalla «Depuración por Wi-Fi» del reloj. Allí aparece otra **IP:puerto** (la de conexión, distinta de la de emparejamiento). Conéctate a ella:
 
 ```bash
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" connect IP_DEL_RELOJ:PUERTO_DE_CONEXION
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" connect IP_DEL_RELOJ:PUERTO_DE_CONEXION
 ```
 
 4. Comprueba que aparece:
 
 ```bash
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" devices
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices
 ```
 
 ### 2.3 Instalar
 
 ```bash
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" install -r dist\VIDA-reloj-wearos-0.1.0.apk
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\VIDA-reloj-wearos-0.1.0.apk"
 ```
 
-Si hay más de un dispositivo conectado, añade `-s IP_DEL_RELOJ:PUERTO_DE_CONEXION` después de `adb.exe`.
+Si hay más de un dispositivo conectado, añade `-s IP_DEL_RELOJ:PUERTO_DE_CONEXION` después de la ruta de `adb.exe`.
 
 5. En el reloj, abre **VIDA** desde la lista de apps e inicia sesión con **la misma cuenta del móvil**. El teclado del reloj sirve para escribir el correo y la contraseña; solo hace falta una vez.
 6. Cuando termines, desactiva la **Depuración por Wi-Fi** en el reloj para ahorrar batería.
