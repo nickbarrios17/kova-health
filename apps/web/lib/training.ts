@@ -9,6 +9,8 @@ export interface ExerciseRow {
 export interface RoutineRow {
   id: string;
   name: string;
+  /** Bumped on every save; the editor sends it back so stale edits are rejected. */
+  version: number;
   schedule_days: number[];
   routine_exercises: Array<{
     id: string;
@@ -17,7 +19,9 @@ export interface RoutineRow {
     target_sets: number;
     target_reps_min: number | null;
     target_reps_max: number | null;
+    target_rest_s: number | null;
     target_load_kg: number | null;
+    notes: string | null;
   }>;
 }
 

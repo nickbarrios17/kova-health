@@ -1,6 +1,7 @@
-/** Routines + history (prototype "Rutinas"). Editing routines comes later; they are created on web/seed for now. */
-import { dayMonth, dur, isoDays, nf, toDisplayWeight } from '@vida/domain';
-import { Barbell, ClockCounterClockwise, Play } from 'phosphor-react-native';
+/** Routines + history (prototype "Rutinas"), with the routine editor (new, edit, duplicate, delete). */
+import { dayMonth, draftFromRoutine, dur, emptyDraft, isoDays, newId, nf, toDisplayWeight, type RoutineDraft } from '@vida/domain';
+import { Barbell, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
+import { useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { vida } from '../client';
 import { useSession } from '../session';
@@ -8,6 +9,7 @@ import { c } from '../theme';
 import { loadTraining, scheme, type TrainingData } from '../training';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Loading, Row, T } from '../ui';
+import { RoutineEditor } from './RoutineEditor';
 
 export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (routineId: string, data: TrainingData) => void }) {
   const { prefs } = useSession();
@@ -16,16 +18,25 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
     const [training, summaries] = await Promise.all([loadTraining(), vida.workouts.summaries(15)]);
     return { training, done: (summaries as Array<Record<string, unknown>>).filter((s) => s.status === 'completed') };
   }, []);
+  const [editing, setEditing] = useState<RoutineDraft | null>(null);
+  const [copying, setCopying] = useState<string | null>(null);
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>;
   const { training, done } = q.data!;
+  const exerciseList = [...training.names].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  if (editing) {
+    return <RoutineEditor key={editing.id} initial={editing} exercises={exerciseList} units={units} onClose={(changed) => { setEditing(null); if (changed) q.reload(); }} />;
+  }
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32, gap: 16 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
-      <T size={22} w="medium">Rutinas</T>
+      <Row style={{ justifyContent: 'space-between' }}>
+        <T size={22} w="medium">Rutinas</T>
+        <Button variant="secondary" label="Nueva rutina" icon={Plus} onPress={() => setEditing(emptyDraft())} />
+      </Row>
       {training.routines.length === 0 ? (
-        <Empty icon={Barbell} title="Aún no tienes rutinas">Crea tu primera rutina desde la web; aparecerá aquí y en el reloj.</Empty>
+        <Empty icon={Barbell} title="Aún no tienes rutinas">Crea una con «Nueva rutina» o importa tu planilla desde la web. Aparecerán aquí y en el reloj.</Empty>
       ) : (
         training.routines.map((r) => (
           <Card key={r.id} style={{ gap: 12 }}>
@@ -42,6 +53,14 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
               ))}
             </View>
             <Button label="Empezar" icon={Play} disabled={hasLive} onPress={() => onStart(r.id, training)} />
+            <Row style={{ gap: 4 }}>
+              <Button variant="ghost" label="Editar" icon={PencilSimple} onPress={() => setEditing(draftFromRoutine(r, Object.fromEntries(training.names)))} />
+              <Button variant="ghost" label="Duplicar" icon={Copy} busy={copying === r.id}
+                onPress={async () => {
+                  setCopying(r.id);
+                  try { await vida.routines.duplicate(r.id, newId(), (r.name + ' (copia)').slice(0, 80)); q.reload(); } finally { setCopying(null); }
+                }} />
+            </Row>
           </Card>
         ))
       )}

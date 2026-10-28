@@ -2,7 +2,11 @@ import { vida } from './client';
 import type { RoutineForStart } from './workout';
 
 export interface TrainingData {
-  routines: Array<RoutineForStart & { schedule_days: number[] }>;
+  routines: Array<RoutineForStart & {
+    schedule_days: number[];
+    version: number;
+    routine_exercises: Array<RoutineForStart['routine_exercises'][number] & { notes: string | null }>;
+  }>;
   names: Map<string, string>;
   lastKg: Map<string, number>;
   bestKg: Map<string, number>;

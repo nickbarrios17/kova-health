@@ -91,7 +91,16 @@ Teléfono: **Progreso → Cuenta → Borrar mi cuenta y mis datos** → confirma
 - **kg / lb:** el selector de arriba cambia la unidad en todos tus dispositivos.
 
 ### Entrenar
-**Rutinas.** Las rutinas aparecen en «Entrenar» (teléfono), «Entrenamiento» (web) y en el reloj, con sus días (por ejemplo «Lun · Jue»). Se cargan importando una planilla desde la web; el editor de rutinas dentro de la app es trabajo pendiente.
+**Rutinas.** Las rutinas aparecen en «Entrenar» (teléfono), «Entrenamiento» (web) y en el reloj, con sus días (por ejemplo «Lun · Jue»).
+
+**Crear o editar una rutina (teléfono y web):**
+1. **Nueva rutina** (arriba en Entrenar / Entrenamiento), o **Editar** en una rutina existente.
+2. Ponle nombre y, si quieres, los días (L M X J V S D).
+3. En **Añadir ejercicio** escribe el nombre: elige uno del catálogo o toca **Crear «…»** para uno nuevo.
+4. En cada ejercicio: **series**, **reps** (un número, 8, o un rango, 8-12), **descanso** en segundos y **peso** (opcional). Las flechas cambian el orden y el tacho lo quita.
+5. **Guardar rutina.** Llega sola al reloj y a los otros dispositivos.
+
+**Duplicar** crea una copia («… (copia)») para hacer variantes. **Borrar rutina** está dentro del editor; tu historial de entrenamientos no se pierde, y cambiar una rutina no modifica las sesiones que ya hiciste. Si la misma rutina se cambia en otro dispositivo mientras la editas, VIDA no pisa ese cambio: te avisa para que la vuelvas a abrir.
 
 **Importar rutinas (web → Entrenamiento → Importar rutinas):**
 1. Elige un archivo **Excel (.xlsx)**, **CSV** o **JSON**. Hay una **plantilla para Excel** y un **ejemplo JSON** para descargar, pero no hace falta usarlos.

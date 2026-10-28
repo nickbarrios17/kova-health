@@ -1,9 +1,10 @@
 'use client';
 /** "Entrenamiento" — markup ported from design/prototypes/VIDA Web v2.dc.html (isTrain), on real data. */
-import { formatWeight, toDisplayWeight, weekStart, type WeightUnit } from '@vida/domain';
+import { draftFromRoutine, emptyDraft, formatWeight, newId, toDisplayWeight, weekStart, type RoutineDraft, type WeightUnit } from '@vida/domain';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
+import { RoutineEditor } from '@/components/RoutineEditor';
 import { vida } from '@/lib/client';
 import { chip, dayMonth, dur, hm, isoDays, nf, shortDate } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -26,6 +27,8 @@ export default function EntrenamientoPage() {
   const units: WeightUnit = prefs!.weight_unit;
   const fw = (kg: number) => formatWeight(kg, units);
   const [ex, setEx] = useState<string | null>(null);
+  const [editing, setEditing] = useState<RoutineDraft | null>(null);
+  const [copying, setCopying] = useState<string | null>(null);
 
   const q = useAsync(async () => {
     const c = vida();
@@ -103,6 +106,15 @@ export default function EntrenamientoPage() {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
         <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {editing ? (
+            <RoutineEditor key={editing.id} initial={editing} exercises={exercises} units={units}
+              onClose={(changed) => { setEditing(null); if (changed) q.reload(); }} />
+          ) : (
+          <>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <button className="btn btn-primary" onClick={() => setEditing(emptyDraft())}><i className="ph ph-plus" />Nueva rutina</button>
+            <Link className="btn btn-secondary" href="/importar"><i className="ph ph-upload-simple" />Importar</Link>
+          </div>
           {routines.length === 0 ? (
             <EmptyState icon="ph ph-barbell" title="Aún no tienes rutinas">Importa tu planilla (Excel, CSV o JSON) y aparecerán aquí, en el teléfono y en el reloj.</EmptyState>
           ) : (
@@ -118,13 +130,27 @@ export default function EntrenamientoPage() {
                     <span style={{ color: 'var(--color-neutral-400)' }}>{it.scheme} · {it.w}</span>
                   </div>
                 ))}
+                <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
+                  <button className="btn btn-ghost" style={{ fontSize: 13 }}
+                    onClick={() => setEditing(draftFromRoutine(r, Object.fromEntries(exercises.map((e) => [e.id, e.name]))))}>
+                    <i className="ph ph-pencil-simple" />Editar
+                  </button>
+                  <button className="btn btn-ghost" style={{ fontSize: 13 }} disabled={copying === r.id}
+                    onClick={async () => {
+                      setCopying(r.id);
+                      try { await vida().routines.duplicate(r.id, newId(), (r.name + ' (copia)').slice(0, 80)); q.reload(); } finally { setCopying(null); }
+                    }}>
+                    <i className={copying === r.id ? 'ph ph-circle-notch vida-spin' : 'ph ph-copy'} />Duplicar
+                  </button>
+                </div>
               </div>
             ))
           )}
           <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--color-neutral-400)', display: 'flex', gap: 6, textWrap: 'pretty' }}>
             <i className="ph ph-device-mobile" style={{ marginTop: 2 }} />Las rutinas se sincronizan con el teléfono y el reloj.
           </span>
-          <Link className="btn btn-secondary" href="/importar" style={{ alignSelf: 'flex-start' }}><i className="ph ph-upload-simple" />Importar rutinas</Link>
+          </>
+          )}
         </div>
 
         <div style={{ flex: '2 1 440px', minWidth: 0, padding: '16px 18px', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 }}>
