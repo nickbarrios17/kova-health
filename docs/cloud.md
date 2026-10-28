@@ -60,7 +60,7 @@ Una sola vez, el propietario inicia sesión:
 npx vercel login
 ```
 
-Despliegue, desde la raíz del repositorio (la raíz ya está vinculada al proyecto `vida`; `.vercel/` está fuera de git):
+Despliegue **automático**: el repositorio de GitHub está conectado al proyecto (28/10/2026), así que cada push a `master` publica la web en producción y cada push a otra rama crea una vista previa. Para publicar a mano, desde la raíz del repositorio (ya vinculada al proyecto `vida`; `.vercel/` está fuera de git):
 
 ```bash
 npx vercel deploy --prod
