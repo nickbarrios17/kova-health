@@ -238,7 +238,7 @@ private fun VidaWatch(store: Store, api: VidaApi) {
                 when {
                     l.pausedAt != null -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Label("Sesión en pausa", TextC, 18, FontWeight.Medium)
-                        Label("${l.doneSets} series hechas", N400, 13)
+                        Label(if (l.doneSets == 1) "1 serie hecha" else "${l.doneSets} series hechas", N400, 13)
                         Pill("Reanudar", primary = true) {
                             save(l.copy(pausedAt = null, pausedMs = l.pausedMs + (System.currentTimeMillis() - l.pausedAt)))
                             queue("transition_session", transitionParams(l.id, "resume"))
@@ -341,7 +341,7 @@ private fun VidaWatch(store: Store, api: VidaApi) {
             is Screen.Done -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Label("✓", Ok, 30)
                 Label("Sesión completada", TextC, 18, FontWeight.Medium)
-                Label("${s.sets} series · " + (if (unit == "kg") "${s.volumeKg.roundToInt()} kg" else "${(s.volumeKg * LB).roundToInt()} lb"), N400, 13)
+                Label(series(s.sets) + " · " + (if (unit == "kg") "${s.volumeKg.roundToInt()} kg" else "${(s.volumeKg * LB).roundToInt()} lb"), N400, 13)
                 SyncLine(pending, offline)
                 Pill("Listo", small = true) { screen = Screen.Home }
             }
@@ -380,6 +380,7 @@ internal fun startParams(l: Live, r: Routine, deviceId: String, tz: String): JSO
 private fun transitionParams(id: String, action: String) =
     JSONObject().put("p_id", id).put("p_action", action).put("p_at", Instant.now().toString())
 
+private fun series(n: Int) = if (n == 1) "1 serie" else "$n series"
 private fun clock(s: Long) = "${s / 60}:${(s % 60).toString().padStart(2, '0')}"
 private fun fmt(v: Double) = if (v % 1.0 == 0.0) v.toInt().toString() else v.toString().replace('.', ',')
 
