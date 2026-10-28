@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private data class Routine(val id: String, val name: String, val days: List<Int>, val items: JSONArray)
+internal data class Routine(val id: String, val name: String, val days: List<Int>, val items: JSONArray)
 
 @Composable
 private fun VidaWatch(store: Store, api: VidaApi) {
@@ -349,7 +349,7 @@ private fun VidaWatch(store: Store, api: VidaApi) {
     }
 }
 
-private fun startSession(r: Routine, names: Map<String, String>, lastKg: Map<String, Double>): Live {
+internal fun startSession(r: Routine, names: Map<String, String>, lastKg: Map<String, Double>): Live {
     val items = (0 until r.items.length()).map { r.items.getJSONObject(it) }.sortedBy { it.getInt("position") }
     return Live(
         id = UUID.randomUUID().toString(), name = r.name, startedAt = System.currentTimeMillis(), pausedAt = null, pausedMs = 0, cur = 0, restEndsAt = null,
@@ -364,7 +364,7 @@ private fun startSession(r: Routine, names: Map<String, String>, lastKg: Map<Str
 }
 
 /** start_session with the client-built snapshot, so sets recorded offline reference valid ids. */
-private fun startParams(l: Live, r: Routine, deviceId: String, tz: String): JSONObject {
+internal fun startParams(l: Live, r: Routine, deviceId: String, tz: String): JSONObject {
     val items = (0 until r.items.length()).map { r.items.getJSONObject(it) }.sortedBy { it.getInt("position") }
     val ex = JSONArray()
     l.exercises.forEachIndexed { i, e ->

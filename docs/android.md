@@ -132,6 +132,25 @@ cd "/c/Users/nicol/Desktop/Proyectos personales/VIDA HEALT/apps/watch" && JAVA_H
 - Resultado: `apps/watch/app/build/outputs/apk/release/app-release.apk`.
 - También se puede abrir `apps/watch` en Android Studio y usar **Run** con el reloj conectado por ADB.
 
+### Tests en el reloj
+`app/src/androidTest/.../StoreTest.kt` corre en el propio reloj: outbox (orden, errores de red, rechazos), persistencia del entreno en curso y armado de la sesión desde una rutina. Usa su propio archivo de preferencias (`vida-test`), así que no toca la sesión ni los datos de la app.
+
+No uses `connectedDebugAndroidTest`: al terminar desinstala la app y cierra la sesión del reloj. En su lugar (Git Bash, en `apps/watch`, con el reloj conectado):
+
+```bash
+./gradlew assembleDebug assembleDebugAndroidTest assembleRelease
+```
+
+```bash
+ADB="/c/Users/nicol/AppData/Local/Android/Sdk/platform-tools/adb.exe"; "$ADB" install -r app/build/outputs/apk/debug/app-debug.apk && "$ADB" install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk && "$ADB" shell am instrument -w com.vida.health.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+```bash
+ADB="/c/Users/nicol/AppData/Local/Android/Sdk/platform-tools/adb.exe"; "$ADB" uninstall com.vida.health.test; "$ADB" install -r app/build/outputs/apk/release/app-release.apk
+```
+
+Con más de un dispositivo conectado, agrega `-s <serie del reloj>` después de `"$ADB"` (la serie sale en `adb devices`). Las versiones debug y release se firman con la misma clave, así que `install -r` conserva la sesión.
+
 ### Arquitectura del reloj
 | Archivo | Rol |
 | --- | --- |

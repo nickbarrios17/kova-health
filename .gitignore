@@ -19,3 +19,4 @@ apps/watch/.kotlin/
 apps/watch/build/
 apps/watch/app/build/
 dist/
+.vercel/
