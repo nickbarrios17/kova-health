@@ -79,6 +79,12 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 - **Energy** (`energy_kcal`) is stored only when a client provides it. `energy_is_estimated` defaults to `true` and must be labelled "estimado" in the UI.
 - All of these are computed on read (views) and never stored.
 
+## Routine import (`packages/domain/src/routineImport.ts`, web page `/importar`)
+- Files are read in the browser: `.xlsx` with `read-excel-file` (pinned 9.3.12), `.csv`/`.tsv` with `parseCsv` (detects `;` from Spanish Excel), `.json` with `jsonToRoutines` (Spanish or English keys). `.xls` is rejected with a message.
+- `detectColumns` finds the header row (first 15 rows) by synonyms; the user can change the header row and every column in the UI. `planReady` needs an exercise column.
+- `sheetToRoutines`: a routine per sheet, per value of a «Rutina» column, or per lone title row («Día A», «Lunes – Pierna»). Cells: «4x8», «8-10», «12/10/8», rest «90», «90s», «1:30», «2 min» (a bare number ≤ 10 means minutes), weight «60 kg», «135 lb» (stored in kg), days «Lun, Jue», «Mon/Thu», «L X V». Missing sets default to 3; out-of-range values are dropped. Each such case is listed as an issue in the preview.
+- `matchExercise` links to the catalog by exact name, common aliases (bench press → press de banca…) or a unique partial match; otherwise the preview offers to create a user exercise. Saving creates the new exercises, then calls `save_routine` once per routine with new ids.
+
 ## Nutrition rules
 - A food's nutrients are given for `ref_amount` of `ref_unit` (`g`, `ml` or `serving`). Portions without known grams ("1 mediano") stay as servings; grams are never invented.
 - **Provenance** (`data_source`):

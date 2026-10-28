@@ -17,7 +17,7 @@ const NAV: Array<[href: string, label: string, icon: string]> = [
   ['/entrenamiento', 'Entrenamiento', 'ph-barbell'],
   ['/coach', 'Coach', 'ph-lightbulb-filament'],
 ];
-const TITLES: Record<string, string> = { '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/coach': 'Coach' };
+const TITLES: Record<string, string> = { '/importar': 'Importar rutinas', '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/coach': 'Coach' };
 const DEVICE_ICON: Record<string, string> = { watch: 'ph ph-watch', mobile: 'ph ph-device-mobile', web: 'ph ph-desktop' };
 const DEVICE_KEY = 'vida:web-device-id';
 

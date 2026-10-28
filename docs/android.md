@@ -133,7 +133,7 @@ cd "/c/Users/nicol/Desktop/Proyectos personales/VIDA HEALT/apps/watch" && JAVA_H
 - También se puede abrir `apps/watch` en Android Studio y usar **Run** con el reloj conectado por ADB.
 
 ### Tests en el reloj
-`app/src/androidTest/.../StoreTest.kt` corre en el propio reloj: outbox (orden, errores de red, rechazos), persistencia del entreno en curso y armado de la sesión desde una rutina. Usa su propio archivo de preferencias (`vida-test`), así que no toca la sesión ni los datos de la app.
+`app/src/androidTest/.../StoreTest.kt` corre en el propio reloj: outbox (orden, errores de red, rechazos), persistencia del entreno en curso y armado de la sesión desde una rutina. También cubre que un campo nulo del servidor (`short_name` de los ejercicios propios) no se muestre como el texto «null». Usa su propio archivo de preferencias (`vida-test`), así que no toca la sesión ni los datos de la app.
 
 No uses `connectedDebugAndroidTest`: al terminar desinstala la app y cierra la sesión del reloj. En su lugar (Git Bash, en `apps/watch`, con el reloj conectado):
 

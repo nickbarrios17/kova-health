@@ -91,7 +91,17 @@ Teléfono: **Progreso → Cuenta → Borrar mi cuenta y mis datos** → confirma
 - **kg / lb:** el selector de arriba cambia la unidad en todos tus dispositivos.
 
 ### Entrenar
-**Rutinas.** Las rutinas aparecen en «Entrenar» (teléfono) y «Entrenamiento» (web), con sus días (por ejemplo «Lun · Jue»). Por ahora se crean desde la base de datos o con la API; el editor de rutinas en la app es trabajo pendiente.
+**Rutinas.** Las rutinas aparecen en «Entrenar» (teléfono), «Entrenamiento» (web) y en el reloj, con sus días (por ejemplo «Lun · Jue»). Se cargan importando una planilla desde la web; el editor de rutinas dentro de la app es trabajo pendiente.
+
+**Importar rutinas (web → Entrenamiento → Importar rutinas):**
+1. Elige un archivo **Excel (.xlsx)**, **CSV** o **JSON**. Hay una **plantilla para Excel** y un **ejemplo JSON** para descargar, pero no hace falta usarlos.
+2. VIDA busca las columnas por nombre, en español o en inglés: «Ejercicio/Exercise», «Series/Sets», «Reps/Repeticiones», «4x8» en una sola celda, «Descanso/Rest» (90, 90s, 1:30, 2 min), «Peso/Kg/Lb» y «Rutina» o «Días» (Lun, Jue / Mon, Thu / L X V). La fila de títulos puede estar más abajo, por ejemplo después del nombre del plan.
+3. Si alguna columna no se reconoce, elígela en los desplegables («esta columna es el ejercicio, esta las series…»).
+4. Cada **hoja** es una rutina, y también cada fila que tenga solo un título («Día A», «Lunes – Pierna», «Push»).
+5. En la **vista previa** puedes cambiar el nombre y los días de cada rutina, dejar alguna fuera y elegir a qué ejercicio de VIDA corresponde cada fila. Los que no existen se crean como ejercicios tuyos. Las dudas («3xAMRAP» sin número de repeticiones) aparecen marcadas.
+6. **Importar** guarda todo. Antes de eso no se guarda nada.
+
+No se leen archivos .xls (Excel antiguo): guárdalos como .xlsx o .csv.
 
 **Sesión en vivo (teléfono):**
 1. **Empezar** en una rutina.

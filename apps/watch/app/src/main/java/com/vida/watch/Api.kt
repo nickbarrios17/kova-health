@@ -40,7 +40,7 @@ class VidaApi(private val store: Store) {
         conn.disconnect()
         if (status in 200..299) return text
         if (status >= 500) throw IOException("server $status")
-        val code = runCatching { JSONObject(text).let { j -> j.optString("error_code").ifBlank { j.optString("code", "") } } }.getOrDefault("")
+        val code = runCatching { JSONObject(text).let { j -> j.str("error_code") ?: j.str("code") ?: "" } }.getOrDefault("")
         throw ApiError(status, code, Errors.message(code, status))
     }
 
@@ -92,7 +92,7 @@ class VidaApi(private val store: Store) {
 
     fun exerciseNames(): Map<String, String> {
         val arr = get("/rest/v1/exercises?select=id,name,short_name&archived_at=is.null&limit=200")
-        return (0 until arr.length()).associate { i -> arr.getJSONObject(i).let { it.getString("id") to it.optString("short_name").ifBlank { it.getString("name") } } }
+        return (0 until arr.length()).associate { i -> arr.getJSONObject(i).let { it.getString("id") to (it.str("short_name") ?: it.getString("name")) } }
     }
 
     /** Top weight of the latest session per exercise (to prefill sets). */
@@ -138,3 +138,6 @@ object Errors {
         else -> if (status == 401) "Inicia sesión de nuevo" else "Algo salió mal"
     }
 }
+
+/** String value, or null when the key is missing, JSON null or blank (optString would return "null"). */
+fun JSONObject.str(key: String): String? = if (isNull(key)) null else optString(key).ifBlank { null }

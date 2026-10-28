@@ -1,6 +1,7 @@
 'use client';
 /** "Entrenamiento" — markup ported from design/prototypes/VIDA Web v2.dc.html (isTrain), on real data. */
 import { formatWeight, toDisplayWeight, weekStart, type WeightUnit } from '@vida/domain';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
 import { vida } from '@/lib/client';
@@ -103,7 +104,7 @@ export default function EntrenamientoPage() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
         <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {routines.length === 0 ? (
-            <EmptyState icon="ph ph-barbell" title="Aún no tienes rutinas">Crea tu primera rutina desde el móvil y aparecerá aquí y en el reloj.</EmptyState>
+            <EmptyState icon="ph ph-barbell" title="Aún no tienes rutinas">Importa tu planilla (Excel, CSV o JSON) y aparecerán aquí, en el teléfono y en el reloj.</EmptyState>
           ) : (
             routines.map((r) => (
               <div key={r.id} style={{ padding: 16, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -121,8 +122,9 @@ export default function EntrenamientoPage() {
             ))
           )}
           <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--color-neutral-400)', display: 'flex', gap: 6, textWrap: 'pretty' }}>
-            <i className="ph ph-device-mobile" style={{ marginTop: 2 }} />Las rutinas se editan en el móvil y se sincronizan con el reloj.
+            <i className="ph ph-device-mobile" style={{ marginTop: 2 }} />Las rutinas se sincronizan con el teléfono y el reloj.
           </span>
+          <Link className="btn btn-secondary" href="/importar" style={{ alignSelf: 'flex-start' }}><i className="ph ph-upload-simple" />Importar rutinas</Link>
         </div>
 
         <div style={{ flex: '2 1 440px', minWidth: 0, padding: '16px 18px', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 }}>
