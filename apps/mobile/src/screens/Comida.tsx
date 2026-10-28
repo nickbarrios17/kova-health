@@ -1,5 +1,7 @@
 /** Food log for today: meals by slot, totals vs goal, search + add (snapshotted on the server). */
-import { addDays, localDate, MEAL_SLOTS, newId, nf, nutritionSourceLabel, scaleNutrients, VidaError, type NutritionSource } from '@vida/domain';
+import {
+  addDays, describeDailyTarget, localDate, MEAL_SLOTS, newId, nf, nutritionSourceLabel, scaleNutrients, VidaError, type NutritionSource,
+} from '@vida/domain';
 import { ForkKnife, MagnifyingGlass, Plus, Trash, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native';
@@ -23,8 +25,17 @@ export function Comida() {
   const [adding, setAdding] = useState<Slot | null>(null);
 
   const q = useAsync(async () => {
-    const [meals, sum] = await Promise.all([vida.nutrition.day(day), vida.summaries.daily(day, day)]);
-    return { meals: meals as Array<{ slot: Slot; meal_items: Item[] }>, s: (sum[0] ?? {}) as Record<string, unknown> };
+    const [meals, sum, energy] = await Promise.all([
+      vida.nutrition.day(day), vida.summaries.daily(day, day),
+      // Today's target follows today's activity; past days keep the saved plan.
+      day === today ? vida.energy.today(today).catch(() => null) : Promise.resolve(null),
+    ]);
+    const s = (sum[0] ?? {}) as Record<string, unknown>;
+    const dynamic = energy?.mode === 'dynamic' ? energy : null;
+    const goal = dynamic
+      ? { kcal: dynamic.kcal, protein: dynamic.proteinG, carbs: dynamic.carbsG, fat: dynamic.fatG }
+      : { kcal: s.kcal_goal == null ? null : n(s.kcal_goal), protein: s.protein_goal_g == null ? null : n(s.protein_goal_g), carbs: s.carbs_goal_g == null ? null : n(s.carbs_goal_g), fat: s.fat_goal_g == null ? null : n(s.fat_goal_g) };
+    return { meals: meals as Array<{ slot: Slot; meal_items: Item[] }>, s, goal, dynamic };
   }, [day]);
 
   const remove = async (id: string) => {
@@ -45,16 +56,19 @@ export function Comida() {
               <T size={13} w="medium" color={c.n300}>{day === today ? 'Hoy' : 'Ayer'}</T>
               <Row style={{ alignItems: 'baseline', gap: 6 }}>
                 <T size={30} w="medium">{q.data!.s.kcal != null ? nf(Math.round(n(q.data!.s.kcal)), 0) : '0'}</T>
-                <T size={13} color={c.n400}>{q.data!.s.kcal_goal != null ? 'de ' + nf(n(q.data!.s.kcal_goal), 0) + ' kcal' : 'kcal'}</T>
+                <T size={13} color={c.n400}>{q.data!.goal.kcal != null ? 'de ' + nf(q.data!.goal.kcal, 0) + ' kcal' : 'kcal'}</T>
               </Row>
               <Row style={{ gap: 16 }}>
-                {[['Proteína', 'protein_g', 'protein_goal_g'], ['Carbos', 'carbs_g', 'carbs_goal_g'], ['Grasa', 'fat_g', 'fat_goal_g']].map(([l, k, g]) => (
+                {([['Proteína', 'protein_g', q.data!.goal.protein], ['Carbos', 'carbs_g', q.data!.goal.carbs], ['Grasa', 'fat_g', q.data!.goal.fat]] as const).map(([l, k, g]) => (
                   <View key={l} style={{ flex: 1 }}>
                     <T size={11} color={c.n400}>{l}</T>
-                    <T size={14} w="medium">{Math.round(n(q.data!.s[k!] ?? 0))}{q.data!.s[g!] != null ? ' / ' + n(q.data!.s[g!]) : ''} g</T>
+                    <T size={14} w="medium">{Math.round(n(q.data!.s[k] ?? 0))}{g != null ? ' / ' + g : ''} g</T>
                   </View>
                 ))}
               </Row>
+              {q.data!.dynamic?.day ? (
+                <T size={12} color={c.n300}>Meta de hoy según tu actividad: {describeDailyTarget(q.data!.dynamic.day)} Se actualiza a medida que te movés.</T>
+              ) : null}
               {q.data!.s.nutrition_has_unverified ? <Notice text="Incluye valores introducidos por ti o estimados." /> : null}
             </Card>
 

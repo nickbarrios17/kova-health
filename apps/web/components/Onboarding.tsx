@@ -5,9 +5,9 @@
  */
 import {
   ACTIVITY_LABEL, ageFromBirthYear, energyTarget, fromDisplayWeight, GOAL_LABEL, localDate, newId, PACE_ADJUST, PACE_LABEL,
-  SEX_LABEL, toDisplayWeight, VidaError, type ActivityLevel, type GoalPace, type Sex, type WeightGoal,
+  resolveBodyFat, RMR_METHOD_LABEL, SEX_LABEL, toDisplayWeight, VidaError, type ActivityLevel, type GoalPace, type Sex, type WeightGoal,
 } from '@vida/domain';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { vida } from '@/lib/client';
 import { nf } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -58,10 +58,26 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [measurementId] = useState(newId);
+  // Optional body composition: a body fat % (from the watch or typed) or tape measurements.
+  const [fatPct, setFatPct] = useState('');
+  const [neck, setNeck] = useState('');
+  const [waist, setWaist] = useState('');
+  const [hip, setHip] = useState('');
+  const [loaded, setLoaded] = useState<{ fat: string; fatFromDevice: boolean; neck: string; waist: string; hip: string } | null>(null);
+  useEffect(() => {
+    vida().body.composition().then((c) => {
+      const recent = c.fat && (Date.now() - Date.parse(c.fat.measuredAt)) / 86_400_000 <= 30 ? c.fat : null;
+      const str = (v: number | undefined) => (v == null ? '' : String(v));
+      const l = { fat: str(recent?.value), fatFromDevice: !!recent && recent.source !== 'manual', neck: str(c.neck?.value), waist: str(c.waist?.value), hip: str(c.hip?.value) };
+      setLoaded(l);
+      setFatPct(l.fat); setNeck(l.neck); setWaist(l.waist); setHip(l.hip);
+    }).catch(() => undefined);
+  }, []);
 
   const by = num(birthYear), h = num(height), wDisp = num(weight);
   const weightKg = wDisp == null ? null : fromDisplayWeight(wDisp, units);
   const age = by == null ? null : ageFromBirthYear(by, today);
+  const bodyFat = resolveBodyFat({ sex, heightCm: h, typedPct: num(fatPct), neckCm: num(neck), waistCm: num(waist), hipCm: num(hip) });
 
   const step2Error = (() => {
     if (age == null || age < 14 || age > 100) return 'Revisa el año de nacimiento: necesitas tener entre 14 y 100 años.';
@@ -71,13 +87,17 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
     if (!activity) return 'Elige tu nivel de actividad.';
     if (!goal) return 'Elige tu objetivo.';
     if (goal !== 'maintain' && !pace) return 'Elige un ritmo para tu objetivo.';
+    if (fatPct.trim() && !(num(fatPct)! >= 3 && num(fatPct)! <= 60)) return 'El % de grasa va de 3 a 60.';
     return null;
   })();
 
   const target = useMemo(() => {
     if (step2Error) return null;
-    return energyTarget({ sex: sex!, age: age!, heightCm: h!, weightKg: weightKg!, activity: activity!, goal: goal!, pace: goal === 'maintain' ? null : pace });
-  }, [step2Error, sex, age, h, weightKg, activity, goal, pace]);
+    return energyTarget({
+      sex: sex!, age: age!, heightCm: h!, weightKg: weightKg!, activity: activity!, goal: goal!, pace: goal === 'maintain' ? null : pace,
+      bodyFatPct: bodyFat?.pct ?? null,
+    });
+  }, [step2Error, sex, age, h, weightKg, activity, goal, pace, bodyFat?.pct]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -96,6 +116,18 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
     if ([vals.proteinG, vals.carbsG, vals.fatG].some((v) => v == null || v < 0)) return setError('Completa proteína, carbohidratos y grasa.');
     setBusy(true);
     try {
+      // Measurements the user typed or changed are saved too, so the daily target can use them later.
+      const at = new Date().toISOString();
+      const rows: Array<{ metric: 'body_fat_pct' | 'neck_cm' | 'waist_cm' | 'hip_cm'; text: string; was: string | undefined }> = [
+        { metric: 'body_fat_pct', text: fatPct, was: loaded?.fat },
+        { metric: 'neck_cm', text: neck, was: loaded?.neck },
+        { metric: 'waist_cm', text: waist, was: loaded?.waist },
+        { metric: 'hip_cm', text: hip, was: loaded?.hip },
+      ];
+      const changed = rows.filter((r) => r.text.trim() && r.text.trim() !== (r.was ?? '').trim() && num(r.text) != null);
+      if (changed.length) {
+        await vida().body.record(changed.map((r) => ({ id: newId(), metric: r.metric, value: num(r.text)!, measured_at: at, time_zone: p.time_zone })));
+      }
       await vida().profile.completeOnboarding({
         displayName: name.trim() || null, birthYear: by!, heightCm: h!, weightKg: Math.round(weightKg! * 10) / 10, sex: sex!,
         activity: activity!, goal: goal!, pace: goal === 'maintain' ? null : pace, measurementId,
@@ -160,6 +192,34 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
               <Choice name="pace" label="Ritmo" value={pace} onChange={setPace}
                 options={(['light', 'moderate', 'aggressive'] as GoalPace[]).map((k) => [k, PACE_LABEL[k] + ' · ' + paceHint(goal, k)])} />
             ) : null}
+            <fieldset className="vida-choice-group" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 'var(--radius-md)', background: 'var(--color-bg)' }}>
+              <legend style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text)', float: 'left', marginBottom: 2 }}>Composición corporal (opcional)</legend>
+              <span style={{ fontSize: 12, color: 'var(--color-neutral-400)', clear: 'both' }}>
+                Con tu % de grasa el cálculo usa tu masa magra, que es más preciso. Si no lo sabés, con un centímetro: cuello, cintura a la altura del ombligo{sex === 'female' ? ' y cadera' : ''}.
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10 }}>
+                <div className="field">
+                  <label htmlFor="ob-fat">% de grasa</label>
+                  <input id="ob-fat" className="input" inputMode="decimal" maxLength={4} placeholder="18" value={fatPct} onChange={(e) => setFatPct(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="ob-neck">Cuello (cm)</label>
+                  <input id="ob-neck" className="input" inputMode="decimal" maxLength={5} value={neck} onChange={(e) => setNeck(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label htmlFor="ob-waist">Cintura (cm)</label>
+                  <input id="ob-waist" className="input" inputMode="decimal" maxLength={5} value={waist} onChange={(e) => setWaist(e.target.value)} />
+                </div>
+                {sex === 'female' ? (
+                  <div className="field">
+                    <label htmlFor="ob-hip">Cadera (cm)</label>
+                    <input id="ob-hip" className="input" inputMode="decimal" maxLength={5} value={hip} onChange={(e) => setHip(e.target.value)} />
+                  </div>
+                ) : null}
+              </div>
+              {loaded?.fatFromDevice && fatPct === loaded.fat ? <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>El % de grasa lo midió tu reloj (Health Connect).</span> : null}
+              {bodyFat?.source === 'tape' ? <span style={{ fontSize: 12, color: 'var(--color-accent-300)' }}>Según tus medidas: {String(bodyFat.pct).replace('.', ',')} % de grasa (estimación).</span> : null}
+            </fieldset>
           </>
         ) : (
           <>
@@ -180,8 +240,11 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
                   ))}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
-                  Gasto en reposo {nf(target!.bmr, 0)} kcal × actividad = {nf(target!.tdee, 0)} kcal
+                  Gasto en reposo {nf(target!.bmr, 0)} kcal ({RMR_METHOD_LABEL[target!.method]}{bodyFat ? ', ' + String(bodyFat.pct).replace('.', ',') + ' % de grasa' : ''}) × actividad = {nf(target!.tdee, 0)} kcal
                   {target!.adjust ? (target!.adjust < 0 ? ' − ' : ' + ') + Math.round(Math.abs(target!.adjust) * 100) + '% por tu objetivo' : ''}.
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
+                  Es tu meta de un día típico. Cada día se ajusta a lo que te moviste: los días con más pasos o entrenamiento tenés más margen.
                 </div>
                 {target!.floored ? (
                   <div style={{ fontSize: 12, color: 'var(--vida-warn)' }}>Subimos la meta al mínimo recomendado sin supervisión profesional.</div>
@@ -200,7 +263,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
             <button type="button" className="btn btn-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setManual(!manual)}>
               <i className={manual ? 'ph ph-calculator' : 'ph ph-pencil-simple'} />{manual ? 'Usar la estimación' : 'Editar a mano'}
             </button>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-neutral-400)' }}>Es una estimación general (fórmula Mifflin-St Jeor), no una indicación médica.</p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-neutral-400)' }}>Es una estimación general, no una indicación médica.</p>
           </>
         )}
 

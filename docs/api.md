@@ -99,13 +99,22 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
   Show non-verified values with `nutritionSourceLabel()`. Recipes take their least reliable ingredient's source.
 - **Snapshots.** `log_food` freezes kcal and macros for the logged quantity. Later edits to the food never change past days.
 - **Goals** live in `nutrition_goals`. A change adds a row from a date, so past days keep their goal. `is_estimated = true` means VIDA calculated it during onboarding (shown as an estimate); `false` means the user typed it.
-- **Energy estimate** (`energyTarget` in `@vida/domain`, run on the client, stored by `complete_onboarding`):
-  - Resting energy, Mifflin-St Jeor: `10 × kg + 6.25 × cm − 5 × age + 5` (male) or `− 161` (female). Sex is required for this formula and is not used for anything else.
-  - Total = resting × activity: sedentary 1.2, light 1.375, moderate 1.55, very active 1.725.
+- **Energy** (`packages/domain/src/energy.ts`; the result is always shown as an estimate):
+  - **Resting energy, best available method** (`bestRestingEnergy`):
+    1. Body fat % known (watch bioimpedance via Health Connect ≤ 30 days, typed, or tape measurements ≤ 90 days) → **Cunningham (1980)**: `500 + 22 × lean mass kg`.
+    2. Otherwise, activity level «muy activa» → **Ten-Haaf & Weijs (2014)**: `11.936 × kg + 587.728 × m − 8.129 × age + 191.027 (male) + 29.279`. Most precise equation in athletes (O'Neill 2023 meta-analysis).
+    3. Otherwise → **Mifflin-St Jeor (1990)**: `10 × kg + 6.25 × cm − 5 × age + 5` (male) or `− 161` (female). Best general equation without body composition (Frankenfield 2005).
+    Any of them can be off by about ±10% for one person; calibrating with the weight trend is future work.
+  - **Tape measurements** (`navyBodyFat`, US Navy / Hodgdon & Beckett): neck and waist (at the navel), plus hip for women, in cm. Typical error vs DXA: a few percentage points, larger for very lean or very heavy people.
+  - **Onboarding (typical day)** (`energyTarget`): resting × activity factor (sedentary 1.2, light 1.375, moderate 1.55, very active 1.725), then the goal adjustment.
+  - **Daily target** (`dailyTarget`, loaded by `energy.today`): resting × 1.2 (sedentary day, includes ~3,000 steps) + that day's activity, of which only 70% is credited and at most +1,200 kcal:
+    - steps above 3,000 × kg × 0.0004 kcal (net of resting);
+    - workouts completed in VIDA: 3.5 METs above resting × kg × active hours (strength training ≈ 4.5 METs);
+    - missing steps (no watch data) use the 7-day average, never zero, and the UI says so.
+    It applies when the plan was calculated by VIDA (`nutrition_goals.is_estimated`); a plan typed by the user stays fixed. Protein and fat come from the plan; carbs absorb the day's difference.
   - Goal adjustment: lose −10 / −20 / −25 % (liviano / moderado / agresivo), maintain 0, gain +5 / +10 / +15 %. Rounded to 50 kcal and never below 1,200 kcal (female) or 1,500 kcal (male).
   - Macros: protein 2.0 g/kg when losing, 1.8 g/kg otherwise; fat the larger of 0.8 g/kg and 25 % of energy; carbs the rest.
-  - Age comes from the birth year only, so it can be one year high.
-  - It is a general estimate, not medical advice; the user can type their own numbers instead.
+  - Sex is required for the formulas and is not used for anything else. Age comes from the birth year only, so it can be one year high.
 - The system food catalog is **empty** until a verified source is chosen (e.g. USDA FoodData Central or BEDCA), with its licence checked.
 
 ## Habit rules

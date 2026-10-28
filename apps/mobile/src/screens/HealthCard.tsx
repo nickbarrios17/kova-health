@@ -52,17 +52,27 @@ export function HealthCard({ onSynced }: { onSynced: () => void }) {
         </View>
       ) : granted === 0 ? (
         <View style={{ gap: 8 }}>
-          <T size={13} color={c.n400}>Importa pasos, sueño, peso, frecuencia cardíaca en reposo y HRV desde tu reloj o tus apps de salud. Solo lectura: VIDA no escribe en Health Connect.</T>
+          <T size={13} color={c.n400}>Importa pasos, sueño, peso, % de grasa corporal, frecuencia cardíaca en reposo y HRV desde tu reloj o tus apps de salud. Solo lectura: VIDA no escribe en Health Connect.</T>
           <Button label="Conectar" icon={Link} busy={busy} onPress={() => run(async () => {
             const n = await hc.connect();
             if (n === 0) return 'No diste permiso a ningún dato. Puedes cambiarlo cuando quieras.';
             await hc.sync(prefs!.time_zone, deviceId, 30);
-            return `Conectado (${n} de 5 tipos de datos).`;
+            return `Conectado (${n} de ${hc.PERMISSION_COUNT} tipos de datos).`;
           })} />
         </View>
       ) : (
         <View style={{ gap: 8 }}>
-          <T size={13} color={c.n400}>Conectado · {granted} de 5 tipos de datos · Última sincronización: {last ? ago(last).toLowerCase() : 'nunca'}</T>
+          <T size={13} color={c.n400}>Conectado · {granted} de {hc.PERMISSION_COUNT} tipos de datos · Última sincronización: {last ? ago(last).toLowerCase() : 'nunca'}</T>
+          {granted < hc.PERMISSION_COUNT ? (
+            <>
+              <Notice text="Hay datos nuevos para importar, como el % de grasa de tu reloj: mejoran el cálculo de tu meta diaria." />
+              <Button label="Permitir los datos que faltan" icon={Link} busy={busy} onPress={() => run(async () => {
+                const n = await hc.connect();
+                await hc.sync(prefs!.time_zone, deviceId, 30);
+                return `Conectado (${n} de ${hc.PERMISSION_COUNT} tipos de datos).`;
+              })} />
+            </>
+          ) : null}
           <Button variant="secondary" label="Sincronizar ahora" icon={ArrowsClockwise} busy={busy} onPress={doSync} />
           <Button variant="ghost" label="Cambiar permisos" onPress={() => hc.openSettings()} style={{ alignSelf: 'flex-start' }} />
         </View>
