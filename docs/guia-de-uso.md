@@ -61,7 +61,11 @@ La primera vez que entrás, en la web o en el teléfono, VIDA te pide tres pasos
 2. **Tus datos:** año de nacimiento, altura, peso actual, sexo, nivel de actividad y objetivo (bajar de peso, mantener o subir de peso). Para bajar o subir elegís un ritmo: **liviano, moderado o agresivo**.
 3. **Tu meta diaria:** VIDA calcula las calorías y los macros (proteína, carbohidratos y grasa). Podés guardarla tal cual o tocar **Editar a mano** y poner tus propios números.
 
-La meta es una **estimación** (fórmula Mifflin-St Jeor), no una indicación médica. Para cambiarla después: en el teléfono, **Progreso → Cuenta → Recalcular mi meta diaria**; en la web, **Recalcular meta** abajo en la barra lateral. Los días anteriores conservan la meta que tenían.
+En el paso 2 también podés completar tu **composición corporal (opcional)**: el % de grasa (si tu reloj lo mide, aparece solo) o, con un centímetro, cuello y cintura a la altura del ombligo (y cadera, en mujeres). Con eso VIDA usa una fórmula basada en tu masa magra, que es más precisa.
+
+**Tu meta cambia cada día:** la que ves en el paso 3 es la de un día típico. En **Comida** y **Hoy**, la meta de hoy parte de tu gasto en reposo y suma lo que te moviste (pasos y entrenamientos registrados), así que un día tranquilo te da menos margen y uno activo, más. Debajo del total de Comida se explica cómo se calculó. Si ese día el reloj no mandó datos, se usa tu promedio de la semana. Si pusiste tu meta a mano, queda fija.
+
+La meta es una **estimación**, no una indicación médica. Para cambiarla después: en el teléfono, **Progreso → Cuenta → Recalcular mi meta diaria**; en la web, **Recalcular meta** abajo en la barra lateral. Los días anteriores conservan la meta que tenían.
 
 ### Olvidé mi contraseña
 **Olvidé mi contraseña** → tu correo → abre el enlace del correo → elige una contraseña nueva en la web (https://vida-nine-iota.vercel.app).
@@ -177,15 +181,17 @@ Health Connect es el «almacén» de salud de Android, donde escriben Samsung He
 
 | Dato | Para qué se usa |
 | --- | --- |
-| Pasos | Tarjeta Pasos, tendencias |
+| Pasos | Tarjeta Pasos, tendencias, meta de calorías del día |
 | Sueño (con fases si las hay) | Tarjeta Sueño, Coach, «sueño previo» de cada entreno |
 | Peso | Cuerpo, tendencias, proyección de peso |
 | Frecuencia en reposo | Semana en números, tendencias |
 | HRV (RMSSD) | Corazón, tendencias |
+| % de grasa corporal | Gasto en reposo con tu masa magra (fórmula más precisa) |
 
 1. **Progreso → Health Connect → Conectar** → elige qué datos permitir.
 2. VIDA importa los últimos 30 días y, después, se actualiza sola cada vez que abres la app (o con **Sincronizar ahora**).
 3. **Cambiar permisos** abre los ajustes de Health Connect.
+4. Si ya lo tenías conectado de antes, aparece **Permitir los datos que faltan** para sumar el % de grasa. En Samsung Health, el % de grasa sale de **Composición corporal** del reloj: medilo siempre en las mismas condiciones (por ejemplo, a la mañana y en ayunas) y Samsung Health lo comparte con Health Connect (Samsung Health → Ajustes → Health Connect).
 
 En Android 13 o anterior hace falta instalar «Health Connect» desde Play Store. En Android 14 o superior ya viene con el sistema.
 

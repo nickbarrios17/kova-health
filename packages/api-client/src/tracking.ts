@@ -2,7 +2,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   addDays,
+  ageFromBirthYear,
+  bestRestingEnergy,
+  dailyTarget,
   generateInsights,
+  navyBodyFat,
+  type ActivityLevel,
+  type DailyTarget,
+  type GoalPace,
+  type RestingEnergy,
+  type Sex,
+  type WeightGoal,
   type DaySummary,
   type HabitDayLite,
   BodyMeasurementSchema,
@@ -28,6 +38,21 @@ import {
 } from '@vida/domain';
 import type { z } from 'zod';
 import type { SupabaseResult } from './errors.js';
+
+/** Result of `energy.today`: the target to show today and how it was obtained. */
+export interface EnergyToday {
+  /** dynamic = resting energy + today's activity; fixed = the numbers the user typed (or missing profile data). */
+  mode: 'dynamic' | 'fixed';
+  /** The saved plan (nutrition_goals row in effect). */
+  plan: { kcal: number | null; proteinG: number | null; carbsG: number | null; fatG: number | null };
+  kcal: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+  rmr: RestingEnergy | null;
+  bodyFat: { pct: number; source: 'device' | 'manual' | 'tape'; measuredAt: string } | null;
+  day: DailyTarget | null;
+}
 
 export interface TrackingDeps {
   sb: SupabaseClient;
@@ -153,6 +178,18 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
       ),
     remove: (id: string) =>
       call(sb.from('body_measurements').update({ deleted_at: now() }).eq('id', id).select().single()),
+    /** Latest body fat % (with its source) and tape measurements, for the energy formulas. */
+    composition: async () => {
+      const latest = async (metric: string) => {
+        const rows = (await call(
+          sb.from('body_measurements').select('value, measured_at, source').eq('metric', metric).is('deleted_at', null)
+            .order('measured_at', { ascending: false }).limit(1),
+        )) as Array<{ value: number | string; measured_at: string; source: string }>;
+        return rows[0] ? { value: Number(rows[0].value), measuredAt: rows[0].measured_at, source: rows[0].source } : null;
+      };
+      const [fat, neck, waist, hip] = await Promise.all([latest('body_fat_pct'), latest('neck_cm'), latest('waist_cm'), latest('hip_cm')]);
+      return { fat, neck, waist, hip };
+    },
   };
 
   const health = {
@@ -239,5 +276,54 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
     },
   };
 
-  return { nutrition, habits, body, health, goals, summaries, insights };
+  const energy = {
+    /**
+     * Today's nutrition target. Dynamic (resting energy + today's activity, docs/api.md §Energy) when
+     * the plan was calculated by VIDA; the user's own numbers when they typed them; null without a plan.
+     * Body fat comes from the latest measurement (≤ 30 days), else from tape measurements (≤ 90 days).
+     */
+    today: async (today: string): Promise<EnergyToday | null> => {
+      const [profiles, goals, days, weights, comp] = await Promise.all([
+        call(sb.from('profiles').select('sex, birth_year, height_cm, activity_level, weight_goal, goal_pace').limit(1)),
+        call(sb.from('nutrition_goals').select('*').lte('effective_from', today).order('effective_from', { ascending: false }).limit(1)),
+        rpc<Array<Record<string, unknown>>>('daily_summaries', { p_from: addDays(today, -7), p_to: today }),
+        body.history('weight_kg', 1),
+        body.composition(),
+      ]);
+      const p = (profiles as Array<Record<string, unknown>>)[0];
+      const g = (goals as Array<Record<string, unknown>>)[0];
+      if (!g) return null;
+      const n = (v: unknown) => (v == null ? null : Number(v));
+      const plan = { kcal: n(g.kcal), proteinG: n(g.protein_g), carbsG: n(g.carbs_g), fatG: n(g.fat_g) };
+      const w = n((weights as Array<{ value: unknown }>)[0]?.value);
+      const { fat, neck, waist, hip } = comp;
+      if (!g.is_estimated || !p?.sex || !p.birth_year || !p.height_cm || !p.weight_goal || w == null) {
+        return { mode: 'fixed', plan, kcal: plan.kcal, proteinG: plan.proteinG, carbsG: plan.carbsG, fatG: plan.fatG, rmr: null, bodyFat: null, day: null };
+      }
+      const sex = p.sex as Sex;
+      const heightCm = Number(p.height_cm);
+      const ageDays = (iso: string) => (Date.parse(today) - Date.parse(iso.slice(0, 10))) / 86_400_000;
+      let bodyFat: EnergyToday['bodyFat'] = null;
+      if (fat && ageDays(fat.measuredAt) <= 30) {
+        bodyFat = { pct: fat.value, source: fat.source === 'manual' ? 'manual' : 'device', measuredAt: fat.measuredAt };
+      } else if (neck && waist && ageDays(waist.measuredAt) <= 90) {
+        const pct = navyBodyFat(sex, heightCm, neck.value, waist.value, hip?.value ?? null);
+        if (pct != null) bodyFat = { pct, source: 'tape', measuredAt: waist.measuredAt };
+      }
+      const rmr = bestRestingEnergy({
+        sex, age: ageFromBirthYear(Number(p.birth_year), today), heightCm, weightKg: w,
+        activity: p.activity_level as ActivityLevel | null, bodyFatPct: bodyFat?.pct ?? null,
+      });
+      const todayRow = days.find((d) => String(d.local_date) === today);
+      const past = days.filter((d) => String(d.local_date) !== today && d.steps != null).map((d) => Number(d.steps));
+      const day = dailyTarget({
+        sex, restingKcal: rmr.kcal, weightKg: w, goal: p.weight_goal as WeightGoal, pace: (p.goal_pace as GoalPace | null) ?? null,
+        steps: n(todayRow?.steps), avgSteps7d: past.length ? past.reduce((a, b) => a + b, 0) / past.length : null,
+        workoutMinutes: (n(todayRow?.workout_active_s) ?? 0) / 60, proteinG: plan.proteinG, fatG: plan.fatG,
+      });
+      return { mode: 'dynamic', plan, kcal: day.kcal, proteinG: day.proteinG, carbsG: day.carbsG, fatG: day.fatG, rmr, bodyFat, day };
+    },
+  };
+
+  return { nutrition, habits, body, health, goals, summaries, insights, energy };
 }

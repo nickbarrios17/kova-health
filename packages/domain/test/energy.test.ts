@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ageFromBirthYear, energyTarget, restingEnergy, type EnergyInput } from '../src/energy.js';
+import {
+  ageFromBirthYear, bestRestingEnergy, dailyTarget, describeDailyTarget, energyTarget, navyBodyFat, resolveBodyFat, restingEnergy, tenHaaf,
+  type EnergyInput,
+} from '../src/energy.js';
 
 const base: EnergyInput = { sex: 'male', age: 30, heightCm: 175, weightKg: 78, activity: 'moderate', goal: 'maintain', pace: null };
 
@@ -60,5 +63,80 @@ describe('energyTarget', () => {
 describe('ageFromBirthYear', () => {
   it('uses the local year', () => {
     expect(ageFromBirthYear(1996, '2026-10-28')).toBe(30);
+  });
+});
+
+describe('bestRestingEnergy', () => {
+  const p = { sex: 'male' as const, age: 30, heightCm: 175, weightKg: 78 };
+  it('lean mass (Cunningham) when body fat is known', () => {
+    expect(bestRestingEnergy({ ...p, bodyFatPct: 15 })).toEqual({ kcal: 1959, method: 'cunningham', leanMassKg: 66.3 });
+  });
+  it('Ten-Haaf for very active people, Mifflin otherwise', () => {
+    expect(tenHaaf('male', 78, 175, 30)).toBeCloseTo(1935.97, 1);
+    expect(bestRestingEnergy({ ...p, activity: 'very_active' }).method).toBe('ten_haaf');
+    expect(bestRestingEnergy({ ...p, activity: 'moderate' })).toEqual({ kcal: 1729, method: 'mifflin', leanMassKg: null });
+  });
+  it('ignores impossible body fat values', () => {
+    expect(bestRestingEnergy({ ...p, bodyFatPct: 80 }).method).toBe('mifflin');
+  });
+  it('energyTarget uses the best method', () => {
+    expect(energyTarget({ ...base, bodyFatPct: 15 })).toMatchObject({ bmr: 1959, method: 'cunningham', kcal: 3050 });
+    expect(energyTarget(base).method).toBe('mifflin');
+  });
+});
+
+describe('navyBodyFat', () => {
+  it('men: neck and waist; women: also hip', () => {
+    expect(navyBodyFat('male', 175, 38, 85)).toBe(16.9);
+    expect(navyBodyFat('female', 165, 33, 75, 98)).toBe(28.4);
+  });
+  it('null when the measurements cannot be valid', () => {
+    expect(navyBodyFat('male', 175, 40, 38)).toBeNull();
+    expect(navyBodyFat('female', 165, 33, 75)).toBeNull();
+  });
+});
+
+describe('dailyTarget', () => {
+  const d = { sex: 'male' as const, restingKcal: 1729, weightKg: 78, goal: 'lose' as const, pace: 'moderate' as const, avgSteps7d: 8000 };
+  it('a quiet day is close to the base; an active day earns more', () => {
+    const rest = dailyTarget({ ...d, steps: 3500, workoutMinutes: 0 });
+    const active = dailyTarget({ ...d, steps: 12000, workoutMinutes: 60 });
+    expect(rest).toMatchObject({ kcal: 1650, base: 2075, activityKcal: 11, stepsEstimated: false });
+    expect(active).toMatchObject({ kcal: 1950, stepsKcal: 281, workoutKcal: 273, activityKcal: 388 });
+    // Protein and fat stay fixed; carbs absorb the difference.
+    expect(active.proteinG).toBe(rest.proteinG);
+    expect(active.carbsG - rest.carbsG).toBe(75);
+  });
+  it('missing steps use the 7-day average, not zero', () => {
+    const t = dailyTarget({ ...d, goal: 'maintain', pace: null, steps: null, workoutMinutes: 0, proteinG: 140, fatG: 75 });
+    expect(t).toMatchObject({ steps: 8000, stepsEstimated: true, kcal: 2200, proteinG: 140, fatG: 75, carbsG: 241 });
+  });
+  it('credits at most 1,200 kcal of activity', () => {
+    expect(dailyTarget({ ...d, goal: 'maintain', pace: null, steps: 40000, avgSteps7d: null, workoutMinutes: 240 }).activityKcal).toBe(1200);
+  });
+  it('never below the safety floor', () => {
+    expect(dailyTarget({ ...d, sex: 'female', restingKcal: 1000, weightKg: 45, pace: 'aggressive', steps: 0, workoutMinutes: 0 })).toMatchObject({ kcal: 1200, floored: true });
+  });
+});
+
+describe('describeDailyTarget', () => {
+  it('explains base, activity and goal', () => {
+    const t = dailyTarget({ sex: 'male', restingKcal: 1729, weightKg: 78, goal: 'lose', pace: 'moderate', steps: 12000, avgSteps7d: null, workoutMinutes: 60 });
+    expect(describeDailyTarget(t)).toBe('Base 2.075 kcal + 388 por actividad (12.000 pasos, 60 min de entrenamiento) − 20% por tu objetivo.');
+  });
+  it('says when steps come from the average', () => {
+    const t = dailyTarget({ sex: 'male', restingKcal: 1729, weightKg: 78, goal: 'maintain', pace: null, steps: null, avgSteps7d: 8000, workoutMinutes: 0 });
+    expect(describeDailyTarget(t)).toContain('tu promedio');
+  });
+});
+
+describe('resolveBodyFat', () => {
+  const base2 = { sex: 'male' as const, heightCm: 175, neckCm: 38, waistCm: 85, hipCm: null };
+  it('a typed percentage wins over tape measurements', () => {
+    expect(resolveBodyFat({ ...base2, typedPct: 18 })).toEqual({ pct: 18, source: 'manual' });
+  });
+  it('falls back to the Navy formula, or null', () => {
+    expect(resolveBodyFat({ ...base2, typedPct: null })).toEqual({ pct: 16.9, source: 'tape' });
+    expect(resolveBodyFat({ ...base2, typedPct: null, waistCm: null })).toBeNull();
   });
 });
