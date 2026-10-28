@@ -20,6 +20,15 @@ const PERMISSIONS = [
   { accessType: 'read', recordType: 'HeartRateVariabilityRmssd' },
 ] as const;
 
+const WANTED = new Set<string>(PERMISSIONS.map((p) => p.recordType));
+
+/**
+ * How many of VIDA's 5 data types are granted. Health Connect can return other read grants
+ * (e.g. background read) and repeats, so count distinct wanted record types only.
+ */
+const countWanted = (perms: ReadonlyArray<{ accessType: string; recordType: string }>) =>
+  new Set(perms.filter((p) => p.accessType === 'read' && WANTED.has(p.recordType)).map((p) => p.recordType)).size;
+
 const LAST_SYNC_KEY = 'vida:hc-last-sync';
 // Health Connect sleep stage codes counted as asleep: SLEEPING, LIGHT, DEEP, REM.
 const ASLEEP = new Set([2, 4, 5, 6]);
@@ -40,14 +49,13 @@ export async function status(): Promise<HcStatus> {
 /** Opens the system permission sheet. Returns how many of the 5 data types were granted. */
 export async function connect(): Promise<number> {
   await initialize();
-  const granted = await requestPermission([...PERMISSIONS]);
-  return granted.length;
+  return countWanted(await requestPermission([...PERMISSIONS]));
 }
 
 export async function grantedCount(): Promise<number> {
   try {
     await initialize();
-    return (await getGrantedPermissions()).filter((p) => p.accessType === 'read').length;
+    return countWanted(await getGrantedPermissions());
   } catch {
     return 0;
   }
