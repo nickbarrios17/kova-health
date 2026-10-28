@@ -1,12 +1,12 @@
 /** "Sesión en vivo" + "Resumen de sesión" from the prototype, persisted and offline-capable. */
-import { clock, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, VidaError, type WeightUnit } from '@vida/domain';
+import { clock, dayMonth, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, VidaError, type WeightUnit } from '@vida/domain';
 import { CaretDown, Check, CheckCircle, HourglassMedium, Pause, Play, Plus, Trophy } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useSession } from '../session';
 import { c, font, r } from '../theme';
-import { Button, Card, Notice, Row, Seg, T } from '../ui';
-import { addSet, elapsedS, patchSet, saveLive, summarize, toggleSet, transition, type LiveSession, type Summary } from '../workout';
+import { Button, Card, Confirm, Notice, Row, Seg, T } from '../ui';
+import { addSet, elapsedS, fillForward, saveLive, summarize, toggleSet, transition, type LiveSession, type Summary } from '../workout';
 
 const parseNum = (s: string) => {
   const v = Number(s.replace(',', '.'));
@@ -23,6 +23,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
   const units: WeightUnit = prefs!.weight_unit;
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
@@ -46,27 +47,22 @@ export function Session({ live, setLive, onClose, onFinished }: {
   };
   const disp = (kg: number | null) => (kg == null ? '' : String(units === 'kg' ? kg : toDisplayWeight(kg, 'lb')).replace('.', ','));
 
-  const finish = () =>
-    Alert.alert('Terminar sesión', doneSets ? '¿Guardar la sesión con ' + doneSets + ' series?' : 'No registraste ninguna serie. ¿Descartar la sesión?', [
-      { text: 'Seguir entrenando', style: 'cancel' },
-      {
-        text: doneSets ? 'Terminar' : 'Descartar', style: doneSets ? 'default' : 'destructive',
-        onPress: () => run(async () => {
-          const sum = summarize(live, prefs!.time_zone);
-          await transition(live, doneSets ? 'complete' : 'abandon');
-          setLive(null);
-          if (doneSets) onFinished(sum);
-          else onClose();
-        }),
-      },
-    ]);
+  const series = (n: number) => n + (n === 1 ? ' serie' : ' series');
+  const finish = () => run(async () => {
+    setConfirming(false);
+    const sum = summarize(live, prefs!.time_zone);
+    await transition(live, doneSets ? 'complete' : 'abandon');
+    setLive(null);
+    if (doneSets) onFinished(sum);
+    else onClose();
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
       <Row style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
         <Pressable onPress={onClose} accessibilityLabel="Minimizar sesión" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><CaretDown size={22} color={c.text} /></Pressable>
-        <View style={{ flex: 1 }}><T size={16} w="medium">{live.name}</T><T size={12} color={c.n400}>{doneSets} de {totalSets} series</T></View>
-        <Button label="Terminar" onPress={finish} />
+        <View style={{ flex: 1 }}><T size={16} w="medium">{live.name}</T><T size={12} color={c.n400}>{doneSets} de {series(totalSets)}</T></View>
+        <Button label="Terminar" onPress={() => setConfirming(true)} />
       </Row>
 
       <View style={{ marginHorizontal: 16, marginTop: 8, flexDirection: 'row', borderRadius: r.md, backgroundColor: c.surface, paddingVertical: 10 }}>
@@ -126,11 +122,11 @@ export function Session({ live, setLive, onClose, onFinished }: {
             <Row key={s.id} style={{ padding: 6, borderRadius: r.md, backgroundColor: s.done ? 'rgba(145,132,217,0.08)' : 'transparent' }}>
               <T w="medium" color={s.done ? c.accent : c.text} style={{ width: 36 }}>{j + 1}</T>
               <T size={13} color={c.n500} style={{ flex: 1 }}>{ex.prevKg != null ? formatWeight(ex.prevKg, units) : '—'}</T>
-              <TextInput editable={!s.done} keyboardType="decimal-pad" defaultValue={disp(s.w)} accessibilityLabel={'Peso serie ' + (j + 1)}
-                onEndEditing={(e) => { const v = parseNum(e.nativeEvent.text); update(patchSet(live, live.cur, j, { w: v == null ? null : fromDisplayWeight(v, units) })); }}
+              <TextInput key={'w' + s.id + s.w} editable={!s.done} keyboardType="decimal-pad" defaultValue={disp(s.w)} accessibilityLabel={'Peso serie ' + (j + 1)}
+                onEndEditing={(e) => { const v = parseNum(e.nativeEvent.text); update(fillForward(live, live.cur, j, 'w', v == null ? null : fromDisplayWeight(v, units))); }}
                 style={inputStyle(72)} />
-              <TextInput editable={!s.done} keyboardType="number-pad" defaultValue={s.reps == null ? '' : String(s.reps)} accessibilityLabel={'Repeticiones serie ' + (j + 1)}
-                onEndEditing={(e) => { const v = parseNum(e.nativeEvent.text); update(patchSet(live, live.cur, j, { reps: v == null ? null : Math.round(v) })); }}
+              <TextInput key={'r' + s.id + s.reps} editable={!s.done} keyboardType="number-pad" defaultValue={s.reps == null ? '' : String(s.reps)} accessibilityLabel={'Repeticiones serie ' + (j + 1)}
+                onEndEditing={(e) => { const v = parseNum(e.nativeEvent.text); update(fillForward(live, live.cur, j, 'reps', v == null ? null : Math.round(v))); }}
                 style={[inputStyle(56), { marginLeft: 8 }]} />
               <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: s.done }} accessibilityLabel={'Serie ' + (j + 1) + ' hecha'}
                 disabled={!!live.pausedAt}
@@ -148,6 +144,16 @@ export function Session({ live, setLive, onClose, onFinished }: {
         ) : null}
         <Notice text="Las series se guardan en el teléfono al instante y se envían cuando hay conexión." />
       </ScrollView>
+      <Confirm
+        visible={confirming}
+        title="Terminar sesión"
+        message={doneSets ? '¿Guardar la sesión con ' + series(doneSets) + '?' : 'No registraste ninguna serie. ¿Descartar la sesión?'}
+        confirmLabel={doneSets ? 'Terminar' : 'Descartar'}
+        destructive={!doneSets}
+        cancelLabel="Seguir entrenando"
+        onConfirm={finish}
+        onCancel={() => setConfirming(false)}
+      />
     </View>
   );
 }
@@ -165,10 +171,10 @@ export function SessionSummary({ summary, onDone }: { summary: Summary; onDone: 
       <View style={{ gap: 6 }}>
         <T size={11} w="medium" color={c.accent}>Sesión completada</T>
         <T size={28} w="medium">{summary.name}</T>
-        <T size={13} color={c.n400}>{dur(summary.durationS)}</T>
+        <T size={13} color={c.n400}>{dayMonth(summary.date)}</T>
       </View>
       <Row style={{ gap: 8 }}>
-        {[['Volumen', nf(units === 'kg' ? summary.volumeKg : toDisplayWeight(summary.volumeKg, 'lb'), 0) + ' ' + units], ['Series', String(summary.sets)], ['Duración', dur(summary.durationS)]].map(([l, v]) => (
+        {[['Volumen', nf(units === 'kg' ? summary.volumeKg : toDisplayWeight(summary.volumeKg, 'lb'), 0) + ' ' + units], [summary.sets === 1 ? 'Serie' : 'Series', String(summary.sets)], ['Duración', dur(summary.durationS)]].map(([l, v]) => (
           <View key={l} style={{ flex: 1, padding: 12, borderRadius: r.md, backgroundColor: c.surface }}>
             <T size={11} color={c.n400}>{l}</T>
             <T size={17} w="medium">{v}</T>

@@ -9,8 +9,20 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const configured = Boolean(url && anonKey);
 
+/**
+ * React Native's fetch has no timeout: a request that never answers would hang the app forever.
+ * Every Supabase call is aborted after 20 s and surfaces as a normal network error instead.
+ */
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20_000);
+  init?.signal?.addEventListener?.('abort', () => controller.abort());
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
+
 const supabase = createClient(url ?? 'http://invalid.local', anonKey ?? 'missing', {
   auth: { storage: AsyncStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false },
+  global: { fetch: fetchWithTimeout },
 });
 
 // Refresh tokens only while the app is in the foreground (supabase-js recommendation for RN).

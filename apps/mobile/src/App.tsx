@@ -8,7 +8,7 @@ import { Barbell, ChartLineUp, ForkKnife, House, type Icon } from 'phosphor-reac
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, Pressable, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { configured, outbox } from './client';
+import { configured, outbox, vida } from './client';
 import * as hc from './health';
 import { Comida } from './screens/Comida';
 import { Entrenar } from './screens/Entrenar';
@@ -19,7 +19,7 @@ import { Session, SessionSummary } from './screens/Session';
 import { SessionProvider, useSession } from './session';
 import { c } from './theme';
 import type { TrainingData } from './training';
-import { T } from './ui';
+import { Button, T } from './ui';
 import { loadLive, startFromRoutine, type LiveSession, type Summary } from './workout';
 
 type Tab = 'hoy' | 'entrenar' | 'comida' | 'progreso';
@@ -31,7 +31,7 @@ const TABS: Array<[Tab, string, Icon]> = [
 ];
 
 function Shell() {
-  const { status, prefs, deviceId } = useSession();
+  const { status, prefs, deviceId, bootError, retryBoot } = useSession();
   const [tab, setTab] = useState<Tab>('hoy');
   const [live, setLive] = useState<LiveSession | null>(null);
   const [showLive, setShowLive] = useState(false);
@@ -51,6 +51,17 @@ function Shell() {
     return () => sub.remove();
   }, [status, prefs, deviceId]);
 
+  if (status === 'signedIn' && !prefs && bootError) {
+    return (
+      <View style={{ flex: 1, padding: 24, justifyContent: 'center', gap: 12 }}>
+        <T size={18} w="medium">No pudimos cargar tu cuenta</T>
+        <T size={13} color={c.n400}>{bootError}</T>
+        <T size={13} color={c.n400}>Revisa tu conexión a internet e inténtalo de nuevo.</T>
+        <Button label="Reintentar" onPress={retryBoot} />
+        <Button variant="ghost" label="Cerrar sesión" onPress={() => vida.auth.signOut()} />
+      </View>
+    );
+  }
   if (status === 'loading' || (status === 'signedIn' && !prefs)) {
     return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={c.accent} /></View>;
   }

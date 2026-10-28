@@ -4,6 +4,7 @@ import { CircleNotch, Info, WarningCircle, XCircle } from 'phosphor-react-native
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   Text as RNText,
   TextInput,
@@ -148,4 +149,37 @@ export function Seg<V extends string>({ options, value, onChange }: { options: A
 
 export function Row({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 8 }, style]}>{children}</View>;
+}
+
+/** In-app confirmation dialog (replaces the system Alert so it matches the rest of VIDA). */
+export function Confirm({
+  visible, title, message, confirmLabel, cancelLabel = 'Cancelar', destructive, onConfirm, onCancel,
+}: {
+  visible: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const tone = destructive ? c.crit : c.accent;
+  return (
+    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onCancel}>
+      <Pressable onPress={onCancel} accessibilityLabel={cancelLabel} style={{ flex: 1, backgroundColor: 'rgba(8,9,16,0.72)', justifyContent: 'center', padding: 24 }}>
+        <Pressable accessibilityViewIsModal style={{ backgroundColor: c.surface, borderRadius: r.lg, borderWidth: 1, borderColor: c.divider, padding: 20, gap: 12 }}>
+          <T size={18} w="medium" accessibilityRole="header">{title}</T>
+          <T size={14} color={c.n300}>{message}</T>
+          <View style={{ gap: 8, marginTop: 8 }}>
+            <Pressable accessibilityRole="button" onPress={onConfirm}
+              style={({ pressed }) => ({ minHeight: 44, borderRadius: r.md, borderWidth: 1, borderColor: tone, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? (destructive ? 'rgba(240,138,120,0.16)' : 'rgba(145,132,217,0.18)') : 'transparent' })}>
+              <T w="medium" color={tone}>{confirmLabel}</T>
+            </Pressable>
+            <Button variant="secondary" label={cancelLabel} onPress={onCancel} />
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
 }

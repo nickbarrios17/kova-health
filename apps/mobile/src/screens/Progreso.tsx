@@ -4,7 +4,7 @@ import {
 } from '@vida/domain';
 import { Check, Flame, Plus, Scales, SignOut, Smiley, SmileyMeh, SmileyNervous, SmileySad, SmileyWink, Trash, type Icon } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Alert, Keyboard, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { outbox, vida } from '../client';
 import { useSession } from '../session';
 import { c, r } from '../theme';
@@ -49,6 +49,7 @@ export function Progreso() {
   };
 
   const saveWeight = () => run(async () => {
+    Keyboard.dismiss();
     const v = Number(weight.replace(',', '.'));
     await outbox.enqueue({ kind: 'record_measurement', input: { id: newId(), metric: 'weight_kg', value: fromDisplayWeight(v, units), measured_at: new Date().toISOString(), time_zone: tz, device_id: deviceId } });
     await outbox.flush();
@@ -72,6 +73,7 @@ export function Progreso() {
   });
 
   const addHabit = () => run(async () => {
+    Keyboard.dismiss();
     await vida.habits.save({ id: newId(), name: habitName.trim(), effective_from: today });
     setHabitName('');
   });

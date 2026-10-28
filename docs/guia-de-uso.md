@@ -31,15 +31,15 @@ Los relojes se instalan desde este PC por Wi-Fi. Resumen (paso a paso completo e
 4. En el PC, empareja con el código, conéctate e instala:
 
 ```bash
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" pair IP:PUERTO_EMPAREJAMIENTO
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" pair IP:PUERTO_EMPAREJAMIENTO
 ```
 
 ```bash
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" connect IP:PUERTO_CONEXION
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" connect IP:PUERTO_CONEXION
 ```
 
 ```bash
-"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" install -r dist\VIDA-reloj-wearos-0.1.0.apk
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\VIDA-reloj-wearos-0.1.0.apk"
 ```
 
 5. Abre **VIDA** en el reloj e inicia sesión con la misma cuenta.

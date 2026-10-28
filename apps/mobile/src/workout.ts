@@ -147,6 +147,22 @@ export function patchSet(s: LiveSession, exIdx: number, setIdx: number, patch: P
   };
 }
 
+/**
+ * Sets one field and carries it forward to the later, not-yet-done sets of the same exercise that
+ * were still empty or still held the previous value, so a load typed once applies to the rest.
+ */
+export function fillForward(s: LiveSession, exIdx: number, setIdx: number, field: 'w' | 'reps', value: number | null): LiveSession {
+  const sets = s.exercises[exIdx]!.sets;
+  const prev = sets[setIdx]![field];
+  return {
+    ...s,
+    exercises: s.exercises.map((e, i) => (i !== exIdx ? e : {
+      ...e,
+      sets: e.sets.map((x, j) => (j === setIdx || (j > setIdx && !x.done && value != null && (x[field] == null || x[field] === prev)) ? { ...x, [field]: value } : x)),
+    })),
+  };
+}
+
 export function addSet(s: LiveSession, exIdx: number): LiveSession {
   const ex = s.exercises[exIdx]!;
   const last = ex.sets[ex.sets.length - 1];
