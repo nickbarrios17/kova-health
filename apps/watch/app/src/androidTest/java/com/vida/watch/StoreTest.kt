@@ -133,6 +133,15 @@ class StoreTest {
         assertEquals("America/Argentina/Buenos_Aires", p.getString("p_time_zone"))
     }
 
+    @Test fun strTreatsJsonNullAsMissing() {
+        // User exercises have short_name = null; optString would return the text "null".
+        val o = JSONObject("""{"name":"Hip thrust","short_name":null,"blank":"  "}""")
+        assertNull(o.str("short_name"))
+        assertNull(o.str("missing"))
+        assertNull(o.str("blank"))
+        assertEquals("Hip thrust", o.str("short_name") ?: o.str("name"))
+    }
+
     private fun sampleLive() = Live(
         id = "s1", name = "Fuerza B", startedAt = 1_700_000_000_000, pausedAt = null, pausedMs = 0, cur = 0, restEndsAt = null,
         exercises = listOf(
