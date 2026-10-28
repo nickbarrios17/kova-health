@@ -1,6 +1,6 @@
 /** Auth session, preferences and this device's id. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { newId, type WeightUnit } from '@vida/domain';
+import { newId, type Tables, type WeightUnit } from '@vida/domain';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { outbox, vida } from './client';
@@ -11,6 +11,10 @@ export interface Prefs {
   weight_unit: WeightUnit;
   time_zone: string;
   display_name: string | null;
+  /** Onboarding is mandatory: the app shows it until this is 'done'. */
+  onboarded: boolean;
+  profile: Pick<Tables<'profiles'>, 'birth_year' | 'height_cm' | 'sex' | 'activity_level' | 'weight_goal' | 'goal_pace'>;
+  lastWeightKg: number | null;
 }
 
 interface SessionValue {
@@ -51,13 +55,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [bootTick, setBootTick] = useState(0);
 
   const reloadPrefs = useCallback(async () => {
-    const [p, profile] = await Promise.all([vida.profile.getPreferences(), vida.profile.get()]);
+    const [p, profile, weights] = await Promise.all([
+      vida.profile.getPreferences(), vida.profile.get(), vida.body.history('weight_kg', 1).catch(() => []),
+    ]);
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (p.time_zone === 'UTC' && tz && tz !== 'UTC') {
       await vida.profile.updatePreferences({ time_zone: tz }).catch(() => undefined);
       p.time_zone = tz;
     }
-    setPrefs({ weight_unit: p.weight_unit, time_zone: p.time_zone, display_name: profile.display_name });
+    const last = (weights as Array<{ value: number | string }>)[0];
+    setPrefs({
+      weight_unit: p.weight_unit, time_zone: p.time_zone, display_name: profile.display_name,
+      onboarded: profile.onboarding_state === 'done',
+      profile: {
+        birth_year: profile.birth_year, height_cm: profile.height_cm, sex: profile.sex,
+        activity_level: profile.activity_level, weight_goal: profile.weight_goal, goal_pace: profile.goal_pace,
+      },
+      lastWeightKg: last ? Number(last.value) : null,
+    });
   }, []);
 
   useEffect(() => {

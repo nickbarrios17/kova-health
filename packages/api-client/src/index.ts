@@ -7,6 +7,7 @@ import {
   DeviceRegisterSchema,
   ExerciseCreateSchema,
   ExerciseSearchSchema,
+  OnboardingSchema,
   PreferencesUpdateSchema,
   ProfileUpdateSchema,
   RecordSetSchema,
@@ -20,11 +21,13 @@ import {
   type DeviceRegister,
   type ExerciseCreate,
   type ExerciseSearch,
+  type OnboardingInput,
   type PreferencesUpdate,
   type ProfileUpdate,
   type RecordSetInput,
   type SaveRoutineInput,
   type StartSessionInput,
+  type Tables,
   type TransitionSessionInput,
 } from '@vida/domain';
 import type { z } from 'zod';
@@ -127,6 +130,21 @@ export function createVidaClient(opts: VidaClientOptions) {
       call(
         sb.from('user_preferences').update(parse(PreferencesUpdateSchema, patch)).eq('user_id', await uid()).select().single(),
       ),
+    /**
+     * Saves onboarding (profile, starting weight, nutrition target from local today) and marks it done.
+     * Idempotent on `measurementId`; calling it again recalculates the target.
+     */
+    completeOnboarding: (input: OnboardingInput) => {
+      const v = parse(OnboardingSchema, input);
+      return idempotent(() =>
+        rpc<Tables<'profiles'>>('complete_onboarding', {
+          p_display_name: v.displayName ?? null, p_birth_year: v.birthYear, p_height_cm: v.heightCm, p_sex: v.sex,
+          p_activity_level: v.activity, p_weight_goal: v.goal, p_goal_pace: v.goal === 'maintain' ? null : v.pace,
+          p_weight_kg: v.weightKg, p_measurement_id: v.measurementId, p_kcal: v.kcal, p_protein_g: v.proteinG,
+          p_carbs_g: v.carbsG, p_fat_g: v.fatG, p_is_estimated: v.isEstimated, p_time_zone: v.timeZone ?? null,
+        }),
+      );
+    },
   };
 
   const devices = {

@@ -3,7 +3,7 @@
  * Auth session + user preferences for the whole app. The session lives in supabase-js
  * (browser storage); authorization is enforced by RLS on the server, not here.
  */
-import type { WeightUnit } from '@vida/domain';
+import type { Tables, WeightUnit } from '@vida/domain';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { vida } from './client';
 
@@ -13,6 +13,10 @@ export interface Prefs {
   weight_unit: WeightUnit;
   time_zone: string;
   display_name: string | null;
+  /** Onboarding is mandatory: the app shows it until this is true. */
+  onboarded: boolean;
+  profile: Pick<Tables<'profiles'>, 'birth_year' | 'height_cm' | 'sex' | 'activity_level' | 'weight_goal' | 'goal_pace'>;
+  lastWeightKg: number | null;
 }
 
 interface SessionValue {
@@ -21,6 +25,8 @@ interface SessionValue {
   recovery: boolean;
   prefs: Prefs | null;
   setUnit: (u: WeightUnit) => Promise<void>;
+  /** Reloads preferences and profile (after onboarding). */
+  reload: () => Promise<void>;
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -32,14 +38,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const loadPrefs = useCallback(async () => {
     const c = vida();
-    const [p, profile] = await Promise.all([c.profile.getPreferences(), c.profile.get()]);
+    const [p, profile, weights] = await Promise.all([
+      c.profile.getPreferences(), c.profile.get(), c.body.history('weight_kg', 1).catch(() => []),
+    ]);
     const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     // First visit: adopt the browser's time zone so "today" matches the user's day.
     if (p.time_zone === 'UTC' && browserTz && browserTz !== 'UTC') {
       await c.profile.updatePreferences({ time_zone: browserTz }).catch(() => undefined);
       p.time_zone = browserTz;
     }
-    setPrefs({ weight_unit: p.weight_unit, time_zone: p.time_zone, display_name: profile.display_name });
+    const last = (weights as Array<{ value: number | string }>)[0];
+    setPrefs({
+      weight_unit: p.weight_unit, time_zone: p.time_zone, display_name: profile.display_name,
+      onboarded: profile.onboarding_state === 'done',
+      profile: {
+        birth_year: profile.birth_year, height_cm: profile.height_cm, sex: profile.sex,
+        activity_level: profile.activity_level, weight_goal: profile.weight_goal, goal_pace: profile.goal_pace,
+      },
+      lastWeightKg: last ? Number(last.value) : null,
+    });
   }, []);
 
   useEffect(() => {
@@ -62,7 +79,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     await vida().profile.updatePreferences({ weight_unit: u });
   }, []);
 
-  const value = useMemo(() => ({ status, recovery, prefs, setUnit }), [status, recovery, prefs, setUnit]);
+  const value = useMemo(() => ({ status, recovery, prefs, setUnit, reload: loadPrefs }), [status, recovery, prefs, setUnit, loadPrefs]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

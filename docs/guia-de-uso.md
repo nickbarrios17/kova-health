@@ -16,7 +16,7 @@ Todo lo que registras en un dispositivo aparece en los demás. Si no hay conexi�
 
 ### Web
 - **En local** (este PC): `npm run dev:web` y abre http://localhost:3000 (detalles en `docs/setup.md`).
-- **En internet:** cuando esté publicada en Vercel tendrá una dirección del tipo `https://vida-….vercel.app` (ver «Lo que te queda por hacer»). Funciona en cualquier navegador, también en el del teléfono.
+- **En internet:** https://vida-nine-iota.vercel.app. Funciona en cualquier navegador, también en el del teléfono. Se publica sola con cada cambio que se sube a GitHub.
 
 ### Teléfono (Android 8 o superior)
 1. Pasa `dist/VIDA-movil-0.1.0.apk` al teléfono (cable, Drive, correo…).
@@ -55,9 +55,16 @@ Los relojes se instalan desde este PC por Wi-Fi. Resumen (paso a paso completo e
 
 Una misma cuenta sirve para la web, el teléfono y el reloj.
 
+### Configuración inicial (obligatoria)
+La primera vez que entrás, en la web o en el teléfono, VIDA te pide tres pasos antes de mostrar la app:
+1. **Bienvenida:** tu nombre y si preferís kilos o libras.
+2. **Tus datos:** año de nacimiento, altura, peso actual, sexo, nivel de actividad y objetivo (bajar de peso, mantener o subir de peso). Para bajar o subir elegís un ritmo: **liviano, moderado o agresivo**.
+3. **Tu meta diaria:** VIDA calcula las calorías y los macros (proteína, carbohidratos y grasa). Podés guardarla tal cual o tocar **Editar a mano** y poner tus propios números.
+
+La meta es una **estimación** (fórmula Mifflin-St Jeor), no una indicación médica. Para cambiarla después: en el teléfono, **Progreso → Cuenta → Recalcular mi meta diaria**; en la web, **Recalcular meta** abajo en la barra lateral. Los días anteriores conservan la meta que tenían.
+
 ### Olvidé mi contraseña
-**Olvidé mi contraseña** → tu correo → abre el enlace del correo → elige una contraseña nueva en la web.
-> Hasta que la web esté publicada y la URL configurada en Supabase, el enlace del correo apunta a `localhost` y solo funciona desde este PC.
+**Olvidé mi contraseña** → tu correo → abre el enlace del correo → elige una contraseña nueva en la web (https://vida-nine-iota.vercel.app).
 
 ### Cerrar sesión
 - Web: **Cerrar sesión** abajo en la barra lateral.

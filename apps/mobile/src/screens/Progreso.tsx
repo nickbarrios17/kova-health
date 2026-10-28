@@ -2,7 +2,7 @@
 import {
   addDays, dailyStreak, dayMonth, fromDisplayWeight, localDate, MOODS, newId, nf, toDisplayWeight, VidaError, type HabitDay,
 } from '@vida/domain';
-import { Check, Flame, Plus, Scales, SignOut, Smiley, SmileyMeh, SmileyNervous, SmileySad, SmileyWink, Trash, type Icon } from 'phosphor-react-native';
+import { Check, Flame, Plus, Scales, SignOut, Smiley, SmileyMeh, SmileyNervous, SmileySad, SmileyWink, Target, Trash, type Icon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, Keyboard, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { outbox, vida } from '../client';
@@ -11,6 +11,7 @@ import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Field, Loading, Notice, Row, T } from '../ui';
 import { HealthCard } from './HealthCard';
+import { Onboarding } from './Onboarding';
 
 const MOOD_ICONS: Icon[] = [SmileySad, SmileyNervous, SmileyMeh, Smiley, SmileyWink];
 
@@ -22,6 +23,7 @@ export function Progreso() {
   const [weight, setWeight] = useState('');
   const [habitName, setHabitName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [recalc, setRecalc] = useState(false);
 
   const q = useAsync(async () => {
     const [weights, habits, days, moods] = await Promise.all([
@@ -84,6 +86,7 @@ export function Progreso() {
       { text: 'Borrar todo', style: 'destructive', onPress: () => run(() => vida.account.delete()) },
     ]);
 
+  if (recalc) return <Onboarding onCancel={() => setRecalc(false)} />;
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>;
   const { weights, habits, days, mood } = q.data!;
@@ -156,6 +159,7 @@ export function Progreso() {
 
       <Card>
         <T size={16} w="medium">Cuenta</T>
+        <Button variant="secondary" label="Recalcular mi meta diaria" icon={Target} onPress={() => setRecalc(true)} />
         <Button variant="secondary" label="Cerrar sesión" icon={SignOut} onPress={() => vida.auth.signOut()} />
         <Button variant="ghost" label="Borrar mi cuenta y mis datos" icon={Trash} onPress={deleteAccount} style={{ alignSelf: 'flex-start' }} />
       </Card>
