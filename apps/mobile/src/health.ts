@@ -18,7 +18,12 @@ const PERMISSIONS = [
   { accessType: 'read', recordType: 'Weight' },
   { accessType: 'read', recordType: 'RestingHeartRate' },
   { accessType: 'read', recordType: 'HeartRateVariabilityRmssd' },
+  // Body composition from the watch's bioimpedance (Samsung Health): improves resting energy.
+  { accessType: 'read', recordType: 'BodyFat' },
 ] as const;
+
+/** How many data types VIDA asks for (shown as "n de N tipos de datos"). */
+export const PERMISSION_COUNT = PERMISSIONS.length;
 
 const WANTED = new Set<string>(PERMISSIONS.map((p) => p.recordType));
 
@@ -46,7 +51,7 @@ export async function status(): Promise<HcStatus> {
   }
 }
 
-/** Opens the system permission sheet. Returns how many of the 5 data types were granted. */
+/** Opens the system permission sheet. Returns how many of VIDA's data types were granted. */
 export async function connect(): Promise<number> {
   await initialize();
   return countWanted(await requestPermission([...PERMISSIONS]));
@@ -131,6 +136,11 @@ export async function sync(timeZone: string, deviceId: string | null, days = 7):
   if (granted.has('Weight')) {
     for (const r of await readAll('Weight', s, e)) {
       measurements.push({ metric: 'weight_kg', value: Math.round(r.weight.inKilograms * 100) / 100, measured_at: r.time, ...base(r.metadata) });
+    }
+  }
+  if (granted.has('BodyFat')) {
+    for (const r of await readAll('BodyFat', s, e)) {
+      measurements.push({ metric: 'body_fat_pct', value: Math.round(r.percentage * 10) / 10, measured_at: r.time, ...base(r.metadata) });
     }
   }
 

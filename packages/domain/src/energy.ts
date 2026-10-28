@@ -1,13 +1,18 @@
 /**
- * Daily energy and macro target for onboarding. Pure and shared by web and mobile; the result is
- * an estimate (shown as such) and the user can always type their own numbers instead.
+ * Energy and macro targets. Pure and shared by web and mobile; every result is an estimate (shown
+ * as such) and the user can always type their own numbers instead. Rules: docs/api.md §Energy.
  *
- * - Resting energy: Mifflin-St Jeor (1990), kcal/day.
- * - Total: resting × activity factor.
+ * - Resting energy, best available method (bestRestingEnergy):
+ *   body fat % known → Cunningham (1980) on lean mass; very active → Ten-Haaf (2014);
+ *   otherwise Mifflin-St Jeor (1990). Body fat can come from the watch (bioimpedance), typed in,
+ *   or the US Navy tape formula (navyBodyFat).
+ * - Onboarding target: resting × activity factor (energyTarget).
+ * - Daily target: resting × 1.2 plus that day's measured activity, partly credited (dailyTarget).
  * - Goal: percentage adjustment by pace, rounded to 50 kcal, never below a safety floor.
  * - Macros: protein by body weight, fat at least 0.8 g/kg or 25% of energy, carbs the rest.
  */
 import { z } from 'zod';
+import { nf } from './format.js';
 
 export const SexSchema = z.enum(['male', 'female']);
 export const ActivityLevelSchema = z.enum(['sedentary', 'light', 'moderate', 'very_active']);
@@ -48,12 +53,16 @@ export const EnergyInputSchema = z
     activity: ActivityLevelSchema,
     goal: WeightGoalSchema,
     pace: GoalPaceSchema.nullable(),
+    /** Body fat %, if known: switches resting energy to the lean-mass formula. */
+    bodyFatPct: z.number().min(3).max(60).nullish(),
   })
   .refine((v) => v.goal === 'maintain' || v.pace != null, { message: 'Elige un ritmo', path: ['pace'] });
-export type EnergyInput = z.infer<typeof EnergyInputSchema>;
+export type EnergyInput = z.input<typeof EnergyInputSchema>;
 
 export interface EnergyTarget {
   bmr: number;
+  /** Formula used for `bmr`. */
+  method: RmrMethod;
   tdee: number;
   /** Signed fraction applied to the total (0 when maintaining). */
   adjust: number;
@@ -65,21 +74,160 @@ export interface EnergyTarget {
   floored: boolean;
 }
 
+/** Mifflin-St Jeor (1990): best general equation without body composition (Frankenfield 2005). */
 export function restingEnergy(sex: Sex, weightKg: number, heightCm: number, age: number): number {
   return 10 * weightKg + 6.25 * heightCm - 5 * age + (sex === 'male' ? 5 : -161);
 }
 
+/** Ten-Haaf and Weijs (2014), weight-based: the most precise in athletes (O'Neill 2023 meta-analysis). */
+export const tenHaaf = (sex: Sex, weightKg: number, heightCm: number, age: number) =>
+  11.936 * weightKg + 587.728 * (heightCm / 100) - 8.129 * age + (sex === 'male' ? 191.027 : 0) + 29.279;
+
+/** Cunningham (1980) on lean (fat-free) mass in kg. */
+export const cunningham = (leanMassKg: number) => 500 + 22 * leanMassKg;
+
+/**
+ * US Navy circumference formula (Hodgdon and Beckett): body fat % from neck, waist (at the navel)
+ * and, for women, hip, all in cm. Null when the measurements cannot be valid. Typical error vs DXA
+ * is a few percentage points, larger for very lean or very heavy people.
+ */
+export function navyBodyFat(sex: Sex, heightCm: number, neckCm: number, waistCm: number, hipCm?: number | null): number | null {
+  let v = NaN;
+  if (sex === 'male' && waistCm > neckCm) {
+    v = 495 / (1.0324 - 0.19077 * Math.log10(waistCm - neckCm) + 0.15456 * Math.log10(heightCm)) - 450;
+  } else if (sex === 'female' && hipCm && waistCm + hipCm > neckCm) {
+    v = 495 / (1.29579 - 0.35004 * Math.log10(waistCm + hipCm - neckCm) + 0.221 * Math.log10(heightCm)) - 450;
+  }
+  return Number.isFinite(v) && v >= 3 && v <= 60 ? Math.round(v * 10) / 10 : null;
+}
+
+/** Body fat to use from what the user typed: a percentage wins; otherwise tape measurements (Navy). */
+export function resolveBodyFat(p: {
+  sex: Sex | null; heightCm: number | null; typedPct: number | null; neckCm: number | null; waistCm: number | null; hipCm: number | null;
+}): { pct: number; source: 'manual' | 'tape' } | null {
+  if (p.typedPct != null && p.typedPct >= 3 && p.typedPct <= 60) return { pct: Math.round(p.typedPct * 10) / 10, source: 'manual' };
+  if (!p.sex || !p.heightCm || !p.neckCm || !p.waistCm) return null;
+  const pct = navyBodyFat(p.sex, p.heightCm, p.neckCm, p.waistCm, p.hipCm);
+  return pct == null ? null : { pct, source: 'tape' };
+}
+
+export type RmrMethod = 'cunningham' | 'ten_haaf' | 'mifflin';
+export const RMR_METHOD_LABEL: Record<RmrMethod, string> = {
+  cunningham: 'Cunningham (masa magra)',
+  ten_haaf: 'Ten-Haaf (personas activas)',
+  mifflin: 'Mifflin-St Jeor',
+};
+
+export interface RestingEnergy {
+  kcal: number;
+  method: RmrMethod;
+  leanMassKg: number | null;
+}
+
+/** Best available resting energy: lean mass if body fat is known, Ten-Haaf if very active, else Mifflin. */
+export function bestRestingEnergy(p: {
+  sex: Sex; age: number; heightCm: number; weightKg: number; activity?: ActivityLevel | null; bodyFatPct?: number | null;
+}): RestingEnergy {
+  if (p.bodyFatPct != null && p.bodyFatPct >= 3 && p.bodyFatPct <= 60) {
+    const lean = p.weightKg * (1 - p.bodyFatPct / 100);
+    return { kcal: Math.round(cunningham(lean)), method: 'cunningham', leanMassKg: Math.round(lean * 10) / 10 };
+  }
+  if (p.activity === 'very_active') return { kcal: Math.round(tenHaaf(p.sex, p.weightKg, p.heightCm, p.age)), method: 'ten_haaf', leanMassKg: null };
+  return { kcal: Math.round(restingEnergy(p.sex, p.weightKg, p.heightCm, p.age)), method: 'mifflin', leanMassKg: null };
+}
+
+const macros = (kcal: number, weightKg: number, goal: WeightGoal) => {
+  const proteinG = Math.round(weightKg * (goal === 'lose' ? 2.0 : 1.8));
+  const fatG = Math.round(Math.max(weightKg * 0.8, (kcal * 0.25) / 9));
+  return { proteinG, fatG, carbsG: Math.max(0, Math.round((kcal - proteinG * 4 - fatG * 9) / 4)) };
+};
+
 export function energyTarget(input: EnergyInput): EnergyTarget {
-  const { sex, age, heightCm, weightKg, activity, goal, pace } = EnergyInputSchema.parse(input);
-  const bmr = restingEnergy(sex, weightKg, heightCm, age);
-  const tdee = bmr * ACTIVITY_FACTOR[activity];
+  const { sex, age, heightCm, weightKg, activity, goal, pace, bodyFatPct } = EnergyInputSchema.parse(input);
+  const rmr = bestRestingEnergy({ sex, age, heightCm, weightKg, activity, bodyFatPct });
+  const tdee = rmr.kcal * ACTIVITY_FACTOR[activity];
   const adjust = goal === 'maintain' ? 0 : PACE_ADJUST[goal][pace!];
   const raw = Math.round((tdee * (1 + adjust)) / 50) * 50;
   const kcal = Math.max(KCAL_FLOOR[sex], raw);
-  const proteinG = Math.round(weightKg * (goal === 'lose' ? 2.0 : 1.8));
-  const fatG = Math.round(Math.max(weightKg * 0.8, (kcal * 0.25) / 9));
-  const carbsG = Math.max(0, Math.round((kcal - proteinG * 4 - fatG * 9) / 4));
-  return { bmr: Math.round(bmr), tdee: Math.round(tdee), adjust, kcal, proteinG, fatG, carbsG, floored: kcal > raw };
+  return { bmr: rmr.kcal, method: rmr.method, tdee: Math.round(tdee), adjust, kcal, ...macros(kcal, weightKg, goal), floored: kcal > raw };
+}
+
+// ── Daily target from the day's activity ─────────────────────────────────────
+/**
+ * Constants of the daily target (docs/api.md §Energy):
+ * - base: resting × 1.2 covers a sedentary day, including ~3,000 steps of moving around;
+ * - walking: ~0.0004 kcal per kg per step above that allowance (net of resting, ~2.5 METs at 100 steps/min);
+ * - strength training: 4.5 METs, i.e. 3.5 above resting, per minute of active workout time;
+ * - only 70% of the activity is credited (activity estimates run high), at most +1,200 kcal.
+ */
+export const DAILY_TARGET = { baseFactor: 1.2, stepAllowance: 3000, kcalPerKgStep: 0.0004, strengthMet: 4.5, credit: 0.7, maxActivityKcal: 1200 } as const;
+
+export interface DailyTargetInput {
+  sex: Sex;
+  restingKcal: number;
+  weightKg: number;
+  goal: WeightGoal;
+  pace: GoalPace | null;
+  /** Steps counted today; null means no data (watch not synced), not zero. */
+  steps: number | null;
+  /** Average of the last 7 days with data, used when today's steps are missing. */
+  avgSteps7d: number | null;
+  /** Active minutes of workouts completed today. */
+  workoutMinutes: number;
+  /** Fixed macros from the user's plan; carbs flex with the day. Defaults follow energyTarget. */
+  proteinG?: number | null;
+  fatG?: number | null;
+}
+
+export interface DailyTarget {
+  kcal: number;
+  base: number;
+  stepsKcal: number;
+  workoutKcal: number;
+  /** Activity actually credited (after the 70% factor and the cap). */
+  activityKcal: number;
+  steps: number;
+  /** True when today's steps were missing and the 7-day average was used. */
+  stepsEstimated: boolean;
+  workoutMinutes: number;
+  adjust: number;
+  proteinG: number;
+  fatG: number;
+  carbsG: number;
+  floored: boolean;
+}
+
+export function dailyTarget(i: DailyTargetInput): DailyTarget {
+  const D = DAILY_TARGET;
+  const stepsEstimated = i.steps == null && i.avgSteps7d != null;
+  const steps = Math.max(0, Math.round(i.steps ?? i.avgSteps7d ?? 0));
+  const base = i.restingKcal * D.baseFactor;
+  const stepsKcal = Math.max(0, steps - D.stepAllowance) * i.weightKg * D.kcalPerKgStep;
+  const workoutKcal = (D.strengthMet - 1) * i.weightKg * (Math.max(0, i.workoutMinutes) / 60);
+  const activityKcal = Math.min(D.maxActivityKcal, (stepsKcal + workoutKcal) * D.credit);
+  const adjust = i.goal === 'maintain' || !i.pace ? 0 : PACE_ADJUST[i.goal][i.pace];
+  const raw = Math.round(((base + activityKcal) * (1 + adjust)) / 50) * 50;
+  const kcal = Math.max(KCAL_FLOOR[i.sex], raw);
+  const def = macros(kcal, i.weightKg, i.goal);
+  const proteinG = i.proteinG ?? def.proteinG;
+  const fatG = i.fatG ?? def.fatG;
+  return {
+    kcal, base: Math.round(base), stepsKcal: Math.round(stepsKcal), workoutKcal: Math.round(workoutKcal), activityKcal: Math.round(activityKcal),
+    steps, stepsEstimated, workoutMinutes: Math.round(Math.max(0, i.workoutMinutes)), adjust, proteinG, fatG,
+    carbsG: Math.max(0, Math.round((kcal - proteinG * 4 - fatG * 9) / 4)), floored: kcal > raw,
+  };
+}
+
+/** Plain-language breakdown of a daily target, e.g. "Base 2.075 kcal + 388 por actividad (12.000 pasos, 60 min de entrenamiento) − 20% por tu objetivo". */
+export function describeDailyTarget(d: DailyTarget): string {
+  const what = [
+    d.steps ? nf(d.steps, 0) + ' pasos' + (d.stepsEstimated ? ' (tu promedio: hoy no hay datos del reloj)' : '') : null,
+    d.workoutMinutes ? d.workoutMinutes + ' min de entrenamiento' : null,
+  ].filter(Boolean).join(', ');
+  let out = 'Base ' + nf(d.base, 0) + ' kcal';
+  if (d.activityKcal > 0) out += ' + ' + nf(d.activityKcal, 0) + ' por actividad' + (what ? ' (' + what + ')' : '');
+  if (d.adjust) out += (d.adjust < 0 ? ' − ' : ' + ') + Math.round(Math.abs(d.adjust) * 100) + '% por tu objetivo';
+  return out + '.';
 }
 
 /** Age in whole years from a birth year, as of `today` (YYYY-MM-DD local date). Month is unknown, so this can be one year high. */

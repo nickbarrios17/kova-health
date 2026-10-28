@@ -35,6 +35,7 @@ import { toVidaError, unwrap, type SupabaseResult } from './errors.js';
 import { Outbox, type OutboxOp, type OutboxStorage } from './outbox.js';
 import { withRetry, type RetryOptions } from './retry.js';
 import { createTracking } from './tracking.js';
+export type { EnergyToday } from './tracking.js';
 
 export { toVidaError } from './errors.js';
 export { withRetry } from './retry.js';

@@ -25,25 +25,27 @@ export function Hoy({ live, onOpenLive, onStart }: {
   const today = localDate(new Date(), tz);
 
   const q = useAsync(async () => {
-    const [days, training, goals, insights] = await Promise.all([
+    const [days, training, goals, insights, energy] = await Promise.all([
       vida.summaries.daily(addDays(today, -6), today), loadTraining(), vida.goals.list(), vida.insights.today(today, 2).catch(() => []),
+      vida.energy.today(today).catch(() => null),
     ]);
-    return { days, training, goals: goals as Array<{ kind: string; status: string; target_value: number }>, insights };
+    return { days, training, goals: goals as Array<{ kind: string; status: string; target_value: number }>, insights, energy };
   }, [today]);
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>;
-  const { days, training, goals, insights } = q.data!;
+  const { days, training, goals, insights, energy } = q.data!;
   const t = days[days.length - 1]! as Record<string, unknown>;
   const plan = training.routines.find((x) => x.schedule_days.includes(isoWeekday(today)));
   const stepGoal = goals.find((g) => g.kind === 'steps_daily' && g.status === 'active')?.target_value ?? null;
   const weekSessions = days.reduce((a, d) => a + Number((d as Record<string, unknown>).workouts_completed ?? 0), 0);
   const latestW = [...days].reverse().find((d) => (d as Record<string, unknown>).weight_kg != null) as Record<string, unknown> | undefined;
 
-  const kcal = num(t.kcal), kcalGoal = num(t.kcal_goal), steps = num(t.steps), sleep = num(t.sleep_min), mood = num(t.mood);
+  // Today's target follows today's activity when the plan was calculated by VIDA.
+  const kcal = num(t.kcal), kcalGoal = energy?.mode === 'dynamic' ? energy.kcal : num(t.kcal_goal), steps = num(t.steps), sleep = num(t.sleep_min), mood = num(t.mood);
   const tiles: Tile[] = [
     kcal != null ? { icon: ForkKnife, name: 'Comida', period: 'Hoy', value: nf(Math.round(kcal), 0), unit: kcalGoal ? 'de ' + nf(kcalGoal, 0) + ' kcal' : 'kcal', hint: 'Proteína ' + Math.round(num(t.protein_g) ?? 0) + ' g' }
-      : { icon: ForkKnife, name: 'Comida', period: 'Hoy', empty: 'Sin registrar', hint: 'Añádelo en Comida' },
+      : { icon: ForkKnife, name: 'Comida', period: 'Hoy', empty: 'Sin registrar', hint: kcalGoal ? 'Meta de hoy: ' + nf(kcalGoal, 0) + ' kcal' : 'Añádelo en Comida' },
     steps != null ? { icon: SneakerMove, name: 'Pasos', period: 'Hoy', value: nf(steps, 0), unit: stepGoal ? 'de ' + nf(stepGoal, 0) : 'pasos', hint: stepGoal ? (steps >= stepGoal ? 'Objetivo cumplido' : 'Faltan ' + nf(stepGoal - steps, 0)) : 'Sin objetivo' }
       : { icon: SneakerMove, name: 'Pasos', period: 'Hoy', empty: 'Sin datos', hint: 'Llegan del reloj o de Health Connect' },
     sleep != null ? { icon: Moon, name: 'Sueño', period: 'Anoche', value: hm(sleep), hint: 'Duración dormido' }

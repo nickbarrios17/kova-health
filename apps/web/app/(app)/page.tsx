@@ -58,17 +58,22 @@ export default function HoyPage() {
 
   const q = useAsync(async () => {
     const c = vida();
-    const [days, routines, active, exercises, history, goals] = await Promise.all([
+    const [days, routines, active, exercises, history, goals, energy] = await Promise.all([
       c.summaries.daily(addDays(today, -6), today),
       c.routines.list(),
       c.workouts.active(),
       c.exercises.search({ limit: 100 }),
       c.workouts.recentHistory(500),
       c.goals.list(),
+      c.energy.today(today).catch(() => null),
     ]);
     const insights = await c.insights.today(today, 3).catch(() => []);
+    const rows = days.map((d) => Object.fromEntries(Object.entries(d).map(([k, v]) => [k, k === 'local_date' ? v : num(v) ?? v])) as unknown as Summary);
+    // Today's target follows today's activity when the plan was calculated by VIDA.
+    const last = rows[rows.length - 1];
+    if (last && energy?.mode === 'dynamic') last.kcal_goal = energy.kcal;
     return {
-      days: days.map((d) => Object.fromEntries(Object.entries(d).map(([k, v]) => [k, k === 'local_date' ? v : num(v) ?? v])) as unknown as Summary),
+      days: rows,
       routines: routines as RoutineRow[],
       active,
       exercises: exercises as ExerciseRow[],

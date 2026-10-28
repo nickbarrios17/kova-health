@@ -1,6 +1,8 @@
 'use client';
 /** Comida — today's meals, totals vs goal, and adding food with frozen nutrient snapshots. */
-import { addDays, localDate, MEAL_SLOTS, newId, nf, nutritionSourceLabel, scaleNutrients, VidaError, type NutritionSource } from '@vida/domain';
+import {
+  addDays, describeDailyTarget, localDate, MEAL_SLOTS, newId, nf, nutritionSourceLabel, scaleNutrients, VidaError, type NutritionSource,
+} from '@vida/domain';
 import { useState } from 'react';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
 import { vida } from '@/lib/client';
@@ -19,13 +21,20 @@ export default function ComidaPage() {
   const [day, setDay] = useState(today);
   const [adding, setAdding] = useState<Slot | null>(null);
   const q = useAsync(async () => {
-    const [meals, sum] = await Promise.all([vida().nutrition.day(day), vida().summaries.daily(day, day)]);
-    return { meals: meals as Array<{ slot: Slot; meal_items: Item[] }>, s: (sum[0] ?? {}) as Record<string, unknown> };
+    const [meals, sum, energy] = await Promise.all([
+      vida().nutrition.day(day), vida().summaries.daily(day, day),
+      // Today's target follows today's activity; past days keep the saved plan.
+      day === today ? vida().energy.today(today).catch(() => null) : Promise.resolve(null),
+    ]);
+    const dynamic = energy?.mode === 'dynamic' ? energy : null;
+    const s = { ...(sum[0] ?? {}) } as Record<string, unknown>;
+    if (dynamic) Object.assign(s, { kcal_goal: dynamic.kcal, protein_goal_g: dynamic.proteinG, carbs_goal_g: dynamic.carbsG, fat_goal_g: dynamic.fatG });
+    return { meals: meals as Array<{ slot: Slot; meal_items: Item[] }>, s, dynamic };
   }, [day]);
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <ErrorNotice message={q.error} onRetry={q.reload} />;
-  const { meals, s } = q.data!;
+  const { meals, s, dynamic } = q.data!;
   const macro = (label: string, k: string, g: string) => (
     <div key={k} style={{ flex: '1 1 120px', display: 'flex', flexDirection: 'column', gap: 4 }}>
       <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{label}</span>
@@ -57,6 +66,11 @@ export default function ComidaPage() {
         {macro('Carbohidratos', 'carbs_g', 'carbs_goal_g')}
         {macro('Grasa', 'fat_g', 'fat_goal_g')}
       </div>
+      {dynamic?.day ? (
+        <span style={{ fontSize: 12, color: 'var(--color-neutral-300)', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+          <i className="ph ph-lightning" style={{ marginTop: 2 }} />Meta de hoy según tu actividad: {describeDailyTarget(dynamic.day)} Se actualiza a medida que te movés.
+        </span>
+      ) : null}
       {Boolean(s.nutrition_has_unverified) && (
         <span style={{ fontSize: 12, color: 'var(--color-neutral-400)', display: 'flex', gap: 6, alignItems: 'center' }}><i className="ph ph-info" />Incluye valores introducidos por ti o estimados.</span>
       )}
