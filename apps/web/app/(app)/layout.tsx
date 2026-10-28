@@ -4,6 +4,7 @@ import { newId } from '@vida/domain';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { Onboarding } from '@/components/Onboarding';
 import { vida } from '@/lib/client';
 import { ago, greeting, headerDate, seg } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -38,6 +39,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const path = usePathname();
   const { status, prefs, setUnit } = useSession();
   const [now, setNow] = useState(() => new Date());
+  const [recalc, setRecalc] = useState(false);
 
   useEffect(() => {
     if (status === 'signedOut') router.replace(path === '/' ? '/login' : '/login?next=' + encodeURIComponent(path));
@@ -61,6 +63,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
+
+  if (!prefs.onboarded || recalc) return <Onboarding onClose={prefs.onboarded ? () => setRecalc(false) : undefined} />;
 
   const title = path === '/' ? greeting(now, prefs.time_zone) + (prefs.display_name ? ', ' + prefs.display_name : '') : TITLES[path] ?? 'VIDA';
 
@@ -95,7 +99,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }} />
             </div>
           ))}
-          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13, marginTop: 4 }}
+          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13, marginTop: 4 }} onClick={() => setRecalc(true)}>
+            <i className="ph ph-target" />Recalcular meta
+          </button>
+          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}
             onClick={() => vida().auth.signOut().then(() => router.replace('/login'))}>
             <i className="ph ph-sign-out" />Cerrar sesión
           </button>

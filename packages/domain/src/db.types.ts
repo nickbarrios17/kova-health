@@ -787,6 +787,7 @@ export type Database = {
           effective_from: string
           fat_g: number | null
           id: string
+          is_estimated: boolean
           kcal: number | null
           protein_g: number | null
           updated_at: string
@@ -798,6 +799,7 @@ export type Database = {
           effective_from: string
           fat_g?: number | null
           id?: string
+          is_estimated?: boolean
           kcal?: number | null
           protein_g?: number | null
           updated_at?: string
@@ -809,6 +811,7 @@ export type Database = {
           effective_from?: string
           fat_g?: number | null
           id?: string
+          is_estimated?: boolean
           kcal?: number | null
           protein_g?: number | null
           updated_at?: string
@@ -818,31 +821,43 @@ export type Database = {
       }
       profiles: {
         Row: {
+          activity_level: Database["public"]["Enums"]["activity_level"] | null
           birth_year: number | null
           created_at: string
           display_name: string | null
+          goal_pace: Database["public"]["Enums"]["goal_pace"] | null
           height_cm: number | null
           id: string
           onboarding_state: Database["public"]["Enums"]["onboarding_state"]
+          sex: Database["public"]["Enums"]["biological_sex"] | null
           updated_at: string
+          weight_goal: Database["public"]["Enums"]["weight_goal"] | null
         }
         Insert: {
+          activity_level?: Database["public"]["Enums"]["activity_level"] | null
           birth_year?: number | null
           created_at?: string
           display_name?: string | null
+          goal_pace?: Database["public"]["Enums"]["goal_pace"] | null
           height_cm?: number | null
           id: string
           onboarding_state?: Database["public"]["Enums"]["onboarding_state"]
+          sex?: Database["public"]["Enums"]["biological_sex"] | null
           updated_at?: string
+          weight_goal?: Database["public"]["Enums"]["weight_goal"] | null
         }
         Update: {
+          activity_level?: Database["public"]["Enums"]["activity_level"] | null
           birth_year?: number | null
           created_at?: string
           display_name?: string | null
+          goal_pace?: Database["public"]["Enums"]["goal_pace"] | null
           height_cm?: number | null
           id?: string
           onboarding_state?: Database["public"]["Enums"]["onboarding_state"]
+          sex?: Database["public"]["Enums"]["biological_sex"] | null
           updated_at?: string
+          weight_goal?: Database["public"]["Enums"]["weight_goal"] | null
         }
         Relationships: []
       }
@@ -1039,6 +1054,45 @@ export type Database = {
           updated_at?: string
           user_id?: string
           version?: number
+        }
+        Relationships: []
+      }
+      shown_insights: {
+        Row: {
+          created_at: string
+          dismissed_at: string | null
+          feedback: string | null
+          id: string
+          insight_key: string
+          kind: string
+          shown_at: string
+          shown_on: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed_at?: string | null
+          feedback?: string | null
+          id?: string
+          insight_key: string
+          kind: string
+          shown_at?: string
+          shown_on: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          dismissed_at?: string | null
+          feedback?: string | null
+          id?: string
+          insight_key?: string
+          kind?: string
+          shown_at?: string
+          shown_on?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1507,6 +1561,44 @@ export type Database = {
       }
     }
     Functions: {
+      complete_onboarding: {
+        Args: {
+          p_activity_level: Database["public"]["Enums"]["activity_level"]
+          p_birth_year: number
+          p_carbs_g: number
+          p_display_name: string
+          p_fat_g: number
+          p_goal_pace: Database["public"]["Enums"]["goal_pace"]
+          p_height_cm: number
+          p_is_estimated?: boolean
+          p_kcal: number
+          p_measurement_id: string
+          p_protein_g: number
+          p_sex: Database["public"]["Enums"]["biological_sex"]
+          p_time_zone?: string
+          p_weight_goal: Database["public"]["Enums"]["weight_goal"]
+          p_weight_kg: number
+        }
+        Returns: {
+          activity_level: Database["public"]["Enums"]["activity_level"] | null
+          birth_year: number | null
+          created_at: string
+          display_name: string | null
+          goal_pace: Database["public"]["Enums"]["goal_pace"] | null
+          height_cm: number | null
+          id: string
+          onboarding_state: Database["public"]["Enums"]["onboarding_state"]
+          sex: Database["public"]["Enums"]["biological_sex"] | null
+          updated_at: string
+          weight_goal: Database["public"]["Enums"]["weight_goal"] | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       daily_summaries: {
         Args: { p_from: string; p_to: string }
         Returns: {
@@ -1795,6 +1887,8 @@ export type Database = {
       }
     }
     Enums: {
+      activity_level: "sedentary" | "light" | "moderate" | "very_active"
+      biological_sex: "male" | "female"
       body_metric:
         | "weight_kg"
         | "body_fat_pct"
@@ -1827,6 +1921,7 @@ export type Database = {
         | "sleep_minutes_daily"
         | "workouts_weekly"
         | "custom"
+      goal_pace: "light" | "moderate" | "aggressive"
       goal_status: "active" | "achieved" | "abandoned"
       habit_frequency: "daily" | "weekly"
       habit_kind: "check" | "count" | "duration"
@@ -1851,6 +1946,7 @@ export type Database = {
       onboarding_state: "new" | "profile" | "goals" | "done"
       session_status: "in_progress" | "paused" | "completed" | "abandoned"
       set_type: "warmup" | "working" | "drop" | "failure"
+      weight_goal: "lose" | "maintain" | "gain"
       weight_unit: "kg" | "lb"
     }
     CompositeTypes: {
@@ -1982,6 +2078,8 @@ export const Constants = {
   },
   public: {
     Enums: {
+      activity_level: ["sedentary", "light", "moderate", "very_active"],
+      biological_sex: ["male", "female"],
       body_metric: [
         "weight_kg",
         "body_fat_pct",
@@ -2018,6 +2116,7 @@ export const Constants = {
         "workouts_weekly",
         "custom",
       ],
+      goal_pace: ["light", "moderate", "aggressive"],
       goal_status: ["active", "achieved", "abandoned"],
       habit_frequency: ["daily", "weekly"],
       habit_kind: ["check", "count", "duration"],
@@ -2044,6 +2143,7 @@ export const Constants = {
       onboarding_state: ["new", "profile", "goals", "done"],
       session_status: ["in_progress", "paused", "completed", "abandoned"],
       set_type: ["warmup", "working", "drop", "failure"],
+      weight_goal: ["lose", "maintain", "gain"],
       weight_unit: ["kg", "lb"],
     },
   },

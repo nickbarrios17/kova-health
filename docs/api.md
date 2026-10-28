@@ -38,6 +38,7 @@ All clients call Supabase (PostgREST + RPC) **with the signed-in user's JWT**. A
 | `record_body_measurements(p_rows)` | Batch of ≤ 500 measurements. Returns how many were new. | `id` and (`source`, `external_id`) |
 | `record_observations(p_rows)` | Batch of ≤ 500 health observations. Returns how many were new. | `id` and (`source`, `external_id`) |
 | `daily_summaries(p_from, p_to)` | One row per day (≤ 93 days), computed from source records | read-only |
+| `complete_onboarding(p_display_name, p_birth_year, p_height_cm, p_sex, p_activity_level, p_weight_goal, p_goal_pace, p_weight_kg, p_measurement_id, p_kcal, p_protein_g, p_carbs_g, p_fat_g, p_is_estimated, p_time_zone)` | Mandatory first run: saves the profile, the starting weight and the nutrition target from the local today, and sets `onboarding_state = 'done'`. Calling it again recalculates. | `p_measurement_id`; same-day target is replaced |
 | `export_my_data()` | Full JSON export of the caller's data (`vida-export/3`, every user table) | read-only |
 | `has_entitlement(p_code)` | Server-side premium check | read-only |
 
@@ -91,7 +92,14 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 
   Show non-verified values with `nutritionSourceLabel()`. Recipes take their least reliable ingredient's source.
 - **Snapshots.** `log_food` freezes kcal and macros for the logged quantity. Later edits to the food never change past days.
-- **Goals** are user-set numbers in `nutrition_goals`. A change adds a row from a date, so past days keep their goal. VIDA does not calculate or prescribe diets.
+- **Goals** live in `nutrition_goals`. A change adds a row from a date, so past days keep their goal. `is_estimated = true` means VIDA calculated it during onboarding (shown as an estimate); `false` means the user typed it.
+- **Energy estimate** (`energyTarget` in `@vida/domain`, run on the client, stored by `complete_onboarding`):
+  - Resting energy, Mifflin-St Jeor: `10 × kg + 6.25 × cm − 5 × age + 5` (male) or `− 161` (female). Sex is required for this formula and is not used for anything else.
+  - Total = resting × activity: sedentary 1.2, light 1.375, moderate 1.55, very active 1.725.
+  - Goal adjustment: lose −10 / −20 / −25 % (liviano / moderado / agresivo), maintain 0, gain +5 / +10 / +15 %. Rounded to 50 kcal and never below 1,200 kcal (female) or 1,500 kcal (male).
+  - Macros: protein 2.0 g/kg when losing, 1.8 g/kg otherwise; fat the larger of 0.8 g/kg and 25 % of energy; carbs the rest.
+  - Age comes from the birth year only, so it can be one year high.
+  - It is a general estimate, not medical advice; the user can type their own numbers instead.
 - The system food catalog is **empty** until a verified source is chosen (e.g. USDA FoodData Central or BEDCA), with its licence checked.
 
 ## Habit rules

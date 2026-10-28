@@ -14,6 +14,7 @@ import { Comida } from './screens/Comida';
 import { Entrenar } from './screens/Entrenar';
 import { Hoy } from './screens/Hoy';
 import { Login } from './screens/Login';
+import { Onboarding } from './screens/Onboarding';
 import { Progreso } from './screens/Progreso';
 import { Session, SessionSummary } from './screens/Session';
 import { SessionProvider, useSession } from './session';
@@ -66,6 +67,7 @@ function Shell() {
     return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={c.accent} /></View>;
   }
   if (status === 'signedOut') return <Login />;
+  if (!prefs!.onboarded) return <Onboarding />;
 
   const start = async (routineId: string, data: TrainingData) => {
     const routine = data.routines.find((x) => x.id === routineId);
