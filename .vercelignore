@@ -1,0 +1,15 @@
+# Only the web app and the shared packages are needed to build apps/web on Vercel.
+# apps/mobile stays (it is an npm workspace and npm ci needs its package.json).
+dist/
+design/
+docs/
+supabase/
+apps/watch/
+apps/mobile/android/
+apps/mobile/ios/
+.claude/
+.github/
+*.log
+*.tsbuildinfo
+.env*
+!.env.example

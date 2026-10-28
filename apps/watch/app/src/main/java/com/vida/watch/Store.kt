@@ -13,8 +13,9 @@ import java.util.UUID
  */
 const val PATCH_SESSION_HR = "__patch_session_hr"
 
-class Store(context: Context) {
-    private val p = context.getSharedPreferences("vida", Context.MODE_PRIVATE)
+/** [prefsName] is "vida" in the app; instrumented tests pass their own so they never touch the user's data. */
+class Store(context: Context, prefsName: String = "vida") {
+    private val p = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
 
     val accessToken: String? get() = p.getString("access", null)
     val refreshToken: String? get() = p.getString("refresh", null)
@@ -56,17 +57,22 @@ class Store(context: Context) {
     val pendingCount: Int
         get() = loadOutbox().let { q -> (0 until q.length()).count { q.getJSONObject(it).getString("status") == "pending" } }
 
-    /** Sends pending ops in order. Stops on network errors (kept pending); rejected ops are marked failed. */
+    fun flush(api: VidaApi): Int = flush { fn, params ->
+        if (fn == PATCH_SESSION_HR) api.patchSessionHr(params.getString("id"), params.getInt("avg_hr")) else api.rpc(fn, params)
+    }
+
+    /**
+     * Sends pending ops in order through [send]. Stops on network errors (IOException: kept pending);
+     * rejected ops (VidaApi.ApiError) are marked failed and skipped.
+     */
     @Synchronized
-    fun flush(api: VidaApi): Int {
+    fun flush(send: (fn: String, params: JSONObject) -> Unit): Int {
         val q = loadOutbox()
         for (i in 0 until q.length()) {
             val op = q.getJSONObject(i)
             if (op.getString("status") != "pending") continue
             try {
-                val params = op.getJSONObject("params")
-                if (op.getString("fn") == PATCH_SESSION_HR) api.patchSessionHr(params.getString("id"), params.getInt("avg_hr"))
-                else api.rpc(op.getString("fn"), params)
+                send(op.getString("fn"), op.getJSONObject("params"))
                 op.put("status", "confirmed")
             } catch (e: IOException) {
                 break

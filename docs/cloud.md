@@ -42,11 +42,12 @@ supabase test db --linked
 ### Ajustes de autenticación (panel → Authentication)
 - **Confirmar correo:** activado (el valor por defecto en la nube). Cada cuenta nueva recibe un correo de confirmación antes de poder entrar.
 - **Envío de correos:** el SMTP incluido en Supabase tiene límites estrictos (pocos correos por hora) y está pensado para pruebas. Para usuarios reales hay que configurar un SMTP propio (Resend, SendGrid, Brevo…) en Authentication → Emails → SMTP Settings.
-- **Site URL y Redirect URLs:** cuando la web esté publicada, en Authentication → URL Configuration:
-  - Site URL: la URL de Vercel (por ejemplo `https://vida-xxxx.vercel.app`).
-  - Redirect URLs: `https://vida-xxxx.vercel.app/**` y `vida://**` (el esquema de la app móvil).
+- **Site URL y Redirect URLs** (configurado el 28/10/2026):
+  - Site URL: `https://vida-nine-iota.vercel.app`.
+  - Redirect URLs: `https://vida-nine-iota.vercel.app/**` y `vida://**` (el esquema de la app móvil).
 
-  Sin esto, el enlace de «recuperar contraseña» lleva a `localhost` y no funciona fuera del PC.
+  Así los enlaces de confirmación y de «recuperar contraseña» abren la web publicada y no `localhost`.
+- **Cuidado con `supabase config push`:** aplica el cambio sin pedir confirmación y sube *todo* `supabase/config.toml`, que tiene valores de desarrollo local (confirmación de correo desactivada, URLs `127.0.0.1`). No lo ejecutes con el config del repo. Para cambiar un ajuste de la nube, usa el panel, o copia el config a una carpeta aparte, iguala todos los valores a los de la nube y cambia solo el que quieras (`supabase config push --workdir <carpeta>`). Comprueba después que `GET <SUPABASE_URL>/auth/v1/settings` devuelve `"mailer_autoconfirm": false`.
 - Recomendado: activar **Leaked password protection** y revisar el **Security Advisor**.
 
 ## Vercel (web)
@@ -59,16 +60,19 @@ Una sola vez, el propietario inicia sesión:
 npx vercel login
 ```
 
-Despliegue, desde la raíz del repositorio:
+Despliegue, desde la raíz del repositorio (la raíz ya está vinculada al proyecto `vida`; `.vercel/` está fuera de git):
 
 ```bash
-npx vercel deploy --prod --cwd apps/web
+npx vercel deploy --prod
 ```
 
 Variables de entorno del proyecto en Vercel (Settings → Environment Variables), solo públicas:
 - `NEXT_PUBLIC_SUPABASE_URL` = `https://oxfucatgikqbwowtgkow.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = la clave anon (la misma que en `apps/mobile/.env`)
 
-Al ser un monorepo, Vercel debe instalar desde la raíz: en el proyecto de Vercel, Root Directory = `apps/web` e «Include files outside the root directory» activado. Esto ya viene en la configuración por defecto de Vercel para monorepos con npm workspaces.
+Configuración del proyecto `vida` en Vercel (monorepo con npm workspaces):
+- Root Directory = `apps/web`, framework Next.js.
+- Install Command = `cd ../.. && npm ci --no-audit --no-fund`. Hace falta instalar desde la raíz: si Vercel instala solo `apps/web`, falta TypeScript (está en la raíz) y Next no resuelve los alias `@/`.
+- `.vercelignore` deja fuera de la subida lo que no se usa para compilar la web (APKs de `dist/`, `design/`, `docs/`, `supabase/`, el reloj y las carpetas nativas del móvil).
 
-Estado: **pendiente del inicio de sesión del propietario en Vercel** (ver la guía de uso, «Lo que te queda por hacer»).
+Estado: **publicada** en https://vida-nine-iota.vercel.app (producción).
