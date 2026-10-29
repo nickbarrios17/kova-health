@@ -1,7 +1,7 @@
 -- LOCAL DEVELOPMENT SEED ONLY. Runs on `supabase db reset`; never applied to production.
 -- Fake demo account (not a real person, no real health data):
---   email:    demo@vida.test
---   password: demo-vida-2026
+--   email:    demo@kova.test
+--   password: demo-kova-2026
 -- Routines mirror the prototype's "Fuerza A / Fuerza B" (design/prototypes/VIDA Health v2.dc.html).
 
 do $$
@@ -15,13 +15,13 @@ begin
     raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
     confirmation_token, recovery_token, email_change_token_new, email_change)
   values (
-    '00000000-0000-0000-0000-000000000000', demo, 'authenticated', 'authenticated', 'demo@vida.test',
-    extensions.crypt('demo-vida-2026', extensions.gen_salt('bf')), now(),
+    '00000000-0000-0000-0000-000000000000', demo, 'authenticated', 'authenticated', 'demo@kova.test',
+    extensions.crypt('demo-kova-2026', extensions.gen_salt('bf')), now(),
     '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '');
 
   insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
   values (gen_random_uuid(), demo, demo::text,
-          jsonb_build_object('sub', demo::text, 'email', 'demo@vida.test', 'email_verified', true),
+          jsonb_build_object('sub', demo::text, 'email', 'demo@kova.test', 'email_verified', true),
           'email', now(), now(), now());
 
   update public.profiles set display_name = 'Demo', onboarding_state = 'done' where id = demo;

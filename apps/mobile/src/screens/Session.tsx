@@ -1,5 +1,5 @@
 /** "Sesión en vivo" + "Resumen de sesión" from the prototype, persisted and offline-capable. */
-import { clock, dayMonth, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, VidaError, type WeightUnit } from '@vida/domain';
+import { clock, dayMonth, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, KovaError, type WeightUnit } from '@kova/domain';
 import { CaretDown, Check, CheckCircle, HourglassMedium, Pause, Play, Plus, Trophy } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
@@ -42,7 +42,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof VidaError ? e.message : 'Algo salió mal.');
+      setError(e instanceof KovaError ? e.message : 'Algo salió mal.');
     }
   };
   const disp = (kg: number | null) => (kg == null ? '' : String(units === 'kg' ? kg : toDisplayWeight(kg, 'lb')).replace('.', ','));

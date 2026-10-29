@@ -1,4 +1,4 @@
--- VIDA Intelligence memory: owner-only access, one row per insight per day, frozen key/kind.
+-- Kova Intelligence memory: owner-only access, one row per insight per day, frozen key/kind.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(6);

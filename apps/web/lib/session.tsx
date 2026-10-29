@@ -3,9 +3,9 @@
  * Auth session + user preferences for the whole app. The session lives in supabase-js
  * (browser storage); authorization is enforced by RLS on the server, not here.
  */
-import type { Tables, WeightUnit } from '@vida/domain';
+import type { Tables, WeightUnit } from '@kova/domain';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { vida } from './client';
+import { kova } from './client';
 
 type Status = 'loading' | 'signedOut' | 'signedIn';
 
@@ -42,7 +42,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [loadTick, setLoadTick] = useState(0);
 
   const loadPrefs = useCallback(async () => {
-    const c = vida();
+    const c = kova();
     const [p, profile, weights] = await Promise.all([
       c.profile.getPreferences(), c.profile.get(), c.body.history('weight_kg', 1).catch(() => []),
     ]);
@@ -65,7 +65,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const sb = vida().supabase;
+    const sb = kova().supabase;
     sb.auth.getSession().then(({ data }) => setStatus(data.session ? 'signedIn' : 'signedOut'));
     const { data: sub } = sb.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') setRecovery(true);
@@ -106,7 +106,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const setUnit = useCallback(async (u: WeightUnit) => {
     setPrefs((p) => (p ? { ...p, weight_unit: u } : p));
-    await vida().profile.updatePreferences({ weight_unit: u });
+    await kova().profile.updatePreferences({ weight_unit: u });
   }, []);
 
   const retryLoad = useCallback(() => setLoadTick((t) => t + 1), []);

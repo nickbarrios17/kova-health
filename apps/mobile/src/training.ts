@@ -1,4 +1,4 @@
-import { vida } from './client';
+import { kova } from './client';
 import type { RoutineForStart } from './workout';
 
 export interface TrainingData {
@@ -15,10 +15,10 @@ export interface TrainingData {
 /** Routines + exercise names + last/best weights (for prefilled sets and PR detection). */
 export async function loadTraining(): Promise<TrainingData> {
   const [routines, exercises, history, records] = await Promise.all([
-    vida.routines.list(),
-    vida.exercises.search({ limit: 100 }),
-    vida.workouts.recentHistory(500),
-    vida.workouts.personalRecords(),
+    kova.routines.list(),
+    kova.exercises.search({ limit: 100 }),
+    kova.workouts.recentHistory(500),
+    kova.workouts.personalRecords(),
   ]);
   const names = new Map((exercises as Array<{ id: string; name: string; short_name: string | null }>).map((e) => [e.id, e.short_name ?? e.name]));
   const lastKg = new Map<string, number>();

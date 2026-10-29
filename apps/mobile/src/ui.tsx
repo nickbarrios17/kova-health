@@ -151,7 +151,7 @@ export function Row({ children, style }: { children: ReactNode; style?: StylePro
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 8 }, style]}>{children}</View>;
 }
 
-/** In-app confirmation dialog (replaces the system Alert so it matches the rest of VIDA). */
+/** In-app confirmation dialog (replaces the system Alert so it matches the rest of Kova Health). */
 export function Confirm({
   visible, title, message, confirmLabel, cancelLabel = 'Cancelar', destructive, onConfirm, onCancel,
 }: {

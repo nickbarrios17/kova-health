@@ -28,7 +28,7 @@ export function UpdatePrompt({ release, onLater }: { release: ApkRelease; onLate
     <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={mandatory ? () => undefined : onLater}>
       <View style={{ flex: 1, backgroundColor: 'rgba(8,9,16,0.72)', justifyContent: 'center', padding: 24 }}>
         <View accessibilityViewIsModal style={{ backgroundColor: c.surface, borderRadius: r.lg, borderWidth: 1, borderColor: c.divider, padding: 20, gap: 12 }}>
-          <T size={18} w="medium" accessibilityRole="header">Hay una versión nueva de VIDA</T>
+          <T size={18} w="medium" accessibilityRole="header">Hay una versión nueva de Kova Health</T>
           <T size={14} color={c.n300}>
             Versión {release.versionName}.{release.notes ? ' ' + release.notes : ''}
           </T>

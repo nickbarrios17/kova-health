@@ -1,11 +1,11 @@
 # Android y Wear OS: compilar e instalar
 
-Este documento explica cómo se generan los dos APK de VIDA, cómo instalarlos en el teléfono y en un reloj Wear OS, y qué hacer si algo falla.
+Este documento explica cómo se generan los dos APK de Kova Health, cómo instalarlos en el teléfono y en un reloj Wear OS, y qué hacer si algo falla.
 
 | APK | Origen | Tamaño aprox. | Requisitos |
 | --- | --- | --- | --- |
-| `dist/VIDA-movil-0.1.0.apk` | `apps/mobile` (Expo SDK 58, React Native 0.88) | ~45 MB | Android 8.0+ (API 26, requisito de Health Connect), ARM 32/64 bits |
-| `dist/VIDA-reloj-wearos-0.1.0.apk` | `apps/watch` (Kotlin, Compose) | 2 MB | Wear OS 3+ (API 30) |
+| `dist/Kova-Health-movil-0.1.0.apk` | `apps/mobile` (Expo SDK 58, React Native 0.88) | ~45 MB | Android 8.0+ (API 26, requisito de Health Connect), ARM 32/64 bits |
+| `dist/Kova-Health-reloj-wearos-0.1.0.apk` | `apps/watch` (Kotlin, Compose) | 2 MB | Wear OS 3+ (API 30) |
 
 Ambos se conectan al proyecto de Supabase en la nube (`docs/cloud.md`), así que funcionan con cualquier conexión a internet, sin el PC encendido. `dist/` no se sube a git: los APK se regeneran con los comandos de abajo. `dist/SHA256SUMS.txt` tiene la huella de cada archivo.
 
@@ -13,16 +13,16 @@ Ambos se conectan al proyecto de Supabase en la nube (`docs/cloud.md`), así que
 
 ## 1. Instalar en el teléfono
 
-1. Copia `VIDA-movil-0.1.0.apk` al teléfono por cable USB, Google Drive, correo o WhatsApp a ti mismo.
+1. Copia `Kova-Health-movil-0.1.0.apk` al teléfono por cable USB, Google Drive, correo o WhatsApp a ti mismo.
 2. Ábrelo desde la app «Archivos» o desde la notificación de descarga.
 3. Android pedirá permiso para **instalar apps de origen desconocido** para esa app (Archivos, Chrome, Drive…). Actívalo solo para esa app y vuelve atrás.
 4. Pulsa **Instalar**. Si aparece Play Protect, elige «Instalar de todos modos». Es normal en apps que no vienen de Play Store.
-5. Abre **VIDA**, crea tu cuenta o inicia sesión.
+5. Abre **Kova Health**, crea tu cuenta o inicia sesión.
 
 Alternativa con cable, con la depuración USB activada en el teléfono:
 
 ```bash
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\VIDA-movil-0.1.0.apk"
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\Kova-Health-movil-0.1.0.apk"
 ```
 
 **Actualizar:** instala el APK nuevo encima del anterior. Los datos se conservan porque están en la nube y la firma es la misma. Con las actualizaciones automáticas (§5) esto pasa solo.
@@ -65,15 +65,15 @@ Los relojes Wear OS no tienen navegador de archivos, así que el APK se instala 
 ### 2.3 Instalar
 
 ```bash
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\VIDA-reloj-wearos-0.1.0.apk"
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\Kova-Health-reloj-wearos-0.1.0.apk"
 ```
 
 Si hay más de un dispositivo conectado, añade `-s IP_DEL_RELOJ:PUERTO_DE_CONEXION` después de la ruta de `adb.exe`.
 
-5. En el reloj, abre **VIDA** desde la lista de apps e inicia sesión con **la misma cuenta del móvil**. El teclado del reloj sirve para escribir el correo y la contraseña; solo hace falta una vez.
+5. En el reloj, abre **Kova Health** desde la lista de apps e inicia sesión con **la misma cuenta del móvil**. El teclado del reloj sirve para escribir el correo y la contraseña; solo hace falta una vez.
 6. Cuando termines, desactiva la **Depuración por Wi-Fi** en el reloj para ahorrar batería.
 
-> En relojes con Wear OS 2, que ya no reciben soporte, el emparejamiento es distinto (`adb connect IP:5555`). VIDA necesita Wear OS 3 o superior.
+> En relojes con Wear OS 2, que ya no reciben soporte, el emparejamiento es distinto (`adb connect IP:5555`). Kova Health necesita Wear OS 3 o superior.
 
 ### 2.4 Qué hace la app del reloj
 - **Inicio:** hora, rutina de hoy, botón **Empezar** y estado de sincronización.
@@ -93,7 +93,7 @@ Si hay más de un dispositivo conectado, añade `-s IP_DEL_RELOJ:PUERTO_DE_CONEX
 - `apps/mobile/.env` con `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY` (ver `.env.example`; solo valores públicos).
 
 ### El problema de las rutas largas en Windows
-La compilación nativa en C++ (CMake + ninja) falla con `Filename longer than 260 characters` si el proyecto está en una carpeta larga como `…\Proyectos personales\VIDA HEALT\…`. Un `subst` no sirve, porque Node resuelve las rutas reales. Por eso se compila desde una **copia en una carpeta corta** (`C:\v`), con la caché de CMake también en una ruta corta, mediante el plugin `apps/mobile/plugins/withShortCxxDir.js` y la variable `VIDA_CXX_DIR`.
+La compilación nativa en C++ (CMake + ninja) falla con `Filename longer than 260 characters` si el proyecto está en una carpeta larga como `…\Proyectos personales\VIDA HEALT\…`. Un `subst` no sirve, porque Node resuelve las rutas reales. Por eso se compila desde una **copia en una carpeta corta** (`C:\v`), con la caché de CMake también en una ruta corta, mediante el plugin `apps/mobile/plugins/withShortCxxDir.js` y la variable `KOVA_CXX_DIR`.
 
 ### Pasos
 
@@ -106,7 +106,7 @@ robocopy "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT" C:\v /MIR /XD 
 En Git Bash:
 
 ```bash
-cd /c/v && npm ci && cd apps/mobile && VIDA_CXX_DIR=C:/v/x npx expo prebuild --platform android --clean --no-install
+cd /c/v && npm ci && cd apps/mobile && KOVA_CXX_DIR=C:/v/x npx expo prebuild --platform android --clean --no-install
 ```
 
 ```bash
@@ -133,7 +133,7 @@ cd "/c/Users/nicol/Desktop/Proyectos personales/VIDA HEALT/apps/watch" && JAVA_H
 - También se puede abrir `apps/watch` en Android Studio y usar **Run** con el reloj conectado por ADB.
 
 ### Tests en el reloj
-`app/src/androidTest/.../StoreTest.kt` corre en el propio reloj: outbox (orden, errores de red, rechazos), persistencia del entreno en curso y armado de la sesión desde una rutina. También cubre que un campo nulo del servidor (`short_name` de los ejercicios propios) no se muestre como el texto «null». Usa su propio archivo de preferencias (`vida-test`), así que no toca la sesión ni los datos de la app.
+`app/src/androidTest/.../StoreTest.kt` corre en el propio reloj: outbox (orden, errores de red, rechazos), persistencia del entreno en curso y armado de la sesión desde una rutina. También cubre que un campo nulo del servidor (`short_name` de los ejercicios propios) no se muestre como el texto «null». Usa su propio archivo de preferencias (`kova-test`), así que no toca la sesión ni los datos de la app.
 
 No uses `connectedDebugAndroidTest`: al terminar desinstala la app y cierra la sesión del reloj. En su lugar (Git Bash, en `apps/watch`, con el reloj conectado):
 
@@ -142,11 +142,11 @@ No uses `connectedDebugAndroidTest`: al terminar desinstala la app y cierra la s
 ```
 
 ```bash
-ADB="/c/Users/nicol/AppData/Local/Android/Sdk/platform-tools/adb.exe"; "$ADB" install -r app/build/outputs/apk/debug/app-debug.apk && "$ADB" install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk && "$ADB" shell am instrument -w com.vida.health.test/androidx.test.runner.AndroidJUnitRunner
+ADB="/c/Users/nicol/AppData/Local/Android/Sdk/platform-tools/adb.exe"; "$ADB" install -r app/build/outputs/apk/debug/app-debug.apk && "$ADB" install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk && "$ADB" shell am instrument -w com.kovahealth.app.test/androidx.test.runner.AndroidJUnitRunner
 ```
 
 ```bash
-ADB="/c/Users/nicol/AppData/Local/Android/Sdk/platform-tools/adb.exe"; "$ADB" uninstall com.vida.health.test; "$ADB" install -r app/build/outputs/apk/release/app-release.apk
+ADB="/c/Users/nicol/AppData/Local/Android/Sdk/platform-tools/adb.exe"; "$ADB" uninstall com.kovahealth.app.test; "$ADB" install -r app/build/outputs/apk/release/app-release.apk
 ```
 
 Con más de un dispositivo conectado, agrega `-s <serie del reloj>` después de `"$ADB"` (la serie sale en `adb devices`). Las versiones debug y release se firman con la misma clave, así que `install -r` conserva la sesión.
@@ -169,23 +169,23 @@ Dos caminos, decididos solos por GitHub Actions (`.github/workflows/mobile-relea
 | Cambio | Cómo llega al teléfono |
 | --- | --- |
 | Solo código (pantallas, cálculos, arreglos) | **Por aire** con EAS Update (`expo-updates`): la app lo descarga al abrirse y lo usa en el siguiente arranque, sin hacer nada. |
-| Nativo (permisos, librerías nativas, versión de Expo) | **APK nuevo** firmado con la clave de VIDA, subido al bucket público `releases` de Supabase con `android/latest.json`. La app muestra «Hay una versión nueva de VIDA» → **Actualizar** → descarga → instalador de Android → **Instalar**. |
+| Nativo (permisos, librerías nativas, versión de Expo) | **APK nuevo** firmado con la clave de Kova Health, subido al bucket público `releases` de Supabase con `android/latest.json`. La app muestra «Hay una versión nueva de Kova Health» → **Actualizar** → descarga → instalador de Android → **Instalar**. |
 
 - **Cómo decide:** el `runtimeVersion` de la app usa la política `fingerprint`: un hash de todo lo nativo. Si coincide con el del APK publicado (`latest.json.runtimeVersion`), alcanza con una actualización por aire; si no, se compila un APK. *Run workflow* con `force_apk` obliga a compilarlo.
 - **Aviso en la app:** `apps/mobile/src/appUpdate.ts` lee `latest.json` al abrir y al volver a la app (como mucho cada 6 h). Solo acepta APK del mismo proyecto de Supabase, y Android rechaza cualquier APK que no esté firmado con la misma clave. `minVersionCode` en `latest.json` vuelve la actualización obligatoria. No aparece durante un entrenamiento. En **Progreso → Versión de la app** se ve la versión y hay **Buscar actualizaciones**.
-- **Android no permite instalar solo** fuera de Play Store: siempre hace falta tocar «Instalar». La primera vez pide permitir que VIDA instale apps (`REQUEST_INSTALL_PACKAGES`).
-- **Firma:** `plugins/withReleaseSigning.js` firma con la clave de VIDA cuando existen `VIDA_KEYSTORE_FILE`, `VIDA_KEYSTORE_PASSWORD`, `VIDA_KEY_ALIAS` y `VIDA_KEY_PASSWORD`; si no, con la de depuración (compilaciones locales). `VIDA_VERSION_CODE` fija el `versionCode` (CI usa el publicado + 1).
+- **Android no permite instalar solo** fuera de Play Store: siempre hace falta tocar «Instalar». La primera vez pide permitir que Kova Health instale apps (`REQUEST_INSTALL_PACKAGES`).
+- **Firma:** `plugins/withReleaseSigning.js` firma con la clave de Kova Health cuando existen `KOVA_KEYSTORE_FILE`, `KOVA_KEYSTORE_PASSWORD`, `KOVA_KEY_ALIAS` y `KOVA_KEY_PASSWORD`; si no, con la de depuración (compilaciones locales). `KOVA_VERSION_CODE` fija el `versionCode` (CI usa el publicado + 1).
 - **Desde ahora los APK que se reparten salen de GitHub Actions**, no de este PC: así todos tienen la misma firma y reciben las actualizaciones por aire. Un APK compilado localmente con la clave de depuración no puede actualizarse encima de uno oficial (ni al revés).
 - **Configuración inicial (una vez, la hacés vos):**
   1. Cuenta gratis en https://expo.dev y, en la PC, `npx eas-cli@24.13.0 login`.
-  2. `.\scripts\setup-releases.ps1` en PowerShell desde la raíz del repo: crea la clave de firma en `%USERPROFILE%\vida-release` (**hacé una copia: sin ella no se pueden publicar actualizaciones**) y carga en GitHub los secretos `VIDA_KEYSTORE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `EXPO_TOKEN` y las variables `EXPO_PUBLIC_SUPABASE_*`.
+  2. `.\scripts\setup-releases.ps1` en PowerShell desde la raíz del repo: crea la clave de firma en `%USERPROFILE%\kova-release` (**hacé una copia: sin ella no se pueden publicar actualizaciones**) y carga en GitHub los secretos `KOVA_KEYSTORE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `EXPO_TOKEN` y las variables `EXPO_PUBLIC_SUPABASE_*`.
   3. Vincular el proyecto de Expo (`eas init` + `eas update:configure`, agrega `extra.eas.projectId` y `updates.url` a `app.json`) y lanzar la primera versión.
-  4. En cada teléfono que tenía un APK firmado con la clave de depuración: **desinstalar VIDA una vez** e instalar el APK oficial (el enlace está en `latest.json`). Los datos están en la nube; antes, abrir la app con conexión para que se envíe lo pendiente.
+  4. En cada teléfono que tenía un APK firmado con la clave de depuración: **desinstalar Kova Health una vez** e instalar el APK oficial (el enlace está en `latest.json`). Los datos están en la nube; antes, abrir la app con conexión para que se envíe lo pendiente.
 - **Límite:** el plan gratis de Supabase sube archivos de hasta 50 MB; el APK pesa ~44 MB.
 
 ## 6. Firma y publicación en Play Store
 
-- Los APK compilados en este PC están firmados con la **clave de depuración local**. Los oficiales usan la clave de VIDA (§5).
+- Los APK compilados en este PC están firmados con la **clave de depuración local**. Los oficiales usan la clave de Kova Health (§5).
 - Para **Google Play** hace falta una clave de publicación propia. Se crea una sola vez y se guarda en un lugar seguro: si se pierde, no se puede actualizar la app publicada. Es una tarea tuya (ver la guía de uso). Opciones:
   - **EAS Build** (`npx eas-cli build -p android`), que gestiona la clave en la nube de Expo y requiere una cuenta de Expo.
   - Una clave local con `keytool` y un plugin que configure `signingConfigs.release`.
@@ -209,7 +209,7 @@ Dos caminos, decididos solos por GitHub Actions (`.github/workflows/mobile-relea
 
 | Síntoma | Causa | Solución |
 | --- | --- | --- |
-| «No se ha instalado la app» en el teléfono | Hay otra versión firmada con otra clave | Desinstala VIDA y vuelve a instalar |
+| «No se ha instalado la app» en el teléfono | Hay otra versión firmada con otra clave | Desinstala Kova Health y vuelve a instalar |
 | `adb pair` falla | Código caducado o puerto equivocado | Repite «Emparejar dispositivo nuevo»; el puerto de emparejamiento cambia cada vez |
 | `adb connect` falla | Reloj y PC en redes distintas, o la Wi-Fi del reloj apagada | Conecta el reloj a la misma Wi-Fi (no por Bluetooth del teléfono) |
 | La app dice «Sin conexión» | Sin internet, o el servidor no responde | Sigue usando la app: todo queda en cola y se envía después |

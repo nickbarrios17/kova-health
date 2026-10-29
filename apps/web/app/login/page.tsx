@@ -1,8 +1,8 @@
 'use client';
-import { VidaError } from '@vida/domain';
+import { KovaError } from '@kova/domain';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { useSession } from '@/lib/session';
 
 type Mode = 'signin' | 'signup' | 'forgot';
@@ -36,7 +36,7 @@ export default function LoginPage() {
     setError(null);
     setNotice(null);
     try {
-      const auth = vida().auth;
+      const auth = kova().auth;
       if (mode === 'signin') await auth.signIn(email, password);
       else if (mode === 'signup') {
         const res = await auth.signUp(email, password);
@@ -46,11 +46,11 @@ export default function LoginPage() {
         setNotice('Si existe una cuenta con ese correo, te hemos enviado un enlace para cambiar la contraseña.');
       }
     } catch (err) {
-      const code = err instanceof VidaError ? err.code : 'INTERNAL';
+      const code = err instanceof KovaError ? err.code : 'INTERNAL';
       setError(
         mode === 'signin' && (code === 'INVALID_INPUT' || code === 'UNAUTHENTICATED' || code === 'INTERNAL')
           ? 'Correo o contraseña incorrectos.'
-          : err instanceof VidaError ? err.message : 'Algo salió mal.',
+          : err instanceof KovaError ? err.message : 'Algo salió mal.',
       );
     } finally {
       setBusy(false);
@@ -59,23 +59,23 @@ export default function LoginPage() {
 
   const c = COPY[mode];
   return (
-    <div className="vida-auth">
-      <form className="vida-auth-card" onSubmit={submit} noValidate>
+    <div className="kova-auth">
+      <form className="kova-auth-card" onSubmit={submit} noValidate>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ width: 10, height: 22, borderRadius: 3, background: 'var(--color-accent)', boxShadow: '0 0 14px var(--color-accent)' }} />
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '.08em' }}>VIDA</span>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '.08em' }}>Kova Health</span>
         </div>
         <h1 style={{ fontSize: 22, margin: 0 }}>{c.title}</h1>
 
         {error && (
-          <div className="vida-error" role="alert">
-            <i className="ph ph-x-circle" style={{ color: 'var(--vida-crit)', fontSize: 16, marginTop: 1 }} />
+          <div className="kova-error" role="alert">
+            <i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)', fontSize: 16, marginTop: 1 }} />
             <span>{error}</span>
           </div>
         )}
         {notice && (
-          <div className="vida-error" role="status" style={{ borderColor: 'var(--color-divider)' }}>
-            <i className="ph ph-check-circle" style={{ color: 'var(--vida-ok)', fontSize: 16, marginTop: 1 }} />
+          <div className="kova-error" role="status" style={{ borderColor: 'var(--color-divider)' }}>
+            <i className="ph ph-check-circle" style={{ color: 'var(--kova-ok)', fontSize: 16, marginTop: 1 }} />
             <span>{notice}</span>
           </div>
         )}
@@ -99,7 +99,7 @@ export default function LoginPage() {
         )}
 
         <button className="btn btn-primary btn-block" type="submit" disabled={busy || !email || (mode !== 'forgot' && !password)}>
-          <i className={busy ? 'ph ph-circle-notch vida-spin' : c.icon} />
+          <i className={busy ? 'ph ph-circle-notch kova-spin' : c.icon} />
           {busy ? 'Un momento…' : c.cta}
         </button>
 

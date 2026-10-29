@@ -1,7 +1,7 @@
-/** Web style helpers ported from design/prototypes/VIDA Web v2.dc.html. Pure formatting lives in @vida/domain. */
+/** Web style helpers ported from design/prototypes/VIDA Web v2.dc.html. Pure formatting lives in @kova/domain. */
 import type { CSSProperties } from 'react';
 
-export { addDays, ago, dayMonth, dayShort, dur, greeting, headerDate, hm, isoDays, MOODS, nf, shortDate } from '@vida/domain';
+export { addDays, ago, dayMonth, dayShort, dur, greeting, headerDate, hm, isoDays, MOODS, nf, shortDate } from '@kova/domain';
 
 /** stroke-dasharray for a progress ring. */
 export const ring = (pct: number, r: number) => {
@@ -27,4 +27,4 @@ export const chip = (on: boolean): CSSProperties => ({
   borderColor: on ? 'var(--color-accent)' : 'var(--color-divider)',
 });
 
-export const warnFg = (bad: boolean) => (bad ? 'var(--vida-warn)' : 'var(--color-text)');
+export const warnFg = (bad: boolean) => (bad ? 'var(--kova-warn)' : 'var(--color-text)');

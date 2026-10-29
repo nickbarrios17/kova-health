@@ -1,8 +1,8 @@
-import { VidaError } from '@vida/domain';
+import { KovaError } from '@kova/domain';
 import { EnvelopeSimple, SignIn, UserPlus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { vida } from '../client';
+import { kova } from '../client';
 import { c } from '../theme';
 import { Button, Card, Field, Notice, T } from '../ui';
 
@@ -26,17 +26,17 @@ export function Login() {
     setError(null);
     setNotice(null);
     try {
-      if (mode === 'signin') await vida.auth.signIn(email.trim(), password);
+      if (mode === 'signin') await kova.auth.signIn(email.trim(), password);
       else if (mode === 'signup') {
-        const res = await vida.auth.signUp(email.trim(), password);
+        const res = await kova.auth.signUp(email.trim(), password);
         if (!res.session) setNotice('Te enviamos un correo para confirmar la cuenta. Ábrelo y después inicia sesión aquí.');
       } else {
-        await vida.auth.requestPasswordReset(email.trim());
+        await kova.auth.requestPasswordReset(email.trim());
         setNotice('Si existe una cuenta con ese correo, te enviamos un enlace para cambiar la contraseña.');
       }
     } catch (e) {
-      const code = e instanceof VidaError ? e.code : 'INTERNAL';
-      setError(mode === 'signin' && code !== 'NETWORK' && code !== 'EMAIL_NOT_CONFIRMED' && code !== 'RATE_LIMITED' ? 'Correo o contraseña incorrectos.' : e instanceof VidaError ? e.message : 'Algo salió mal.');
+      const code = e instanceof KovaError ? e.code : 'INTERNAL';
+      setError(mode === 'signin' && code !== 'NETWORK' && code !== 'EMAIL_NOT_CONFIRMED' && code !== 'RATE_LIMITED' ? 'Correo o contraseña incorrectos.' : e instanceof KovaError ? e.message : 'Algo salió mal.');
     } finally {
       setBusy(false);
     }
@@ -49,7 +49,7 @@ export function Login() {
         <Card style={{ gap: 16, padding: 22 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 10, height: 22, borderRadius: 3, backgroundColor: c.accent }} />
-            <T size={20} w="medium" style={{ letterSpacing: 1.6 }}>VIDA</T>
+            <T size={20} w="medium" style={{ letterSpacing: 1.6 }}>Kova Health</T>
           </View>
           <T size={22} w="medium">{k.title}</T>
           {error ? <Notice tone="warn" text={error} /> : null}

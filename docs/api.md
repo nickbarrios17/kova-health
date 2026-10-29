@@ -1,12 +1,12 @@
 # API and data access
 
 All clients call Supabase (PostgREST + RPC) **with the signed-in user's JWT**. Authorization is RLS in Postgres. There is no "admin mode" in clients.
-- TypeScript clients use `@vida/api-client`.
+- TypeScript clients use `@kova/api-client`.
 - The Wear OS app calls the same HTTP endpoints: `POST {SUPABASE_URL}/rest/v1/rpc/<fn>` with headers `apikey: <anon>` and `Authorization: Bearer <user JWT>`.
 
 ## Conventions
-- **Validation.** Zod schemas in `@vida/domain/schemas.ts` validate input before any request. Postgres constraints, triggers and RPC checks re-validate at the trust boundary.
-- **Errors.** Every failure becomes `VidaError { code, message, retryable }`. The message is a safe Spanish string, and SQL text is never shown. SQL raises domain errors with SQLSTATE `VDxxx`:
+- **Validation.** Zod schemas in `@kova/domain/schemas.ts` validate input before any request. Postgres constraints, triggers and RPC checks re-validate at the trust boundary.
+- **Errors.** Every failure becomes `KovaError { code, message, retryable }`. The message is a safe Spanish string, and SQL text is never shown. SQL raises domain errors with SQLSTATE `VDxxx`:
 
   | SQLSTATE | code | HTTP (PostgREST) | Retry? |
   | --- | --- | --- | --- |
@@ -98,7 +98,7 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 
   Show non-verified values with `nutritionSourceLabel()`. Recipes take their least reliable ingredient's source.
 - **Snapshots.** `log_food` freezes kcal and macros for the logged quantity. Later edits to the food never change past days.
-- **Goals** live in `nutrition_goals`. A change adds a row from a date, so past days keep their goal. `is_estimated = true` means VIDA calculated it during onboarding (shown as an estimate); `false` means the user typed it.
+- **Goals** live in `nutrition_goals`. A change adds a row from a date, so past days keep their goal. `is_estimated = true` means Kova Health calculated it during onboarding (shown as an estimate); `false` means the user typed it.
 - **Energy** (`packages/domain/src/energy.ts`; the result is always shown as an estimate):
   - **Resting energy, best available method** (`bestRestingEnergy`):
     1. Body fat % known (watch bioimpedance via Health Connect ≤ 30 days, typed, or tape measurements ≤ 90 days) → **Cunningham (1980)**: `500 + 22 × lean mass kg`.
@@ -109,9 +109,9 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
   - **Onboarding (typical day)** (`energyTarget`): resting × activity factor (sedentary 1.2, light 1.375, moderate 1.55, very active 1.725), then the goal adjustment.
   - **Daily target** (`dailyTarget`, loaded by `energy.today`): resting × 1.2 (sedentary day, includes ~3,000 steps) + that day's activity, of which only 70% is credited and at most +1,200 kcal:
     - steps above 3,000 × kg × 0.0004 kcal (net of resting);
-    - workouts completed in VIDA: 3.5 METs above resting × kg × active hours (strength training ≈ 4.5 METs);
+    - workouts completed in Kova Health: 3.5 METs above resting × kg × active hours (strength training ≈ 4.5 METs);
     - missing steps (no watch data) use the 7-day average, never zero, and the UI says so.
-    It applies when the plan was calculated by VIDA (`nutrition_goals.is_estimated`); a plan typed by the user stays fixed. Protein and fat follow the reference weight; carbs absorb the day's difference.
+    It applies when the plan was calculated by Kova Health (`nutrition_goals.is_estimated`); a plan typed by the user stays fixed. Protein and fat follow the reference weight; carbs absorb the day's difference.
   - Goal adjustment: lose −10 / −20 / −25 % (liviano / moderado / agresivo), maintain 0, gain +5 / +10 / +15 %, **recomposition** −5 % with no pace (`goalAdjust`; only lose and gain have a pace, `goalHasPace`). Rounded to 50 kcal and never below 1,200 kcal (female) or 1,500 kcal (male).
   - Macros: protein 2.0 g/kg when losing, 2.2 g/kg in recomposition, 1.8 g/kg otherwise (`PROTEIN_PER_KG`); fat the larger of 0.8 g/kg and 25 % of energy; carbs the rest. The kg are a **reference weight** (`macroReferenceWeight`), because fat mass needs no protein: the weight at a healthy body fat (15 % men, 25 % women) when lean mass is known, otherwise the weight at BMI 25 for the person's height, never more than the actual weight. Activity energy still uses total weight. Daily targets recompute macros every day instead of copying the saved plan.
   - Sex is required for the formulas and is not used for anything else. Age comes from the birth year only, so it can be one year high.
@@ -127,7 +127,7 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 - Every row has `source` (`manual`, `health_connect`, `healthkit`, `wear_os`, `import`), an optional `source_app`, an `external_id` for de-duplication, and `is_estimated`.
 - Units are fixed per metric: weight in kg, circumferences in cm, sleep and active time in minutes, HRV in ms (RMSSD), heart rate in bpm, distance in m, energy in kcal, mood 1–5, stress 0–100.
 - `local_date` comes from the event time in the user's time zone. Sleep is assigned to the **wake-up** day.
-- Vendor sleep scores are stored only when the vendor provides them (`details.vendor_score`). They are never computed by VIDA.
+- Vendor sleep scores are stored only when the vendor provides them (`details.vendor_score`). They are never computed by Kova Health.
 
 ## Daily summaries (`calc_version` 1)
 
@@ -144,5 +144,5 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
 
 Missing data is `null`, never `0` or a default (except counts of zero events). Change `calc_version` whenever a rule changes.
 
-## VIDA Intelligence (client-side)
-`vida.insights.today(localDate, limit)` loads 60 days of `daily_summaries` + `habit_days`, runs `generateInsights` from `@vida/domain`, ranks with novelty/fatigue from `shown_insights` (last 14 days) and records what was shown (idempotent per day). `vida.insights.feedback(key, localDate, 'useful'|'not_useful')` stores feedback. Insights are never computed by an LLM; see `docs/architecture.md`.
+## Kova Intelligence (client-side)
+`kova.insights.today(localDate, limit)` loads 60 days of `daily_summaries` + `habit_days`, runs `generateInsights` from `@kova/domain`, ranks with novelty/fatigue from `shown_insights` (last 14 days) and records what was shown (idempotent per day). `kova.insights.feedback(key, localDate, 'useful'|'not_useful')` stores feedback. Insights are never computed by an LLM; see `docs/architecture.md`.

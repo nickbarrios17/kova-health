@@ -1,5 +1,5 @@
 {
-  "name": "@vida/api-client",
+  "name": "@kova/api-client",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
-    "@vida/domain": "0.1.0",
+    "@kova/domain": "0.1.0",
     "zod": "^3.23.8"
   }
 }

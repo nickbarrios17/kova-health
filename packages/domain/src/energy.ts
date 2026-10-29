@@ -47,7 +47,7 @@ export const PACE_ADJUST: Record<'lose' | 'gain', Record<GoalPace, number>> = {
   gain: { light: 0.05, moderate: 0.1, aggressive: 0.15 },
 };
 
-/** Lowest target VIDA will suggest without supervision. */
+/** Lowest target Kova Health will suggest without supervision. */
 export const KCAL_FLOOR: Record<Sex, number> = { male: 1500, female: 1200 };
 
 export const SEX_LABEL: Record<Sex, string> = { male: 'Hombre', female: 'Mujer' };

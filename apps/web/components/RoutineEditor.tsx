@@ -5,10 +5,10 @@
  */
 import {
   draftToSaveInput, fromDisplayWeight, moveItem, newId, newItem, normalize, parseRepsInput, repsLabel, slugify, toDisplayWeight, toggleDay,
-  validateDraft, VidaError, type EditorItem, type RoutineDraft, type WeightUnit,
-} from '@vida/domain';
+  validateDraft, KovaError, type EditorItem, type RoutineDraft, type WeightUnit,
+} from '@kova/domain';
 import { useEffect, useMemo, useState } from 'react';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 
 const WEEK: Array<[number, string, string]> = [
   [1, 'L', 'Lunes'], [2, 'M', 'Martes'], [3, 'X', 'Miércoles'], [4, 'J', 'Jueves'], [5, 'V', 'Viernes'], [6, 'S', 'Sábado'], [7, 'D', 'Domingo'],
@@ -62,7 +62,7 @@ function ItemRow({ item, index, count, units, onChange, onMove, onRemove }: {
             onChange={(e) => { setLoad(e.target.value); const v = num(e.target.value); onChange({ loadKg: v == null ? null : fromDisplayWeight(v, units) }); }} />
         </div>
       </div>
-      {repsBad ? <span style={{ fontSize: 12, color: 'var(--vida-warn)' }}>Reps: un número (8) o un rango (8-12).</span> : null}
+      {repsBad ? <span style={{ fontSize: 12, color: 'var(--kova-warn)' }}>Reps: un número (8) o un rango (8-12).</span> : null}
     </div>
   );
 }
@@ -109,7 +109,7 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
     if (errs.length) return;
     setBusy(true);
     try {
-      const c = vida();
+      const c = kova();
       for (const it of d.items) {
         const name = pendingNew[it.exerciseId];
         if (name) await c.exercises.create({ id: it.exerciseId, name, slug: (slugify(name) + '-' + it.exerciseId.slice(0, 6)).slice(0, 80) });
@@ -117,10 +117,10 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
       await c.routines.save(draftToSaveInput(d));
       onClose(true);
     } catch (e) {
-      const code = e instanceof VidaError ? e.code : '';
+      const code = e instanceof KovaError ? e.code : '';
       setErrors([code === 'VERSION_CONFLICT'
         ? 'Esta rutina cambió en otro dispositivo mientras la editabas. Cierra el editor y vuelve a abrirla.'
-        : e instanceof VidaError ? e.message : 'No se pudo guardar. Revisa tu conexión.']);
+        : e instanceof KovaError ? e.message : 'No se pudo guardar. Revisa tu conexión.']);
     } finally {
       setBusy(false);
     }
@@ -129,10 +129,10 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
   const remove = async () => {
     setBusy(true);
     try {
-      await vida().routines.remove(d.id);
+      await kova().routines.remove(d.id);
       onClose(true);
     } catch (e) {
-      setErrors([e instanceof VidaError ? e.message : 'No se pudo borrar.']);
+      setErrors([e instanceof KovaError ? e.message : 'No se pudo borrar.']);
       setBusy(false);
     }
   };
@@ -180,11 +180,11 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
         {query.trim() ? (
           <div role="listbox" aria-label="Ejercicios" style={{ display: 'flex', flexDirection: 'column', marginTop: 4, border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
             {matches.map((e) => (
-              <button key={e.id} type="button" role="option" aria-selected={false} className="vida-nav" onClick={() => add(e.id, e.name)}
+              <button key={e.id} type="button" role="option" aria-selected={false} className="kova-nav" onClick={() => add(e.id, e.name)}
                 style={{ textAlign: 'left', padding: '9px 12px', border: 0, background: 'transparent', color: 'var(--color-text)', fontSize: 14, cursor: 'pointer' }}>{e.name}</button>
             ))}
             {!exact ? (
-              <button type="button" role="option" aria-selected={false} className="vida-nav" onClick={addNew}
+              <button type="button" role="option" aria-selected={false} className="kova-nav" onClick={addNew}
                 style={{ textAlign: 'left', padding: '9px 12px', border: 0, background: 'transparent', color: 'var(--color-accent-300)', fontSize: 14, cursor: 'pointer' }}>
                 <i className="ph ph-plus" /> Crear «{query.trim().slice(0, 60)}»
               </button>
@@ -194,21 +194,21 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
       </div>
 
       {errors.length ? (
-        <div className="vida-error" role="alert">
-          <i className="ph ph-x-circle" style={{ color: 'var(--vida-crit)', fontSize: 16, marginTop: 1 }} />
+        <div className="kova-error" role="alert">
+          <i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)', fontSize: 16, marginTop: 1 }} />
           <span>{errors.map((m) => <span key={m} style={{ display: 'block' }}>{m}</span>)}</span>
         </div>
       ) : null}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         <button type="button" className="btn btn-primary" disabled={busy} onClick={save}>
-          {busy ? <><i className="ph ph-circle-notch vida-spin" />Guardando…</> : <><i className="ph ph-check" />Guardar rutina</>}
+          {busy ? <><i className="ph ph-circle-notch kova-spin" />Guardando…</> : <><i className="ph ph-check" />Guardar rutina</>}
         </button>
         {!isNew ? (
           confirmDelete ? (
             <>
               <span style={{ fontSize: 13 }}>¿Borrar esta rutina? Tu historial no se pierde.</span>
-              <button type="button" className="btn btn-secondary" disabled={busy} onClick={remove} style={{ color: 'var(--vida-crit)' }}>Sí, borrar</button>
+              <button type="button" className="btn btn-secondary" disabled={busy} onClick={remove} style={{ color: 'var(--kova-crit)' }}>Sí, borrar</button>
               <button type="button" className="btn btn-ghost" onClick={() => setConfirmDelete(false)}>No</button>
             </>
           ) : (

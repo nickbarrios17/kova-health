@@ -1,4 +1,4 @@
-package com.vida.watch
+package com.kovahealth.watch
 
 import android.Manifest
 import android.content.Context

@@ -11,7 +11,7 @@ import {
   RecordSetSchema,
   StartSessionSchema,
   TransitionSessionSchema,
-  VidaError,
+  KovaError,
   type BodyMeasurementInput,
   type ErrorCode,
   type HealthObservationInput,
@@ -20,7 +20,7 @@ import {
   type RecordSetInput,
   type StartSessionInput,
   type TransitionSessionInput,
-} from '@vida/domain';
+} from '@kova/domain';
 
 export type OutboxOp =
   | { kind: 'start_session'; input: StartSessionInput }
@@ -87,7 +87,7 @@ export class Outbox {
   /** Validate and persist an operation before attempting to send it. */
   async enqueue(op: OutboxOp): Promise<OutboxEntry> {
     const parsed = SCHEMA[op.kind].safeParse(op.input);
-    if (!parsed.success) throw new VidaError('INVALID_INPUT', 'Algún dato no es válido.');
+    if (!parsed.success) throw new KovaError('INVALID_INPUT', 'Algún dato no es válido.');
     const entries = await this.storage.load();
     const entry: OutboxEntry = { id: newId(), op, status: 'pending', attempts: 0, enqueued_at: new Date().toISOString() };
     entries.push(entry);
@@ -129,7 +129,7 @@ export class Outbox {
         entry.status = 'confirmed';
         delete entry.error;
       } catch (err) {
-        const e = err instanceof VidaError ? err : new VidaError('INTERNAL');
+        const e = err instanceof KovaError ? err : new KovaError('INTERNAL');
         if (e.retryable) {
           entry.error = e.code;
           await this.storage.save(entries);

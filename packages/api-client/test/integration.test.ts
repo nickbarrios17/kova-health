@@ -3,8 +3,8 @@
  * Skipped when SUPABASE_URL / SUPABASE_ANON_KEY are not set. Uses throwaway fake users only.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { newId } from '@vida/domain';
-import { createVidaClient, type VidaClient } from '../src/index.js';
+import { newId } from '@kova/domain';
+import { createKovaClient, type KovaClient } from '../src/index.js';
 
 const URL = process.env.SUPABASE_URL;
 const ANON = process.env.SUPABASE_ANON_KEY;
@@ -12,10 +12,10 @@ const MAILPIT = process.env.MAILPIT_URL ?? 'http://127.0.0.1:54324';
 const run = Boolean(URL && ANON);
 
 const PASSWORD = 'test-pass-1234';
-const email = (tag: string) => `it-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@vida.test`;
+const email = (tag: string) => `it-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@kova.test`;
 
-async function newUser(tag: string): Promise<{ c: VidaClient; email: string; id: string }> {
-  const c = createVidaClient({ url: URL!, anonKey: ANON!, retry: { baseDelayMs: 50 } });
+async function newUser(tag: string): Promise<{ c: KovaClient; email: string; id: string }> {
+  const c = createKovaClient({ url: URL!, anonKey: ANON!, retry: { baseDelayMs: 50 } });
   const e = email(tag);
   await c.auth.signUp(e, PASSWORD);
   await c.auth.signIn(e, PASSWORD);
@@ -35,7 +35,7 @@ function lossyFetch(match: RegExp) {
   }) as typeof fetch;
 }
 
-describe.skipIf(!run)('VIDA backend (local Supabase)', () => {
+describe.skipIf(!run)('Kova Health backend (local Supabase)', () => {
   let a: Awaited<ReturnType<typeof newUser>>;
   let b: Awaited<ReturnType<typeof newUser>>;
   let squatId: string;
@@ -102,7 +102,7 @@ describe.skipIf(!run)('VIDA backend (local Supabase)', () => {
 
     const sessionId = newId();
     // Lost response on start → retry must return the same session, not fail or duplicate.
-    const flaky = createVidaClient({ url: URL!, anonKey: ANON!, supabase: undefined, fetch: lossyFetch(/rpc\/start_session/), retry: { baseDelayMs: 20 } });
+    const flaky = createKovaClient({ url: URL!, anonKey: ANON!, supabase: undefined, fetch: lossyFetch(/rpc\/start_session/), retry: { baseDelayMs: 20 } });
     await flaky.auth.signIn(a.email, PASSWORD);
     const s = await flaky.workouts.start({ id: sessionId, routine_id: routine.id, time_zone: 'Europe/Madrid' });
     expect(s.status).toBe('in_progress');

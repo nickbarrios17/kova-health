@@ -1,5 +1,5 @@
 /**
- * VIDA Intelligence v1 (design/reference/VIDA Intelligence (Copy).md §03–§09, §12).
+ * Kova Intelligence v1 (design/reference/Kova Intelligence (Copy).md §03–§09, §12).
  * Deterministic detectors over the user's own daily summaries — no AI, no network.
  * Every insight carries its kind and evidence level; the kind decides the allowed language:
  *   fact        → plain arithmetic, always true.

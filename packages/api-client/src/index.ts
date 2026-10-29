@@ -1,5 +1,5 @@
 /**
- * Typed data access for VIDA web and mobile. Talks to Supabase with the user's session only;
+ * Typed data access for Kova Health web and mobile. Talks to Supabase with the user's session only;
  * authorization is enforced by RLS in the database, never here. See docs/api.md.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
@@ -18,7 +18,7 @@ import {
   SetRowSchema,
   StartSessionSchema,
   TransitionSessionSchema,
-  VidaError,
+  KovaError,
   type DeviceRegister,
   type ExerciseCreate,
   type ExerciseSearch,
@@ -30,19 +30,19 @@ import {
   type StartSessionInput,
   type Tables,
   type TransitionSessionInput,
-} from '@vida/domain';
+} from '@kova/domain';
 import type { z } from 'zod';
-import { toVidaError, unwrap, type SupabaseResult } from './errors.js';
+import { toKovaError, unwrap, type SupabaseResult } from './errors.js';
 import { Outbox, type OutboxOp, type OutboxStorage } from './outbox.js';
 import { withRetry, type RetryOptions } from './retry.js';
 import { createTracking } from './tracking.js';
 export type { EnergyToday } from './tracking.js';
 
-export { toVidaError } from './errors.js';
+export { toKovaError } from './errors.js';
 export { withRetry } from './retry.js';
 export * from './outbox.js';
 
-export interface VidaClientOptions {
+export interface KovaClientOptions {
   url: string;
   anonKey: string;
   /** Inject a preconfigured client (e.g. with React Native AsyncStorage). */
@@ -80,23 +80,23 @@ export type SyncTable = (typeof SYNC_TABLES)[number];
 
 function parse<S extends z.ZodTypeAny>(schema: S, input: unknown): z.output<S> {
   const r = schema.safeParse(input);
-  if (!r.success) throw new VidaError('INVALID_INPUT', 'Algún dato no es válido.');
+  if (!r.success) throw new KovaError('INVALID_INPUT', 'Algún dato no es válido.');
   return r.data;
 }
 
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => '\\' + c);
 
-export function createVidaClient(opts: VidaClientOptions) {
+export function createKovaClient(opts: KovaClientOptions) {
   const sb: SupabaseClient =
     opts.supabase ??
     createClient(opts.url, opts.anonKey, opts.fetch ? { global: { fetch: opts.fetch } } : undefined);
 
-  // supabase-js resolves network failures as `{ error }` too; normalise everything to VidaError.
+  // supabase-js resolves network failures as `{ error }` too; normalise everything to KovaError.
   const call = async <R extends SupabaseResult>(p: PromiseLike<R>): Promise<NonNullable<R['data']>> => {
     try {
       return unwrap(await p);
     } catch (err) {
-      throw toVidaError(err);
+      throw toKovaError(err);
     }
   };
   const rpc = async <T = unknown>(fn: string, args: Record<string, unknown>): Promise<T> =>
@@ -106,7 +106,7 @@ export function createVidaClient(opts: VidaClientOptions) {
   const uid = async (): Promise<string> => {
     const { data } = await sb.auth.getSession();
     const id = data.session?.user.id;
-    if (!id) throw new VidaError('UNAUTHENTICATED', 'Inicia sesión de nuevo.');
+    if (!id) throw new KovaError('UNAUTHENTICATED', 'Inicia sesión de nuevo.');
     return id;
   };
 
@@ -115,7 +115,7 @@ export function createVidaClient(opts: VidaClientOptions) {
     signIn: (email: string, password: string) => call(sb.auth.signInWithPassword({ email, password })),
     signOut: async () => {
       const { error } = await sb.auth.signOut();
-      if (error) throw toVidaError(error);
+      if (error) throw toKovaError(error);
     },
     requestPasswordReset: (email: string, redirectTo?: string) =>
       call(sb.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined)),
@@ -357,7 +357,7 @@ export function createVidaClient(opts: VidaClientOptions) {
     /** Permanently deletes the account and all its data (server-side, service role). */
     delete: async () => {
       const { data, error } = await sb.functions.invoke('delete-account', { body: { confirm: 'DELETE' } });
-      if (error) throw toVidaError(error, (error as { context?: { status?: number } }).context?.status);
+      if (error) throw toKovaError(error, (error as { context?: { status?: number } }).context?.status);
       await sb.auth.signOut({ scope: 'local' });
       return data as { deleted: true };
     },
@@ -380,4 +380,4 @@ export function createVidaClient(opts: VidaClientOptions) {
   };
 }
 
-export type VidaClient = ReturnType<typeof createVidaClient>;
+export type KovaClient = ReturnType<typeof createKovaClient>;

@@ -1,7 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
-import { createVidaClient, type OutboxEntry, type OutboxStorage, type VidaClient } from '@vida/api-client';
+import { createKovaClient, type OutboxEntry, type OutboxStorage, type KovaClient } from '@kova/api-client';
 import { AppState } from 'react-native';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -32,10 +32,10 @@ AppState.addEventListener('change', (state) => {
 });
 
 /** One client for the whole app. Authorization is RLS on the server; nothing here is trusted. */
-export const vida: VidaClient = createVidaClient({ url: url ?? '', anonKey: anonKey ?? '', supabase });
+export const kova: KovaClient = createKovaClient({ url: url ?? '', anonKey: anonKey ?? '', supabase });
 
 /** Outbox persisted on the device so queued sets/logs survive app restarts (docs/sync.md). */
-const OUTBOX_KEY = 'vida:outbox';
+const OUTBOX_KEY = 'kova:outbox';
 export const outboxStorage: OutboxStorage = {
   async load() {
     try {
@@ -48,4 +48,4 @@ export const outboxStorage: OutboxStorage = {
     await AsyncStorage.setItem(OUTBOX_KEY, JSON.stringify(entries));
   },
 };
-export const outbox = vida.createOutbox(outboxStorage);
+export const outbox = kova.createOutbox(outboxStorage);

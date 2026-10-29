@@ -1,4 +1,4 @@
-import { ago, VidaError } from '@vida/domain';
+import { ago, KovaError } from '@kova/domain';
 import { ArrowsClockwise, Heartbeat, Link } from 'phosphor-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -26,7 +26,7 @@ export function HealthCard({ onSynced }: { onSynced: () => void }) {
       q.reload();
       onSynced();
     } catch (e) {
-      setMsg(e instanceof VidaError ? e.message : 'No se pudo sincronizar. Revisa los permisos de Health Connect.');
+      setMsg(e instanceof KovaError ? e.message : 'No se pudo sincronizar. Revisa los permisos de Health Connect.');
     } finally {
       setBusy(false);
     }
@@ -52,7 +52,7 @@ export function HealthCard({ onSynced }: { onSynced: () => void }) {
         </View>
       ) : granted === 0 ? (
         <View style={{ gap: 8 }}>
-          <T size={13} color={c.n400}>Importa pasos, sueño, peso, % de grasa corporal, frecuencia cardíaca en reposo y HRV desde tu reloj o tus apps de salud. Solo lectura: VIDA no escribe en Health Connect.</T>
+          <T size={13} color={c.n400}>Importa pasos, sueño, peso, % de grasa corporal, frecuencia cardíaca en reposo y HRV desde tu reloj o tus apps de salud. Solo lectura: Kova Health no escribe en Health Connect.</T>
           <Button label="Conectar" icon={Link} busy={busy} onPress={() => run(async () => {
             const n = await hc.connect();
             if (n === 0) return 'No diste permiso a ningún dato. Puedes cambiarlo cuando quieras.';

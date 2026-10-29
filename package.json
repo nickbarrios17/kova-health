@@ -1,5 +1,5 @@
 {
-  "name": "vida",
+  "name": "kova-health",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -13,16 +13,16 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "test:unit": "npm run test --workspace @vida/domain",
-    "test:integration": "npm run test --workspace @vida/api-client",
+    "test:unit": "npm run test --workspace @kova/domain",
+    "test:integration": "npm run test --workspace @kova/api-client",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
     "db:lint": "supabase db lint --level warning",
     "db:types": "supabase gen types typescript --local > packages/domain/src/db.types.ts",
-    "dev:web": "npm run dev --workspace @vida/web",
-    "build:web": "npm run build --workspace @vida/web",
-    "dev:mobile": "npm run start --workspace @vida/mobile"
+    "dev:web": "npm run dev --workspace @kova/web",
+    "build:web": "npm run build --workspace @kova/web",
+    "dev:mobile": "npm run start --workspace @kova/mobile"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

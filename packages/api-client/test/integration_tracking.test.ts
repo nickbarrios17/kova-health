@@ -3,26 +3,26 @@
  * Throwaway fake users only; they delete themselves at the end.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { dailyStreak, localDate, newId, type HabitDay } from '@vida/domain';
-import { createVidaClient, type VidaClient } from '../src/index.js';
+import { dailyStreak, localDate, newId, type HabitDay } from '@kova/domain';
+import { createKovaClient, type KovaClient } from '../src/index.js';
 
 const URL = process.env.SUPABASE_URL;
 const ANON = process.env.SUPABASE_ANON_KEY;
 const run = Boolean(URL && ANON);
 const PASSWORD = 'test-pass-1234';
 
-async function newUser(tag: string): Promise<VidaClient> {
-  const c = createVidaClient({ url: URL!, anonKey: ANON!, retry: { baseDelayMs: 50 } });
-  const email = `it-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@vida.test`;
+async function newUser(tag: string): Promise<KovaClient> {
+  const c = createKovaClient({ url: URL!, anonKey: ANON!, retry: { baseDelayMs: 50 } });
+  const email = `it-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@kova.test`;
   await c.auth.signUp(email, PASSWORD);
   await c.auth.signIn(email, PASSWORD);
   await c.profile.updatePreferences({ time_zone: 'Europe/Madrid' });
   return c;
 }
 
-describe.skipIf(!run)('VIDA phase 4 (local Supabase)', () => {
-  let a: VidaClient;
-  let b: VidaClient;
+describe.skipIf(!run)('Kova Health phase 4 (local Supabase)', () => {
+  let a: KovaClient;
+  let b: KovaClient;
   const day = '2025-10-25';
 
   beforeAll(async () => {

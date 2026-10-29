@@ -1,4 +1,4 @@
-package com.vida.watch
+package com.kovahealth.watch
 
 import android.content.Context
 import org.json.JSONArray
@@ -13,8 +13,8 @@ import java.util.UUID
  */
 const val PATCH_SESSION_HR = "__patch_session_hr"
 
-/** [prefsName] is "vida" in the app; instrumented tests pass their own so they never touch the user's data. */
-class Store(context: Context, prefsName: String = "vida") {
+/** [prefsName] is "kova" in the app; instrumented tests pass their own so they never touch the user's data. */
+class Store(context: Context, prefsName: String = "kova") {
     private val p = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
 
     val accessToken: String? get() = p.getString("access", null)
@@ -57,13 +57,13 @@ class Store(context: Context, prefsName: String = "vida") {
     val pendingCount: Int
         get() = loadOutbox().let { q -> (0 until q.length()).count { q.getJSONObject(it).getString("status") == "pending" } }
 
-    fun flush(api: VidaApi): Int = flush { fn, params ->
+    fun flush(api: KovaApi): Int = flush { fn, params ->
         if (fn == PATCH_SESSION_HR) api.patchSessionHr(params.getString("id"), params.getInt("avg_hr")) else api.rpc(fn, params)
     }
 
     /**
      * Sends pending ops in order through [send]. Stops on network errors (IOException: kept pending);
-     * rejected ops (VidaApi.ApiError) are marked failed and skipped.
+     * rejected ops (KovaApi.ApiError) are marked failed and skipped.
      */
     @Synchronized
     fun flush(send: (fn: String, params: JSONObject) -> Unit): Int {
@@ -76,7 +76,7 @@ class Store(context: Context, prefsName: String = "vida") {
                 op.put("status", "confirmed")
             } catch (e: IOException) {
                 break
-            } catch (e: VidaApi.ApiError) {
+            } catch (e: KovaApi.ApiError) {
                 op.put("status", "failed").put("error", e.message)
             }
             p.edit().putString("outbox", q.toString()).apply()

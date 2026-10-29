@@ -4,12 +4,12 @@
  */
 import {
   ACTIVITY_LABEL, ageFromBirthYear, energyTarget, fromDisplayWeight, GOAL_HINT, GOAL_LABEL, goalHasPace, localDate, newId, nf, PACE_ADJUST, PACE_LABEL,
-  resolveBodyFat, RMR_METHOD_LABEL, SEX_LABEL, toDisplayWeight, VidaError, type ActivityLevel, type GoalPace, type Sex, type WeightGoal,
+  resolveBodyFat, RMR_METHOD_LABEL, SEX_LABEL, toDisplayWeight, KovaError, type ActivityLevel, type GoalPace, type Sex, type WeightGoal,
   type WeightUnit,
-} from '@vida/domain';
+} from '@kova/domain';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
-import { vida } from '../client';
+import { kova } from '../client';
 import { useSession, type Prefs } from '../session';
 import { c, r } from '../theme';
 import { Button, Card, ErrorNote, Field, Notice, Row, Seg, T } from '../ui';
@@ -72,7 +72,7 @@ export function Onboarding({ onCancel }: { onCancel?: () => void }) {
   const [hip, setHip] = useState('');
   const [loaded, setLoaded] = useState<{ fat: string; fatFromDevice: boolean; neck: string; waist: string; hip: string } | null>(null);
   useEffect(() => {
-    vida.body.composition().then((c) => {
+    kova.body.composition().then((c) => {
       const recent = c.fat && (Date.now() - Date.parse(c.fat.measuredAt)) / 86_400_000 <= 30 ? c.fat : null;
       const str = (v: number | undefined) => (v == null ? '' : String(v).replace('.', ','));
       const l = { fat: str(recent?.value), fatFromDevice: !!recent && recent.source !== 'manual', neck: str(c.neck?.value), waist: str(c.waist?.value), hip: str(c.hip?.value) };
@@ -138,9 +138,9 @@ export function Onboarding({ onCancel }: { onCancel?: () => void }) {
       ];
       const changed = rows.filter((r) => r.text.trim() && r.text.trim() !== (r.was ?? '').trim() && num(r.text) != null);
       if (changed.length) {
-        await vida.body.record(changed.map((r) => ({ id: newId(), metric: r.metric, value: num(r.text)!, measured_at: at, time_zone: p.time_zone })));
+        await kova.body.record(changed.map((r) => ({ id: newId(), metric: r.metric, value: num(r.text)!, measured_at: at, time_zone: p.time_zone })));
       }
-      await vida.profile.completeOnboarding({
+      await kova.profile.completeOnboarding({
         displayName: name.trim() || null, birthYear: by!, heightCm: h!, weightKg: Math.round(weightKg! * 10) / 10, sex: sex!,
         activity: activity!, goal: goal!, pace: goalHasPace(goal) ? pace : null, measurementId,
         kcal: Math.round(vals.kcal), proteinG: Math.round(vals.proteinG!), carbsG: Math.round(vals.carbsG!), fatG: Math.round(vals.fatG!),
@@ -149,7 +149,7 @@ export function Onboarding({ onCancel }: { onCancel?: () => void }) {
       await reloadPrefs();
       onCancel?.();
     } catch (e) {
-      setError(e instanceof VidaError ? e.message : 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');
+      setError(e instanceof KovaError ? e.message : 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');
     } finally {
       setBusy(false);
     }
@@ -168,7 +168,7 @@ export function Onboarding({ onCancel }: { onCancel?: () => void }) {
         {step === 1 ? (
           <>
             <View style={{ gap: 6 }}>
-              <T size={26} w="medium">Bienvenido a VIDA</T>
+              <T size={26} w="medium">Bienvenido a Kova Health</T>
               <T size={14} color={c.n400}>Antes de empezar, unos datos para ajustar la app a vos. Lleva un minuto.</T>
             </View>
             <Field label="¿Cómo te llamamos?" value={name} onChangeText={setName} placeholder="Tu nombre" autoCapitalize="words" maxLength={80} />
@@ -259,7 +259,7 @@ export function Onboarding({ onCancel }: { onCancel?: () => void }) {
         <View style={{ gap: 8, marginTop: 4 }}>
           {step < 3 ? <Button label="Continuar" onPress={next} /> : <Button label="Guardar y empezar" onPress={save} busy={busy} />}
           {step > 1 ? <Button variant="secondary" label="Atrás" onPress={() => { setError(null); setStep((step - 1) as Step); }} /> : null}
-          {!onCancel ? <Button variant="ghost" label="Cerrar sesión" onPress={() => vida.auth.signOut()} /> : null}
+          {!onCancel ? <Button variant="ghost" label="Cerrar sesión" onPress={() => kova.auth.signOut()} /> : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

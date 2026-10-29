@@ -1,12 +1,12 @@
-/** Create or edit a routine by hand (same model and rules as the web editor, @vida/domain routineEditor). */
+/** Create or edit a routine by hand (same model and rules as the web editor, @kova/domain routineEditor). */
 import {
   draftToSaveInput, fromDisplayWeight, moveItem, newId, newItem, normalize, parseRepsInput, repsLabel, slugify, toDisplayWeight, toggleDay,
-  validateDraft, VidaError, type EditorItem, type RoutineDraft, type WeightUnit,
-} from '@vida/domain';
+  validateDraft, KovaError, type EditorItem, type RoutineDraft, type WeightUnit,
+} from '@kova/domain';
 import { ArrowDown, ArrowUp, Check, Plus, Trash } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
-import { vida } from '../client';
+import { kova } from '../client';
 import { c, r } from '../theme';
 import { Button, Card, Confirm, ErrorNote, Field, Row, T } from '../ui';
 
@@ -115,15 +115,15 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
     try {
       for (const it of d.items) {
         const name = pendingNew[it.exerciseId];
-        if (name) await vida.exercises.create({ id: it.exerciseId, name, slug: (slugify(name) + '-' + it.exerciseId.slice(0, 6)).slice(0, 80) });
+        if (name) await kova.exercises.create({ id: it.exerciseId, name, slug: (slugify(name) + '-' + it.exerciseId.slice(0, 6)).slice(0, 80) });
       }
-      await vida.routines.save(draftToSaveInput(d));
+      await kova.routines.save(draftToSaveInput(d));
       onClose(true);
     } catch (e) {
-      const code = e instanceof VidaError ? e.code : '';
+      const code = e instanceof KovaError ? e.code : '';
       setErrors([code === 'VERSION_CONFLICT'
         ? 'Esta rutina cambió en otro dispositivo mientras la editabas. Cancela y vuelve a abrirla.'
-        : e instanceof VidaError ? e.message : 'No se pudo guardar. Revisa tu conexión.']);
+        : e instanceof KovaError ? e.message : 'No se pudo guardar. Revisa tu conexión.']);
     } finally {
       setBusy(false);
     }
@@ -133,10 +133,10 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
     setConfirmDelete(false);
     setBusy(true);
     try {
-      await vida.routines.remove(d.id);
+      await kova.routines.remove(d.id);
       onClose(true);
     } catch (e) {
-      setErrors([e instanceof VidaError ? e.message : 'No se pudo borrar.']);
+      setErrors([e instanceof KovaError ? e.message : 'No se pudo borrar.']);
       setBusy(false);
     }
   };

@@ -3,8 +3,8 @@
 #   EAS Update. Phones download it on their own the next time the app opens.
 # - Native change (new fingerprint), or "force_apk": builds a signed APK, uploads it to the public
 #   Supabase bucket `releases` with latest.json, and the app shows "Actualizar app".
-# Needs (scripts/setup-releases.ps1 sets them): secrets EXPO_TOKEN, VIDA_KEYSTORE_BASE64,
-# VIDA_KEYSTORE_PASSWORD, VIDA_KEY_ALIAS, VIDA_KEY_PASSWORD, SUPABASE_SERVICE_ROLE_KEY; variables
+# Needs (scripts/setup-releases.ps1 sets them): secrets EXPO_TOKEN, KOVA_KEYSTORE_BASE64,
+# KOVA_KEYSTORE_PASSWORD, KOVA_KEY_ALIAS, KOVA_KEY_PASSWORD, SUPABASE_SERVICE_ROLE_KEY; variables
 # EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY.
 name: Mobile release
 
@@ -50,14 +50,14 @@ jobs:
 
       - name: Check configuration
         env:
-          KEYSTORE: ${{ secrets.VIDA_KEYSTORE_BASE64 }}
+          KEYSTORE: ${{ secrets.KOVA_KEYSTORE_BASE64 }}
           SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           missing=""
           [ -n "$EXPO_PUBLIC_SUPABASE_URL" ] || missing="$missing EXPO_PUBLIC_SUPABASE_URL"
           [ -n "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] || missing="$missing EXPO_PUBLIC_SUPABASE_ANON_KEY"
           [ -n "$EXPO_TOKEN" ] || missing="$missing EXPO_TOKEN"
-          [ -n "$KEYSTORE" ] || missing="$missing VIDA_KEYSTORE_BASE64"
+          [ -n "$KEYSTORE" ] || missing="$missing KOVA_KEYSTORE_BASE64"
           [ -n "$SERVICE_KEY" ] || missing="$missing SUPABASE_SERVICE_ROLE_KEY"
           if [ -n "$missing" ]; then echo "::error::Missing:$missing (run scripts/setup-releases.ps1)"; exit 1; fi
 
@@ -91,17 +91,17 @@ jobs:
         if: steps.rt.outputs.current != steps.rt.outputs.published || inputs.force_apk
         working-directory: apps/mobile
         env:
-          KEYSTORE_BASE64: ${{ secrets.VIDA_KEYSTORE_BASE64 }}
-          VIDA_KEYSTORE_PASSWORD: ${{ secrets.VIDA_KEYSTORE_PASSWORD }}
-          VIDA_KEY_ALIAS: ${{ secrets.VIDA_KEY_ALIAS }}
-          VIDA_KEY_PASSWORD: ${{ secrets.VIDA_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KOVA_KEYSTORE_BASE64 }}
+          KOVA_KEYSTORE_PASSWORD: ${{ secrets.KOVA_KEYSTORE_PASSWORD }}
+          KOVA_KEY_ALIAS: ${{ secrets.KOVA_KEY_ALIAS }}
+          KOVA_KEY_PASSWORD: ${{ secrets.KOVA_KEY_PASSWORD }}
         run: |
           code=$(( ${{ steps.rt.outputs.code }} + 1 ))
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/vida-release.jks"
-          export VIDA_KEYSTORE_FILE="$RUNNER_TEMP/vida-release.jks" VIDA_VERSION_CODE="$code"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/kova-release.jks"
+          export KOVA_KEYSTORE_FILE="$RUNNER_TEMP/kova-release.jks" KOVA_VERSION_CODE="$code"
           npx expo prebuild --platform android --clean --no-install
           (cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a)
-          rm -f "$RUNNER_TEMP/vida-release.jks"
+          rm -f "$RUNNER_TEMP/kova-release.jks"
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "name=$(jq -r '.expo.version' app.json)" >> "$GITHUB_OUTPUT"
 
@@ -118,9 +118,9 @@ jobs:
           base="$EXPO_PUBLIC_SUPABASE_URL/storage/v1/object"
           up() { curl -sf -X POST "$base/releases/$1" -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
             -H "x-upsert: true" -H "Content-Type: $2" -H "Cache-Control: no-cache" --data-binary "@$3"; }
-          up "android/vida-$CODE.apk" application/vnd.android.package-archive "$apk"
+          up "android/kova-health-$CODE.apk" application/vnd.android.package-archive "$apk"
           jq -n --argjson code "$CODE" --arg name "$NAME" --arg runtime "$RUNTIME" --arg notes "${MESSAGE%%$'\n'*}" \
-            --arg url "$base/public/releases/android/vida-$CODE.apk" --arg at "$(date -u +%FT%TZ)" \
+            --arg url "$base/public/releases/android/kova-health-$CODE.apk" --arg at "$(date -u +%FT%TZ)" \
             '{versionCode: $code, versionName: $name, runtimeVersion: $runtime, url: $url, notes: $notes, publishedAt: $at}' > latest.json
           up android/latest.json application/json latest.json
           cat latest.json
@@ -129,6 +129,6 @@ jobs:
         if: steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: vida-android-${{ steps.build.outputs.code }}
+          name: kova-android-${{ steps.build.outputs.code }}
           path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30

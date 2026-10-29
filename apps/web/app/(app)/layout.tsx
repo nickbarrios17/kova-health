@@ -1,11 +1,11 @@
 'use client';
 /** App shell: sidebar + header, markup ported from design/prototypes/VIDA Web v2.dc.html. */
-import { newId } from '@vida/domain';
+import { newId } from '@kova/domain';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Onboarding } from '@/components/Onboarding';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { ago, greeting, headerDate, seg } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { useAsync } from '@/lib/useAsync';
@@ -19,7 +19,7 @@ const NAV: Array<[href: string, label: string, icon: string]> = [
 ];
 const TITLES: Record<string, string> = { '/importar': 'Importar rutinas', '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/coach': 'Coach' };
 const DEVICE_ICON: Record<string, string> = { watch: 'ph ph-watch', mobile: 'ph ph-device-mobile', web: 'ph ph-desktop' };
-const DEVICE_KEY = 'vida:web-device-id';
+const DEVICE_KEY = 'kova:web-device-id';
 
 /** This browser's device id (a per-browser convenience; losing it only creates a new device row). */
 function webDeviceId(): string {
@@ -51,19 +51,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const devices = useAsync(async () => {
     if (status !== 'signedIn') return [];
-    const c = vida();
+    const c = kova();
     await c.devices.register({ id: webDeviceId(), kind: 'web', label: 'Esta web', platform: 'web' }).catch(() => undefined);
     return (await c.devices.list()) as Array<{ id: string; kind: string; label: string | null; last_seen_at: string | null }>;
   }, [status]);
 
   if (status === 'signedIn' && !prefs && loadError) {
     return (
-      <div className="vida-auth">
-        <div className="vida-auth-card" role="alert">
+      <div className="kova-auth">
+        <div className="kova-auth-card" role="alert">
           <h1 style={{ fontSize: 20, margin: 0 }}>No pudimos cargar tu cuenta</h1>
           <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Revisa tu conexión a internet e inténtalo de nuevo.</span>
           <button className="btn btn-primary" onClick={retryLoad}><i className="ph ph-arrow-clockwise" />Reintentar</button>
-          <button className="btn btn-ghost" onClick={() => vida().auth.signOut().then(() => router.replace('/login'))}>Cerrar sesión</button>
+          <button className="btn btn-ghost" onClick={() => kova().auth.signOut().then(() => router.replace('/login'))}>Cerrar sesión</button>
         </div>
       </div>
     );
@@ -71,27 +71,27 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   if (status !== 'signedIn' || !prefs) {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--color-bg)', color: 'var(--color-neutral-400)', fontFamily: 'var(--font-body)' }}>
-        <span style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}><i className="ph ph-circle-notch vida-spin" />Cargando…</span>
+        <span style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}><i className="ph ph-circle-notch kova-spin" />Cargando…</span>
       </div>
     );
   }
 
   if (!prefs.onboarded || recalc) return <Onboarding onClose={prefs.onboarded ? () => setRecalc(false) : undefined} />;
 
-  const title = path === '/' ? greeting(now, prefs.time_zone) + (prefs.display_name ? ', ' + prefs.display_name : '') : TITLES[path] ?? 'VIDA';
+  const title = path === '/' ? greeting(now, prefs.time_zone) + (prefs.display_name ? ', ' + prefs.display_name : '') : TITLES[path] ?? 'Kova Health';
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexWrap: 'wrap', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
       <aside data-screen-label="Barra lateral" style={{ flex: '1 0 232px', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 20, padding: '20px 14px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px' }}>
           <span style={{ width: 10, height: 22, borderRadius: 3, background: 'var(--color-accent)', boxShadow: '0 0 14px var(--color-accent)' }} />
-          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '.08em' }}>VIDA</span>
+          <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '.08em' }}>Kova Health</span>
         </div>
         <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 2 }}>
           {NAV.map(([href, label, icon]) => {
             const on = path === href;
             return (
-              <Link key={href} href={href} className={on ? undefined : 'vida-nav'} aria-current={on ? 'page' : undefined}
+              <Link key={href} href={href} className={on ? undefined : 'kova-nav'} aria-current={on ? 'page' : undefined}
                 style={{ display: 'flex', alignItems: 'center', gap: 10, height: 40, padding: '0 10px', borderRadius: 'var(--radius-md)', background: on ? 'var(--color-accent-900)' : 'transparent', color: on ? 'var(--color-accent-200)' : 'var(--color-neutral-300)', fontSize: 14, textDecoration: 'none' }}>
                 <i className={(on ? 'ph-fill ' : 'ph ') + icon} style={{ fontSize: 18 }} />
                 <span style={{ flex: 1 }}>{label}</span>
@@ -115,7 +115,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <i className="ph ph-target" />Recalcular meta
           </button>
           <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}
-            onClick={() => vida().auth.signOut().then(() => router.replace('/login'))}>
+            onClick={() => kova().auth.signOut().then(() => router.replace('/login'))}>
             <i className="ph ph-sign-out" />Cerrar sesión
           </button>
         </div>

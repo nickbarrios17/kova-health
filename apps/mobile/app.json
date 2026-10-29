@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "VIDA",
-    "slug": "vida",
-    "scheme": "vida",
+    "name": "Kova Health",
+    "slug": "kova-health",
+    "scheme": "kovahealth",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,10 +15,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.vida.health"
+      "bundleIdentifier": "com.kovahealth.app"
     },
     "android": {
-      "package": "com.vida.health",
+      "package": "com.kovahealth.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#161826",
@@ -64,13 +64,13 @@
       "requestHeaders": {
         "expo-channel-name": "production"
       },
-      "url": "https://u.expo.dev/6ff6ff8d-bdc8-48fb-afb9-03608e3de1af"
+      "url": "https://u.expo.dev/4d7a2ada-0465-4443-8a34-5dd4c26998b2"
     },
+    "owner": "nickbarrios17",
     "extra": {
       "eas": {
-        "projectId": "6ff6ff8d-bdc8-48fb-afb9-03608e3de1af"
+        "projectId": "4d7a2ada-0465-4443-8a34-5dd4c26998b2"
       }
-    },
-    "owner": "nickbarrios17"
+    }
   }
 }

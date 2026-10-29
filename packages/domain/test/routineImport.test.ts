@@ -115,7 +115,7 @@ describe('sheetToRoutines', () => {
     expect(r[0]!.items[0]).toMatchObject({ sets: 3, repsMin: 12, issues: ['Sin series: usamos 3.'] });
   });
 
-  it('a user-edited mapping works on headers VIDA did not recognise', () => {
+  it('a user-edited mapping works on headers Kova Health did not recognise', () => {
     const sheet: Sheet = { name: 'raro', rows: [['Mov', 'Vueltas', 'Kilos'], ['Hip thrust', '4', '100']] };
     const plan = { ...detectColumns(sheet), headerRow: 0, mapping: { exercise: 0, sets: 1, weight: 2 } };
     expect(sheetToRoutines(sheet, plan, 'raro')[0]!.items[0]).toMatchObject({ name: 'Hip thrust', sets: 4, loadKg: 100 });

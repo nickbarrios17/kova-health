@@ -1,10 +1,10 @@
-# VIDA en la nube
+# Kova Health en la nube
 
 ## Supabase (base de datos, cuentas, API)
 
 | Dato | Valor |
 | --- | --- |
-| Proyecto | `vida` |
+| Proyecto | `vida` (nombre visible en el panel de Supabase; el identificador `oxfucatgikqbwowtgkow` no se puede cambiar) |
 | Referencia | `oxfucatgikqbwowtgkow` |
 | Región | `sa-east-1` (São Paulo) |
 | URL de la API | `https://oxfucatgikqbwowtgkow.supabase.co` |
@@ -42,9 +42,9 @@ supabase test db --linked
 ### Ajustes de autenticación (panel → Authentication)
 - **Confirmar correo:** activado (el valor por defecto en la nube). Cada cuenta nueva recibe un correo de confirmación antes de poder entrar.
 - **Envío de correos:** el SMTP incluido en Supabase tiene límites estrictos (pocos correos por hora) y está pensado para pruebas. Para usuarios reales hay que configurar un SMTP propio (Resend, SendGrid, Brevo…) en Authentication → Emails → SMTP Settings.
-- **Site URL y Redirect URLs** (configurado el 28/10/2026):
-  - Site URL: `https://vida-nine-iota.vercel.app`.
-  - Redirect URLs: `https://vida-nine-iota.vercel.app/**` y `vida://**` (el esquema de la app móvil).
+- **Site URL y Redirect URLs** (actualizado el 29/10/2026 con el nombre Kova Health):
+  - Site URL: `https://kova-health.vercel.app`.
+  - Redirect URLs: `https://kova-health.vercel.app/**` y `kovahealth://**` (el esquema de la app). Las de antes del cambio de nombre (`https://vida-nine-iota.vercel.app/**`, `vida://**`) siguen aceptadas por correos y apps viejas.
 
   Así los enlaces de confirmación y de «recuperar contraseña» abren la web publicada y no `localhost`.
 - **Cuidado con `supabase config push`:** aplica el cambio sin pedir confirmación y sube *todo* `supabase/config.toml`, que tiene valores de desarrollo local (confirmación de correo desactivada, URLs `127.0.0.1`). No lo ejecutes con el config del repo. Para cambiar un ajuste de la nube, usa el panel, o copia el config a una carpeta aparte, iguala todos los valores a los de la nube y cambia solo el que quieras (`supabase config push --workdir <carpeta>`). Comprueba después que `GET <SUPABASE_URL>/auth/v1/settings` devuelve `"mailer_autoconfirm": false`.
@@ -60,7 +60,7 @@ Una sola vez, el propietario inicia sesión:
 npx vercel login
 ```
 
-Despliegue **automático**: el repositorio de GitHub está conectado al proyecto (28/10/2026), así que cada push a `master` publica la web en producción y cada push a otra rama crea una vista previa. Para publicar a mano, desde la raíz del repositorio (ya vinculada al proyecto `vida`; `.vercel/` está fuera de git):
+Despliegue **automático**: el repositorio de GitHub está conectado al proyecto (28/10/2026), así que cada push a `master` publica la web en producción y cada push a otra rama crea una vista previa. Para publicar a mano, desde la raíz del repositorio (ya vinculada al proyecto `kova-health`; `.vercel/` está fuera de git):
 
 ```bash
 npx vercel deploy --prod
@@ -70,9 +70,9 @@ Variables de entorno del proyecto en Vercel (Settings → Environment Variables)
 - `NEXT_PUBLIC_SUPABASE_URL` = `https://oxfucatgikqbwowtgkow.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = la clave anon (la misma que en `apps/mobile/.env`)
 
-Configuración del proyecto `vida` en Vercel (monorepo con npm workspaces):
+Configuración del proyecto `kova-health` en Vercel (monorepo con npm workspaces):
 - Root Directory = `apps/web`, framework Next.js.
 - Install Command = `cd ../.. && npm ci --no-audit --no-fund`. Hace falta instalar desde la raíz: si Vercel instala solo `apps/web`, falta TypeScript (está en la raíz) y Next no resuelve los alias `@/`.
 - `.vercelignore` deja fuera de la subida lo que no se usa para compilar la web (APKs de `dist/`, `design/`, `docs/`, `supabase/`, el reloj y las carpetas nativas del móvil).
 
-Estado: **publicada** en https://vida-nine-iota.vercel.app (producción).
+Estado: **publicada** en https://kova-health.vercel.app (producción).

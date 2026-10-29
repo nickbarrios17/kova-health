@@ -12,4 +12,4 @@
 
 ## Consequences
 - Travel does not move past days.
-- `localDate()` in `@vida/domain` mirrors the SQL computation for offline display and is tested across DST transitions.
+- `localDate()` in `@kova/domain` mirrors the SQL computation for offline display and is tested across DST transitions.

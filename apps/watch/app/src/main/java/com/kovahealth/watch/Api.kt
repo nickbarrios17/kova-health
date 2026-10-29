@@ -1,4 +1,4 @@
-package com.vida.watch
+package com.kovahealth.watch
 
 import org.json.JSONArray
 import org.json.JSONObject
@@ -8,10 +8,10 @@ import java.net.URL
 
 /**
  * Minimal Supabase client for the watch: GoTrue password auth + PostgREST reads/RPCs over HTTPS.
- * Same contract as @vida/api-client (docs/api.md). Only the public anon key is embedded; every
+ * Same contract as @kova/api-client (docs/api.md). Only the public anon key is embedded; every
  * request carries the user's JWT and RLS enforces access on the server.
  */
-class VidaApi(private val store: Store) {
+class KovaApi(private val store: Store) {
     private val base = BuildConfig.SUPABASE_URL.trimEnd('/')
     private val anon = BuildConfig.SUPABASE_ANON_KEY
 

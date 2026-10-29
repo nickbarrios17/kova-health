@@ -42,14 +42,14 @@ const SQLSTATE: Record<string, ErrorCode> = {
 };
 
 /** Errors carry a stable code and a safe message, never raw SQL details. */
-export class VidaError extends Error {
+export class KovaError extends Error {
   constructor(
     public readonly code: ErrorCode,
     message: string = code,
     public readonly retryable: boolean = code === 'NETWORK' || code === 'RATE_LIMITED',
   ) {
     super(message);
-    this.name = 'VidaError';
+    this.name = 'KovaError';
   }
 }
 

@@ -1,6 +1,6 @@
-# VIDA: guía de uso
+# Kova Health: guía de uso
 
-VIDA reúne en un solo lugar tu **entrenamiento**, tu **comida**, tus **hábitos** y tus **datos de salud**, sincronizados entre la web, el teléfono y el reloj.
+Kova Health reúne en un solo lugar tu **entrenamiento**, tu **comida**, tus **hábitos** y tus **datos de salud**, sincronizados entre la web, el teléfono y el reloj.
 
 | Dónde | Para qué |
 | --- | --- |
@@ -16,14 +16,14 @@ Todo lo que registras en un dispositivo aparece en los demás. Si no hay conexi�
 
 ### Web
 - **En local** (este PC): `npm run dev:web` y abre http://localhost:3000 (detalles en `docs/setup.md`).
-- **En internet:** https://vida-nine-iota.vercel.app. Funciona en cualquier navegador, también en el del teléfono. Se publica sola con cada cambio que se sube a GitHub.
+- **En internet:** https://kova-health.vercel.app. Funciona en cualquier navegador, también en el del teléfono. Se publica sola con cada cambio que se sube a GitHub.
 
 ### Teléfono (Android 8 o superior)
-1. Pasa `dist/VIDA-movil-0.1.0.apk` al teléfono (cable, Drive, correo…).
+1. Pasa `dist/Kova-Health-movil-0.1.0.apk` al teléfono (cable, Drive, correo…).
 2. Ábrelo y permite **instalar apps de origen desconocido** para la app con la que lo abriste.
-3. Pulsa **Instalar** (si Play Protect avisa, «Instalar de todos modos») y abre **VIDA**.
+3. Pulsa **Instalar** (si Play Protect avisa, «Instalar de todos modos») y abre **Kova Health**.
 
-**Actualizaciones:** la mayoría de las mejoras llegan solas: VIDA las descarga al abrirse y las usa la próxima vez que la abrís. Cuando hace falta una versión nueva completa, aparece **«Hay una versión nueva de VIDA»**: tocá **Actualizar**, esperá la descarga y tocá **Instalar** en la pantalla de Android (la primera vez, Android te pide permitir que VIDA instale apps). Tus datos no se pierden. También podés revisar a mano en **Progreso → Versión de la app → Buscar actualizaciones**.
+**Actualizaciones:** la mayoría de las mejoras llegan solas: Kova Health las descarga al abrirse y las usa la próxima vez que la abrís. Cuando hace falta una versión nueva completa, aparece **«Hay una versión nueva de Kova Health»**: tocá **Actualizar**, esperá la descarga y tocá **Instalar** en la pantalla de Android (la primera vez, Android te pide permitir que Kova Health instale apps). Tus datos no se pierden. También podés revisar a mano en **Progreso → Versión de la app → Buscar actualizaciones**.
 
 ### Reloj (Wear OS 3 o superior)
 Los relojes se instalan desde este PC por Wi-Fi. Resumen (paso a paso completo en `docs/android.md` §2):
@@ -41,10 +41,10 @@ Los relojes se instalan desde este PC por Wi-Fi. Resumen (paso a paso completo e
 ```
 
 ```bash
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\VIDA-reloj-wearos-0.1.0.apk"
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\Kova-Health-reloj-wearos-0.1.0.apk"
 ```
 
-5. Abre **VIDA** en el reloj e inicia sesión con la misma cuenta.
+5. Abre **Kova Health** en el reloj e inicia sesión con la misma cuenta.
 
 ---
 
@@ -53,24 +53,24 @@ Los relojes se instalan desde este PC por Wi-Fi. Resumen (paso a paso completo e
 ### Crear una cuenta
 1. En la web o en el teléfono: **Crear una cuenta** → correo y contraseña (mínimo 8 caracteres, con letras y números).
 2. Te llega un **correo de confirmación** de Supabase. Ábrelo y pulsa el enlace.
-3. Vuelve a VIDA e **inicia sesión**. Si intentas entrar sin confirmar, VIDA te lo dirá («Confirma tu correo…»).
+3. Vuelve a Kova Health e **inicia sesión**. Si intentas entrar sin confirmar, Kova Health te lo dirá («Confirma tu correo…»).
 
 Una misma cuenta sirve para la web, el teléfono y el reloj.
 
 ### Configuración inicial (obligatoria)
-La primera vez que entrás, en la web o en el teléfono, VIDA te pide tres pasos antes de mostrar la app:
+La primera vez que entrás, en la web o en el teléfono, Kova Health te pide tres pasos antes de mostrar la app:
 1. **Bienvenida:** tu nombre y si preferís kilos o libras.
 2. **Tus datos:** año de nacimiento, altura, peso actual, sexo, nivel de actividad y objetivo: bajar de peso, mantener, subir de peso o **recomposición corporal** (perder grasa y ganar músculo a la vez). Para bajar o subir elegís un ritmo: **liviano, moderado o agresivo**. La recomposición no tiene ritmo: usa calorías un 5 % por debajo de mantenimiento y más proteína (2,2 g por kg de referencia). Funciona sobre todo si empezás a entrenar, volvés después de un parón o tenés grasa para perder; en ese caso el peso puede quedarse igual aunque avances, así que conviene seguir el % de grasa, la cintura y la fuerza.
-3. **Tu meta diaria:** VIDA calcula las calorías y los macros (proteína, carbohidratos y grasa). Podés guardarla tal cual o tocar **Editar a mano** y poner tus propios números.
+3. **Tu meta diaria:** Kova Health calcula las calorías y los macros (proteína, carbohidratos y grasa). Podés guardarla tal cual o tocar **Editar a mano** y poner tus propios números.
 
-En el paso 2 también podés completar tu **composición corporal (opcional)**: el % de grasa (si tu reloj lo mide, aparece solo) o, con un centímetro, cuello y cintura a la altura del ombligo (y cadera, en mujeres). Con eso VIDA usa una fórmula basada en tu masa magra, que es más precisa.
+En el paso 2 también podés completar tu **composición corporal (opcional)**: el % de grasa (si tu reloj lo mide, aparece solo) o, con un centímetro, cuello y cintura a la altura del ombligo (y cadera, en mujeres). Con eso Kova Health usa una fórmula basada en tu masa magra, que es más precisa.
 
 **Tu meta cambia cada día:** la que ves en el paso 3 es la de un día típico. En **Comida** y **Hoy**, la meta de hoy parte de tu gasto en reposo y suma lo que te moviste (pasos y entrenamientos registrados), así que un día tranquilo te da menos margen y uno activo, más. Debajo del total de Comida se explica cómo se calculó. Si ese día el reloj no mandó datos, se usa tu promedio de la semana. Si pusiste tu meta a mano, queda fija.
 
 La meta es una **estimación**, no una indicación médica. Para cambiarla después: en el teléfono, **Progreso → Cuenta → Recalcular mi meta diaria**; en la web, **Recalcular meta** abajo en la barra lateral. Los días anteriores conservan la meta que tenían.
 
 ### Olvidé mi contraseña
-**Olvidé mi contraseña** → tu correo → abre el enlace del correo → elige una contraseña nueva en la web (https://vida-nine-iota.vercel.app).
+**Olvidé mi contraseña** → tu correo → abre el enlace del correo → elige una contraseña nueva en la web (https://kova-health.vercel.app).
 
 ### Cerrar sesión
 - Web: **Cerrar sesión** abajo en la barra lateral.
@@ -91,8 +91,8 @@ Teléfono: **Progreso → Cuenta → Borrar mi cuenta y mis datos** → confirma
 
 ### Hoy (web y teléfono)
 - **Plan de hoy:** la rutina programada para hoy, con series×repeticiones y el último peso que usaste. En el teléfono, el botón **Empezar** arranca la sesión.
-- **VIDA ve hoy:** observaciones del Coach (ver §3.6).
-- **Progreso de hoy:** comida, pasos, sueño, cuerpo, ánimo y entreno. Si no hay dato, la tarjeta dice «Sin datos» y cómo conseguirlo. **VIDA nunca inventa números.**
+- **Kova Health ve hoy:** observaciones del Coach (ver §3.6).
+- **Progreso de hoy:** comida, pasos, sueño, cuerpo, ánimo y entreno. Si no hay dato, la tarjeta dice «Sin datos» y cómo conseguirlo. **Kova Health nunca inventa números.**
 - **La semana en números** (web): tabla de 7 días. Lo resaltado está fuera de tu objetivo o de tu media.
 - **kg / lb:** el selector de arriba cambia la unidad en todos tus dispositivos.
 
@@ -106,14 +106,14 @@ Teléfono: **Progreso → Cuenta → Borrar mi cuenta y mis datos** → confirma
 4. En cada ejercicio: **series**, **reps** (un número, 8, o un rango, 8-12), **descanso** en segundos y **peso** (opcional). Las flechas cambian el orden y el tacho lo quita.
 5. **Guardar rutina.** Llega sola al reloj y a los otros dispositivos.
 
-**Duplicar** crea una copia («… (copia)») para hacer variantes. **Borrar rutina** está dentro del editor; tu historial de entrenamientos no se pierde, y cambiar una rutina no modifica las sesiones que ya hiciste. Si la misma rutina se cambia en otro dispositivo mientras la editas, VIDA no pisa ese cambio: te avisa para que la vuelvas a abrir.
+**Duplicar** crea una copia («… (copia)») para hacer variantes. **Borrar rutina** está dentro del editor; tu historial de entrenamientos no se pierde, y cambiar una rutina no modifica las sesiones que ya hiciste. Si la misma rutina se cambia en otro dispositivo mientras la editas, Kova Health no pisa ese cambio: te avisa para que la vuelvas a abrir.
 
 **Importar rutinas (web → Entrenamiento → Importar rutinas):**
 1. Elige un archivo **Excel (.xlsx)**, **CSV** o **JSON**. Hay una **plantilla para Excel** y un **ejemplo JSON** para descargar, pero no hace falta usarlos.
-2. VIDA busca las columnas por nombre, en español o en inglés: «Ejercicio/Exercise», «Series/Sets», «Reps/Repeticiones», «4x8» en una sola celda, «Descanso/Rest» (90, 90s, 1:30, 2 min), «Peso/Kg/Lb» y «Rutina» o «Días» (Lun, Jue / Mon, Thu / L X V). La fila de títulos puede estar más abajo, por ejemplo después del nombre del plan.
+2. Kova Health busca las columnas por nombre, en español o en inglés: «Ejercicio/Exercise», «Series/Sets», «Reps/Repeticiones», «4x8» en una sola celda, «Descanso/Rest» (90, 90s, 1:30, 2 min), «Peso/Kg/Lb» y «Rutina» o «Días» (Lun, Jue / Mon, Thu / L X V). La fila de títulos puede estar más abajo, por ejemplo después del nombre del plan.
 3. Si alguna columna no se reconoce, elígela en los desplegables («esta columna es el ejercicio, esta las series…»).
 4. Cada **hoja** es una rutina, y también cada fila que tenga solo un título («Día A», «Lunes – Pierna», «Push»).
-5. En la **vista previa** puedes cambiar el nombre y los días de cada rutina, dejar alguna fuera y elegir a qué ejercicio de VIDA corresponde cada fila. Los que no existen se crean como ejercicios tuyos. Las dudas («3xAMRAP» sin número de repeticiones) aparecen marcadas.
+5. En la **vista previa** puedes cambiar el nombre y los días de cada rutina, dejar alguna fuera y elegir a qué ejercicio de Kova Health corresponde cada fila. Los que no existen se crean como ejercicios tuyos. Las dudas («3xAMRAP» sin número de repeticiones) aparecen marcadas.
 6. **Importar** guarda todo. Antes de eso no se guarda nada.
 
 No se leen archivos .xls (Excel antiguo): guárdalos como .xlsx o .csv.
@@ -141,14 +141,14 @@ Puedes salir de la sesión con la flecha ⌄: queda una barra «Volver» abajo. 
 1. **Comida** (web o teléfono) → elige el día (Hoy / Ayer).
 2. En cada comida (Desayuno, Almuerzo, Merienda, Cena, Picoteo) → **Añadir**.
 3. **Busca** un alimento. Si no existe, **Crear alimento** con los valores de la etiqueta (por 100 g o por porción).
-4. Indica la **cantidad** y VIDA calcula kcal y macros antes de guardar.
+4. Indica la **cantidad** y Kova Health calcula kcal y macros antes de guardar.
 5. Para quitar algo, la papelera. Para cambiar una cantidad, quítalo y vuelve a añadirlo.
 
 Cosas a saber:
 - Cada valor dice de dónde viene: **Verificado**, **Etiqueta**, **Introducido por ti** o **Estimado**.
 - Lo registrado se **congela**: si luego editas un alimento, tus días pasados no cambian.
 - El catálogo verificado de alimentos todavía está vacío (ver «Lo que te queda por hacer»). Mientras tanto, crea tus alimentos.
-- Los objetivos de kcal y macros los pones tú; VIDA no prescribe dietas.
+- Los objetivos de kcal y macros los pones tú; Kova Health no prescribe dietas.
 
 ### Progreso (teléfono)
 - **Ánimo:** cinco caras, de «Muy mal» a «Muy bien». Toca la de hoy.
@@ -179,7 +179,7 @@ El Coach busca **hechos y patrones** en tus últimos 60 días, con reglas transp
 
 ## 4. Health Connect (teléfono)
 
-Health Connect es el «almacén» de salud de Android, donde escriben Samsung Health, Google Fit, Fitbit, tu reloj, etc. VIDA puede **leer** de ahí (nunca escribe):
+Health Connect es el «almacén» de salud de Android, donde escriben Samsung Health, Google Fit, Fitbit, tu reloj, etc. Kova Health puede **leer** de ahí (nunca escribe):
 
 | Dato | Para qué se usa |
 | --- | --- |
@@ -191,13 +191,13 @@ Health Connect es el «almacén» de salud de Android, donde escriben Samsung He
 | % de grasa corporal | Gasto en reposo con tu masa magra (fórmula más precisa) |
 
 1. **Progreso → Health Connect → Conectar** → elige qué datos permitir.
-2. VIDA importa los últimos 30 días y, después, se actualiza sola cada vez que abres la app (o con **Sincronizar ahora**).
+2. Kova Health importa los últimos 30 días y, después, se actualiza sola cada vez que abres la app (o con **Sincronizar ahora**).
 3. **Cambiar permisos** abre los ajustes de Health Connect.
 4. Si ya lo tenías conectado de antes, aparece **Permitir los datos que faltan** para sumar el % de grasa. En Samsung Health, el % de grasa sale de **Composición corporal** del reloj: medilo siempre en las mismas condiciones (por ejemplo, a la mañana y en ayunas) y Samsung Health lo comparte con Health Connect (Samsung Health → Ajustes → Health Connect).
 
 En Android 13 o anterior hace falta instalar «Health Connect» desde Play Store. En Android 14 o superior ya viene con el sistema.
 
-Si un mismo paseo lo registran el teléfono y el reloj, VIDA **no los suma dos veces**: usa la fuente con más pasos del día.
+Si un mismo paseo lo registran el teléfono y el reloj, Kova Health **no los suma dos veces**: usa la fuente con más pasos del día.
 
 ---
 
@@ -212,11 +212,11 @@ Si un mismo paseo lo registran el teléfono y el reloj, VIDA **no los suma dos v
 
 ## 6. Preguntas frecuentes
 
-**¿Por qué dice «Sin datos» si llevo el reloj?** Los pasos, el sueño y el pulso en reposo llegan por Health Connect: conéctalo en el teléfono (§4). El reloj VIDA, por ahora, solo mide el pulso durante el entreno.
+**¿Por qué dice «Sin datos» si llevo el reloj?** Los pasos, el sueño y el pulso en reposo llegan por Health Connect: conéctalo en el teléfono (§4). El reloj Kova Health, por ahora, solo mide el pulso durante el entreno.
 
-**¿Por qué no veo calorías del entreno?** Sin un sensor de pulso fiable durante toda la sesión, VIDA prefiere no mostrar un número inventado. Si en el futuro se estima, se marcará como «estimado».
+**¿Por qué no veo calorías del entreno?** Sin un sensor de pulso fiable durante toda la sesión, Kova Health prefiere no mostrar un número inventado. Si en el futuro se estima, se marcará como «estimado».
 
-**¿Qué es la Preparación «Aún sin calcular»?** Hace falta una línea base de varias noches de sueño y HRV. Ese modelo está en el plan de VIDA Intelligence. Mientras tanto ves los datos reales que lo alimentan.
+**¿Qué es la Preparación «Aún sin calcular»?** Hace falta una línea base de varias noches de sueño y HRV. Ese modelo está en el plan de Kova Intelligence. Mientras tanto ves los datos reales que lo alimentan.
 
 **El reloj dice «N envíos pendientes».** No hay red o el servidor no responde. Sigue entrenando: se envía solo al recuperar la conexión.
 

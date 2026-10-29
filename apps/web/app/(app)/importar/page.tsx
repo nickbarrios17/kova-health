@@ -6,11 +6,11 @@
 import {
   detectColumns, FIELD_LABEL, isoDays, jsonToRoutines, matchExercise, newId, normalize, parseCsv, planReady, sheetToRoutines,
   slugify, type CatalogExercise, type DraftRoutine, type ImportField, type Sheet, type SheetPlan,
-} from '@vida/domain';
+} from '@kova/domain';
 import Link from 'next/link';
 import { useMemo, useState, type ChangeEvent } from 'react';
 import { EmptyState } from '@/components/EmptyState';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { useAsync } from '@/lib/useAsync';
 
 const FIELDS: ImportField[] = ['exercise', 'sets', 'reps', 'setsReps', 'rest', 'weight', 'routine', 'days', 'notes'];
@@ -48,7 +48,7 @@ export default function ImportPage() {
   const [done, setDone] = useState<number | null>(null);
 
   const catalog = useAsync(async () => {
-    const c = vida();
+    const c = kova();
     const all: CatalogExercise[] = [];
     for (let offset = 0; offset < 1000; offset += 100) {
       const page = (await c.exercises.search({ limit: 100, offset })) as Array<{ id: string; name: string }>;
@@ -124,7 +124,7 @@ export default function ImportPage() {
     if (chosen.some((r) => !r.name.trim())) return setError('Ponle nombre a cada rutina.');
     setBusy(true);
     try {
-      const c = vida();
+      const c = kova();
       const created = new Map<string, string>();
       for (const name of newNames) {
         const id = newId();
@@ -161,7 +161,7 @@ export default function ImportPage() {
   if (done != null) {
     return (
       <div className="card" style={{ maxWidth: 560, gap: 12 }}>
-        <span style={{ fontSize: 17, fontWeight: 500 }}><i className="ph ph-check-circle" style={{ color: 'var(--vida-ok)' }} /> {done === 1 ? '1 rutina importada' : done + ' rutinas importadas'}</span>
+        <span style={{ fontSize: 17, fontWeight: 500 }}><i className="ph ph-check-circle" style={{ color: 'var(--kova-ok)' }} /> {done === 1 ? '1 rutina importada' : done + ' rutinas importadas'}</span>
         <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Ya están en Entrenamiento, en el teléfono y en el reloj.</span>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link className="btn btn-primary" href="/entrenamiento">Ver rutinas</Link>
@@ -176,7 +176,7 @@ export default function ImportPage() {
       <div className="card" style={{ gap: 12 }}>
         <span style={{ fontSize: 15, fontWeight: 500 }}>Elige un archivo</span>
         <span style={{ fontSize: 13, color: 'var(--color-neutral-400)', lineHeight: 1.5 }}>
-          Excel (.xlsx), CSV o JSON. No hace falta un formato exacto: VIDA reconoce columnas como «Ejercicio», «Series», «Reps», «4x8», «Descanso» o «Peso»,
+          Excel (.xlsx), CSV o JSON. No hace falta un formato exacto: Kova Health reconoce columnas como «Ejercicio», «Series», «Reps», «4x8», «Descanso» o «Peso»,
           y si no las encuentra te deja elegirlas. Cada hoja, o cada fila título como «Día A», es una rutina.
         </span>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
@@ -184,14 +184,14 @@ export default function ImportPage() {
             <i className="ph ph-upload-simple" />{fileName ? 'Elegir otro archivo' : 'Elegir archivo'}
             <input type="file" accept=".xlsx,.csv,.tsv,.txt,.json" onChange={onFile} style={{ display: 'none' }} />
           </label>
-          <button className="btn btn-ghost" onClick={() => download('plantilla-rutinas-vida.csv', TEMPLATE_CSV, 'text/csv;charset=utf-8')}><i className="ph ph-file-csv" />Plantilla para Excel</button>
-          <button className="btn btn-ghost" onClick={() => download('rutinas-vida.json', TEMPLATE_JSON, 'application/json')}><i className="ph ph-brackets-curly" />Ejemplo JSON</button>
+          <button className="btn btn-ghost" onClick={() => download('plantilla-rutinas-kova.csv', TEMPLATE_CSV, 'text/csv;charset=utf-8')}><i className="ph ph-file-csv" />Plantilla para Excel</button>
+          <button className="btn btn-ghost" onClick={() => download('rutinas-kova.json', TEMPLATE_JSON, 'application/json')}><i className="ph ph-brackets-curly" />Ejemplo JSON</button>
           {fileName ? <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>{fileName}</span> : null}
         </div>
       </div>
 
       {error && (
-        <div className="vida-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--vida-crit)', fontSize: 16, marginTop: 1 }} /><span>{error}</span></div>
+        <div className="kova-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)', fontSize: 16, marginTop: 1 }} /><span>{error}</span></div>
       )}
 
       {sheets.map((s, i) => {
@@ -201,7 +201,7 @@ export default function ImportPage() {
           <div key={s.name + i} className="card" style={{ gap: 12 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'baseline', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 15, fontWeight: 500 }}>Columnas · {s.name}</span>
-              <span style={{ fontSize: 12, color: planReady(p) ? 'var(--vida-ok)' : 'var(--vida-warn)' }}>
+              <span style={{ fontSize: 12, color: planReady(p) ? 'var(--kova-ok)' : 'var(--kova-warn)' }}>
                 {planReady(p) ? 'Listo para leer' : 'Elige al menos la columna del ejercicio'}
               </span>
             </div>
@@ -271,7 +271,7 @@ export default function ImportPage() {
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table className="table" style={{ fontSize: 13, minWidth: 620 }}>
-                  <thead><tr><th>Ejercicio en el archivo</th><th>En VIDA</th><th>Series × reps</th><th>Descanso</th><th>Peso</th></tr></thead>
+                  <thead><tr><th>Ejercicio en el archivo</th><th>En Kova Health</th><th>Series × reps</th><th>Descanso</th><th>Peso</th></tr></thead>
                   <tbody>
                     {r.items.map((it) => {
                       const ex = exerciseFor(it.name);
@@ -279,10 +279,10 @@ export default function ImportPage() {
                         <tr key={it.row + it.name}>
                           <td>
                             {it.name}
-                            {it.issues.map((m) => <div key={m} style={{ fontSize: 11, color: 'var(--vida-warn)' }}>Fila {it.row}: {m}</div>)}
+                            {it.issues.map((m) => <div key={m} style={{ fontSize: 11, color: 'var(--kova-warn)' }}>Fila {it.row}: {m}</div>)}
                           </td>
                           <td>
-                            <select className="input" style={{ minWidth: 190 }} value={ex} aria-label={'Ejercicio de VIDA para ' + it.name}
+                            <select className="input" style={{ minWidth: 190 }} value={ex} aria-label={'Ejercicio de Kova Health para ' + it.name}
                               onChange={(e) => setChoice((c) => ({ ...c, [normalize(it.name)]: e.target.value }))}>
                               <option value={CREATE}>Crear «{it.name.slice(0, 40)}»</option>
                               {(catalog.data ?? []).map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -301,7 +301,7 @@ export default function ImportPage() {
           ))}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
             <button className="btn btn-primary" disabled={busy || chosen.length === 0 || catalog.loading} onClick={save}>
-              {busy ? <><i className="ph ph-circle-notch vida-spin" />Importando…</> : <><i className="ph ph-download-simple" />Importar {chosen.length === 1 ? '1 rutina' : chosen.length + ' rutinas'}</>}
+              {busy ? <><i className="ph ph-circle-notch kova-spin" />Importando…</> : <><i className="ph ph-download-simple" />Importar {chosen.length === 1 ? '1 rutina' : chosen.length + ' rutinas'}</>}
             </button>
             <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
               {newNames.length ? 'Se crearán ' + newNames.length + (newNames.length === 1 ? ' ejercicio nuevo' : ' ejercicios nuevos') + ' en tu cuenta. ' : ''}

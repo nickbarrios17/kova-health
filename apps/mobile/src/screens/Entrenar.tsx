@@ -1,9 +1,9 @@
 /** Routines + history (prototype "Rutinas"), with the routine editor (new, edit, duplicate, delete). */
-import { dayMonth, draftFromRoutine, dur, emptyDraft, isoDays, newId, nf, toDisplayWeight, type RoutineDraft } from '@vida/domain';
+import { dayMonth, draftFromRoutine, dur, emptyDraft, isoDays, newId, nf, toDisplayWeight, type RoutineDraft } from '@kova/domain';
 import { Barbell, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
-import { vida } from '../client';
+import { kova } from '../client';
 import { useSession } from '../session';
 import { c } from '../theme';
 import { loadTraining, scheme, type TrainingData } from '../training';
@@ -15,7 +15,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
   const { prefs } = useSession();
   const units = prefs!.weight_unit;
   const q = useAsync(async () => {
-    const [training, summaries] = await Promise.all([loadTraining(), vida.workouts.summaries(15)]);
+    const [training, summaries] = await Promise.all([loadTraining(), kova.workouts.summaries(15)]);
     return { training, done: (summaries as Array<Record<string, unknown>>).filter((s) => s.status === 'completed') };
   }, []);
   const [editing, setEditing] = useState<RoutineDraft | null>(null);
@@ -58,7 +58,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
               <Button variant="ghost" label="Duplicar" icon={Copy} busy={copying === r.id}
                 onPress={async () => {
                   setCopying(r.id);
-                  try { await vida.routines.duplicate(r.id, newId(), (r.name + ' (copia)').slice(0, 80)); q.reload(); } finally { setCopying(null); }
+                  try { await kova.routines.duplicate(r.id, newId(), (r.name + ' (copia)').slice(0, 80)); q.reload(); } finally { setCopying(null); }
                 }} />
             </Row>
           </Card>

@@ -16,8 +16,8 @@ export function EmptyState({ icon, title, children }: { icon: string; title: str
 /** Inline error notice (crit border, icon + text — never colour alone). */
 export function ErrorNotice({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div role="alert" style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', border: '1px solid var(--vida-crit)' }}>
-      <i className="ph ph-x-circle" style={{ fontSize: 18, color: 'var(--vida-crit)' }} />
+    <div role="alert" style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', border: '1px solid var(--kova-crit)' }}>
+      <i className="ph ph-x-circle" style={{ fontSize: 18, color: 'var(--kova-crit)' }} />
       <span style={{ flex: 1, fontSize: 14 }}>{message}</span>
       {onRetry && <button className="btn btn-secondary" onClick={onRetry}><i className="ph ph-arrow-clockwise" />Reintentar</button>}
     </div>
@@ -27,7 +27,7 @@ export function ErrorNotice({ message, onRetry }: { message: string; onRetry?: (
 export function Loading({ label = 'Cargando…' }: { label?: string }) {
   return (
     <span style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14, color: 'var(--color-neutral-400)' }}>
-      <i className="ph ph-circle-notch vida-spin" />{label}
+      <i className="ph ph-circle-notch kova-spin" />{label}
     </span>
   );
 }

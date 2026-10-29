@@ -1,4 +1,4 @@
-package com.vida.watch
+package com.kovahealth.watch
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -15,8 +15,8 @@ import org.junit.runner.RunWith
 import java.io.IOException
 
 /**
- * Runs on the watch. Uses its own SharedPreferences file ("vida-test"), so the signed-in
- * session, live workout and outbox of the real app ("vida") are never read or changed.
+ * Runs on the watch. Uses its own SharedPreferences file ("kova-test"), so the signed-in
+ * session, live workout and outbox of the real app ("kova") are never read or changed.
  */
 @RunWith(AndroidJUnit4::class)
 class StoreTest {
@@ -59,7 +59,7 @@ class StoreTest {
         (1..2).forEach { store.enqueue("record_set", op(it)) }
         val sent = mutableListOf<Int>()
         val left = store.flush { _, p ->
-            if (p.getInt("n") == 1) throw VidaApi.ApiError(400, "VD003", "La sesión ya terminó")
+            if (p.getInt("n") == 1) throw KovaApi.ApiError(400, "VD003", "La sesión ya terminó")
             sent += p.getInt("n")
         }
         assertEquals(listOf(2), sent)
@@ -149,5 +149,5 @@ class StoreTest {
         ),
     )
 
-    private companion object { const val PREFS = "vida-test" }
+    private companion object { const val PREFS = "kova-test" }
 }

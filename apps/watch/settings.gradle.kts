@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "vida-watch"
+rootProject.name = "kova-watch"
 include(":app")

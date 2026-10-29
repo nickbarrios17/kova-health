@@ -1,9 +1,9 @@
 /** Auth session, preferences and this device's id. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { newId, type Tables, type WeightUnit } from '@vida/domain';
+import { newId, type Tables, type WeightUnit } from '@kova/domain';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
-import { outbox, vida } from './client';
+import { outbox, kova } from './client';
 
 type Status = 'loading' | 'signedOut' | 'signedIn';
 
@@ -29,7 +29,7 @@ interface SessionValue {
 }
 
 const Ctx = createContext<SessionValue | null>(null);
-const DEVICE_KEY = 'vida:device-id';
+const DEVICE_KEY = 'kova:device-id';
 
 /** Rejects if `p` does not settle in `ms`, naming the step so the UI can say what failed. */
 function withTimeout<T>(p: Promise<T>, ms: number, step: string): Promise<T> {
@@ -56,11 +56,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const reloadPrefs = useCallback(async () => {
     const [p, profile, weights] = await Promise.all([
-      vida.profile.getPreferences(), vida.profile.get(), vida.body.history('weight_kg', 1).catch(() => []),
+      kova.profile.getPreferences(), kova.profile.get(), kova.body.history('weight_kg', 1).catch(() => []),
     ]);
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (p.time_zone === 'UTC' && tz && tz !== 'UTC') {
-      await vida.profile.updatePreferences({ time_zone: tz }).catch(() => undefined);
+      await kova.profile.updatePreferences({ time_zone: tz }).catch(() => undefined);
       p.time_zone = tz;
     }
     const last = (weights as Array<{ value: number | string }>)[0];
@@ -76,7 +76,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const sb = vida.supabase;
+    const sb = kova.supabase;
     withTimeout(sb.auth.getSession(), 10_000, 'Recuperar sesión')
       .then(({ data }) => setStatus(data.session ? 'signedIn' : 'signedOut'))
       .catch(() => setStatus('signedOut'));
@@ -103,7 +103,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (!alive) return;
       setDeviceId(id);
       // Non-blocking: registering the device must never keep the app from opening.
-      withTimeout(vida.devices.register({ id, kind: 'mobile', platform: Platform.OS, label: 'Teléfono' }), 15_000, 'Registrar dispositivo')
+      withTimeout(kova.devices.register({ id, kind: 'mobile', platform: Platform.OS, label: 'Teléfono' }), 15_000, 'Registrar dispositivo')
         .catch(() => undefined);
       try {
         await withTimeout(reloadPrefs(), 20_000, 'Cargar tu perfil');
@@ -119,7 +119,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const setUnit = useCallback(async (u: WeightUnit) => {
     setPrefs((p) => (p ? { ...p, weight_unit: u } : p));
-    await vida.profile.updatePreferences({ weight_unit: u }).catch(() => undefined);
+    await kova.profile.updatePreferences({ weight_unit: u }).catch(() => undefined);
   }, []);
 
   const retryBoot = useCallback(() => setBootTick((t) => t + 1), []);

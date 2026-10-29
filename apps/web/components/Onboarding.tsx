@@ -1,14 +1,14 @@
 'use client';
 /**
  * Mandatory first run (and "Recalcular meta"): name and unit, body data, activity and goal, then the
- * estimated daily target (energyTarget in @vida/domain), accepted as is or typed by hand.
+ * estimated daily target (energyTarget in @kova/domain), accepted as is or typed by hand.
  */
 import {
   ACTIVITY_LABEL, ageFromBirthYear, energyTarget, fromDisplayWeight, GOAL_HINT, GOAL_LABEL, goalHasPace, localDate, newId, PACE_ADJUST, PACE_LABEL,
-  resolveBodyFat, RMR_METHOD_LABEL, SEX_LABEL, toDisplayWeight, VidaError, type ActivityLevel, type GoalPace, type Sex, type WeightGoal,
-} from '@vida/domain';
+  resolveBodyFat, RMR_METHOD_LABEL, SEX_LABEL, toDisplayWeight, KovaError, type ActivityLevel, type GoalPace, type Sex, type WeightGoal,
+} from '@kova/domain';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { nf } from '@/lib/format';
 import { useSession } from '@/lib/session';
 
@@ -23,11 +23,11 @@ function Choice<V extends string>({ name, label, options, value, onChange }: {
   name: string; label: string; options: Array<[V, string, string?]>; value: V | null; onChange: (v: V) => void;
 }) {
   return (
-    <fieldset className="vida-choice-group">
+    <fieldset className="kova-choice-group">
       <legend>{label}</legend>
-      <div className="vida-choices">
+      <div className="kova-choices">
         {options.map(([v, title, hint]) => (
-          <label key={v} className={'vida-choice' + (hint ? ' vida-choice-wide' : '')}>
+          <label key={v} className={'kova-choice' + (hint ? ' kova-choice-wide' : '')}>
             <input type="radio" name={name} value={v} checked={value === v} onChange={() => onChange(v)} />
             <span>{title}</span>
             {hint ? <small>{hint}</small> : null}
@@ -65,7 +65,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
   const [hip, setHip] = useState('');
   const [loaded, setLoaded] = useState<{ fat: string; fatFromDevice: boolean; neck: string; waist: string; hip: string } | null>(null);
   useEffect(() => {
-    vida().body.composition().then((c) => {
+    kova().body.composition().then((c) => {
       const recent = c.fat && (Date.now() - Date.parse(c.fat.measuredAt)) / 86_400_000 <= 30 ? c.fat : null;
       const str = (v: number | undefined) => (v == null ? '' : String(v));
       const l = { fat: str(recent?.value), fatFromDevice: !!recent && recent.source !== 'manual', neck: str(c.neck?.value), waist: str(c.waist?.value), hip: str(c.hip?.value) };
@@ -126,9 +126,9 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
       ];
       const changed = rows.filter((r) => r.text.trim() && r.text.trim() !== (r.was ?? '').trim() && num(r.text) != null);
       if (changed.length) {
-        await vida().body.record(changed.map((r) => ({ id: newId(), metric: r.metric, value: num(r.text)!, measured_at: at, time_zone: p.time_zone })));
+        await kova().body.record(changed.map((r) => ({ id: newId(), metric: r.metric, value: num(r.text)!, measured_at: at, time_zone: p.time_zone })));
       }
-      await vida().profile.completeOnboarding({
+      await kova().profile.completeOnboarding({
         displayName: name.trim() || null, birthYear: by!, heightCm: h!, weightKg: Math.round(weightKg! * 10) / 10, sex: sex!,
         activity: activity!, goal: goal!, pace: goalHasPace(goal) ? pace : null, measurementId,
         kcal: Math.round(vals.kcal), proteinG: Math.round(vals.proteinG!), carbsG: Math.round(vals.carbsG!), fatG: Math.round(vals.fatG!),
@@ -137,7 +137,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
       await reload();
       onClose?.();
     } catch (err) {
-      setError(err instanceof VidaError ? err.message : 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');
+      setError(err instanceof KovaError ? err.message : 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');
     } finally {
       setBusy(false);
     }
@@ -146,8 +146,8 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
   const paceHint = (g: 'lose' | 'gain', k: GoalPace) => (g === 'lose' ? '−' : '+') + Math.round(Math.abs(PACE_ADJUST[g][k]) * 100) + '%';
 
   return (
-    <div className="vida-auth">
-      <form className="vida-auth-card" style={{ width: 'min(520px, 100%)' }} onSubmit={submit} noValidate>
+    <div className="kova-auth">
+      <form className="kova-auth-card" style={{ width: 'min(520px, 100%)' }} onSubmit={submit} noValidate>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 12, color: 'var(--color-neutral-500)' }}>Paso {step} de 3</span>
           {onClose ? <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button> : null}
@@ -155,7 +155,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
 
         {step === 1 ? (
           <>
-            <h1 style={{ fontSize: 24, margin: 0 }}>Bienvenido a VIDA</h1>
+            <h1 style={{ fontSize: 24, margin: 0 }}>Bienvenido a Kova Health</h1>
             <p style={{ margin: 0, color: 'var(--color-neutral-400)', fontSize: 14 }}>Antes de empezar, unos datos para ajustar la app a vos. Lleva un minuto.</p>
             <div className="field">
               <label htmlFor="ob-name">¿Cómo te llamamos?</label>
@@ -192,7 +192,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
               <Choice name="pace" label="Ritmo" value={pace} onChange={setPace}
                 options={(['light', 'moderate', 'aggressive'] as GoalPace[]).map((k) => [k, PACE_LABEL[k] + ' · ' + paceHint(goal, k)])} />
             ) : null}
-            <fieldset className="vida-choice-group" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 'var(--radius-md)', background: 'var(--color-bg)' }}>
+            <fieldset className="kova-choice-group" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 'var(--radius-md)', background: 'var(--color-bg)' }}>
               <legend style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text)', float: 'left', marginBottom: 2 }}>Composición corporal (opcional)</legend>
               <span style={{ fontSize: 12, color: 'var(--color-neutral-400)', clear: 'both' }}>
                 Con tu % de grasa el cálculo usa tu masa magra, que es más preciso. Si no lo sabés, con un centímetro: cuello, cintura a la altura del ombligo{sex === 'female' ? ' y cadera' : ''}.
@@ -247,7 +247,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
                   Es tu meta de un día típico. Cada día se ajusta a lo que te moviste: los días con más pasos o entrenamiento tenés más margen.
                 </div>
                 {target!.floored ? (
-                  <div style={{ fontSize: 12, color: 'var(--vida-warn)' }}>Subimos la meta al mínimo recomendado sin supervisión profesional.</div>
+                  <div style={{ fontSize: 12, color: 'var(--kova-warn)' }}>Subimos la meta al mínimo recomendado sin supervisión profesional.</div>
                 ) : null}
               </div>
             ) : (
@@ -268,8 +268,8 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
         )}
 
         {error && (
-          <div className="vida-error" role="alert">
-            <i className="ph ph-x-circle" style={{ color: 'var(--vida-crit)', fontSize: 16, marginTop: 1 }} />
+          <div className="kova-error" role="alert">
+            <i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)', fontSize: 16, marginTop: 1 }} />
             <span>{error}</span>
           </div>
         )}
@@ -277,11 +277,11 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {step > 1 ? <button type="button" className="btn btn-secondary" onClick={() => { setError(null); setStep((step - 1) as Step); }}>Atrás</button> : null}
           <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={busy}>
-            {busy ? <><i className="ph ph-circle-notch vida-spin" />Guardando…</> : step < 3 ? 'Continuar' : 'Guardar y empezar'}
+            {busy ? <><i className="ph ph-circle-notch kova-spin" />Guardando…</> : step < 3 ? 'Continuar' : 'Guardar y empezar'}
           </button>
         </div>
         {!onClose ? (
-          <button type="button" className="btn btn-ghost" style={{ alignSelf: 'center', fontSize: 13 }} onClick={() => vida().auth.signOut()}>
+          <button type="button" className="btn btn-ghost" style={{ alignSelf: 'center', fontSize: 13 }} onClick={() => kova().auth.signOut()}>
             <i className="ph ph-sign-out" />Cerrar sesión
           </button>
         ) : null}

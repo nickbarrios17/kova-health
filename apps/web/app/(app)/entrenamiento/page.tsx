@@ -1,11 +1,11 @@
 'use client';
 /** "Entrenamiento" — markup ported from design/prototypes/VIDA Web v2.dc.html (isTrain), on real data. */
-import { draftFromRoutine, emptyDraft, formatWeight, newId, toDisplayWeight, weekStart, type RoutineDraft, type WeightUnit } from '@vida/domain';
+import { draftFromRoutine, emptyDraft, formatWeight, newId, toDisplayWeight, weekStart, type RoutineDraft, type WeightUnit } from '@kova/domain';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
 import { RoutineEditor } from '@/components/RoutineEditor';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { chip, dayMonth, dur, hm, isoDays, nf, shortDate } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { exerciseName, lastWeights, routineItems, type ExerciseRow, type HistoryRow, type RoutineRow } from '@/lib/training';
@@ -31,7 +31,7 @@ export default function EntrenamientoPage() {
   const [copying, setCopying] = useState<string | null>(null);
 
   const q = useAsync(async () => {
-    const c = vida();
+    const c = kova();
     const [routines, exercises, history, records, active, summaries] = await Promise.all([
       c.routines.list(),
       c.exercises.search({ limit: 100 }),
@@ -67,7 +67,7 @@ export default function EntrenamientoPage() {
     if (!ex && withHistory.length) setEx(withHistory[0]!);
   }, [ex, withHistory]);
 
-  const series = useAsync(async () => (ex ? ((await vida().workouts.history(ex, 1000)) as HistoryRow[]) : []), [ex]);
+  const series = useAsync(async () => (ex ? ((await kova().workouts.history(ex, 1000)) as HistoryRow[]) : []), [ex]);
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <ErrorNotice message={q.error} onRetry={q.reload} />;
@@ -138,9 +138,9 @@ export default function EntrenamientoPage() {
                   <button className="btn btn-ghost" style={{ fontSize: 13 }} disabled={copying === r.id}
                     onClick={async () => {
                       setCopying(r.id);
-                      try { await vida().routines.duplicate(r.id, newId(), (r.name + ' (copia)').slice(0, 80)); q.reload(); } finally { setCopying(null); }
+                      try { await kova().routines.duplicate(r.id, newId(), (r.name + ' (copia)').slice(0, 80)); q.reload(); } finally { setCopying(null); }
                     }}>
-                    <i className={copying === r.id ? 'ph ph-circle-notch vida-spin' : 'ph ph-copy'} />Duplicar
+                    <i className={copying === r.id ? 'ph ph-circle-notch kova-spin' : 'ph ph-copy'} />Duplicar
                   </button>
                 </div>
               </div>
@@ -233,7 +233,7 @@ export default function EntrenamientoPage() {
                         {s.energy_kcal == null ? '—' : nf(Number(s.energy_kcal), 0) + (s.energy_is_estimated ? ' (est.)' : '')}
                       </td>
                       <td style={{ textAlign: 'right' }}>{d?.avg_hr != null ? d.avg_hr + ' lpm' : '—'}</td>
-                      <td style={{ textAlign: 'right', color: sl != null && sl < 390 ? 'var(--vida-warn)' : 'var(--color-text)' }}>{sl != null ? hm(sl) : '—'}</td>
+                      <td style={{ textAlign: 'right', color: sl != null && sl < 390 ? 'var(--kova-warn)' : 'var(--color-text)' }}>{sl != null ? hm(sl) : '—'}</td>
                       <td style={{ color: 'var(--color-neutral-400)', maxWidth: 280 }}>{d?.notes || '—'}</td>
                     </tr>
                   );

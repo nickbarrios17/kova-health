@@ -2,14 +2,14 @@ import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
 import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
 import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { useFonts } from 'expo-font';
-import { VidaError } from '@vida/domain';
+import { KovaError } from '@kova/domain';
 import { StatusBar } from 'expo-status-bar';
 import { Barbell, ChartLineUp, ForkKnife, House, type Icon } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, Pressable, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { checkApkUpdate, type ApkRelease } from './appUpdate';
-import { configured, outbox, vida } from './client';
+import { configured, outbox, kova } from './client';
 import * as hc from './health';
 import { Comida } from './screens/Comida';
 import { Entrenar } from './screens/Entrenar';
@@ -80,7 +80,7 @@ function Shell() {
         <T size={13} color={c.n400}>{bootError}</T>
         <T size={13} color={c.n400}>Revisa tu conexión a internet e inténtalo de nuevo.</T>
         <Button label="Reintentar" onPress={retryBoot} />
-        <Button variant="ghost" label="Cerrar sesión" onPress={() => vida.auth.signOut()} />
+        <Button variant="ghost" label="Cerrar sesión" onPress={() => kova.auth.signOut()} />
       </View>
     );
   }
@@ -98,7 +98,7 @@ function Shell() {
       setLive(s);
       setShowLive(true);
     } catch (e) {
-      Alert.alert('No se pudo empezar', e instanceof VidaError ? e.message : 'Algo salió mal.');
+      Alert.alert('No se pudo empezar', e instanceof KovaError ? e.message : 'Algo salió mal.');
     }
   };
 

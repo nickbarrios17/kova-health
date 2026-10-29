@@ -1,8 +1,8 @@
 /** "Hoy" — mobile home from design/prototypes/VIDA Health v2.dc.html, on real data only. */
-import { addDays, EVIDENCE_LABEL, KIND_LABEL, greeting, headerDate, hm, isoWeekday, localDate, MOODS, nf, toDisplayWeight } from '@vida/domain';
+import { addDays, EVIDENCE_LABEL, KIND_LABEL, greeting, headerDate, hm, isoWeekday, localDate, MOODS, nf, toDisplayWeight } from '@kova/domain';
 import { CaretRight, ForkKnife, Moon, Play, Scales, Smiley, SneakerMove, Barbell, Lightbulb, type Icon } from 'phosphor-react-native';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
-import { vida } from '../client';
+import { kova } from '../client';
 import { useSession } from '../session';
 import { c, r } from '../theme';
 import { loadTraining, scheme, type TrainingData } from '../training';
@@ -26,8 +26,8 @@ export function Hoy({ live, onOpenLive, onStart }: {
 
   const q = useAsync(async () => {
     const [days, training, goals, insights, energy] = await Promise.all([
-      vida.summaries.daily(addDays(today, -6), today), loadTraining(), vida.goals.list(), vida.insights.today(today, 2).catch(() => []),
-      vida.energy.today(today).catch(() => null),
+      kova.summaries.daily(addDays(today, -6), today), loadTraining(), kova.goals.list(), kova.insights.today(today, 2).catch(() => []),
+      kova.energy.today(today).catch(() => null),
     ]);
     return { days, training, goals: goals as Array<{ kind: string; status: string; target_value: number }>, insights, energy };
   }, [today]);
@@ -41,7 +41,7 @@ export function Hoy({ live, onOpenLive, onStart }: {
   const weekSessions = days.reduce((a, d) => a + Number((d as Record<string, unknown>).workouts_completed ?? 0), 0);
   const latestW = [...days].reverse().find((d) => (d as Record<string, unknown>).weight_kg != null) as Record<string, unknown> | undefined;
 
-  // Today's target follows today's activity when the plan was calculated by VIDA.
+  // Today's target follows today's activity when the plan was calculated by Kova Health.
   const kcal = num(t.kcal), kcalGoal = energy?.mode === 'dynamic' ? energy.kcal : num(t.kcal_goal), steps = num(t.steps), sleep = num(t.sleep_min), mood = num(t.mood);
   const tiles: Tile[] = [
     kcal != null ? { icon: ForkKnife, name: 'Comida', period: 'Hoy', value: nf(Math.round(kcal), 0), unit: kcalGoal ? 'de ' + nf(kcalGoal, 0) + ' kcal' : 'kcal', hint: 'Proteína ' + Math.round(num(t.protein_g) ?? 0) + ' g' }
@@ -92,14 +92,14 @@ export function Hoy({ live, onOpenLive, onStart }: {
         </View>
 
         {insights.length === 0 ? (
-          <Empty title="VIDA todavía no tiene observaciones">
+          <Empty title="Kova Health todavía no tiene observaciones">
             Cuando haya suficientes días de datos te mostraremos hechos y patrones aquí. No mostramos ejemplos inventados.
           </Empty>
         ) : insights.map((x) => (
           <View key={x.key} style={{ flexDirection: 'row', gap: 10, padding: 12, borderRadius: r.md, borderWidth: 1, borderColor: c.divider, borderStyle: x.kind === 'hypothesis' ? 'dashed' : 'solid' }}>
             <Lightbulb size={18} color={x.kind === 'hypothesis' ? c.n400 : c.a300} />
             <View style={{ flex: 1, gap: 2 }}>
-              <T size={12} color={c.n400}>VIDA · {KIND_LABEL[x.kind]}{x.kind !== 'fact' ? ' · ' + EVIDENCE_LABEL[x.evidence] : ''}</T>
+              <T size={12} color={c.n400}>Kova Health · {KIND_LABEL[x.kind]}{x.kind !== 'fact' ? ' · ' + EVIDENCE_LABEL[x.evidence] : ''}</T>
               <T size={14}>{x.title}</T>
             </View>
           </View>
