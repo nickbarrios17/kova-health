@@ -3,6 +3,7 @@ import { EnvelopeSimple, SignIn, UserPlus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { kova } from '../client';
+import { KovaMark } from '../KovaMark';
 import { c } from '../theme';
 import { Button, Card, Field, Notice, T } from '../ui';
 
@@ -48,7 +49,7 @@ export function Login() {
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }} keyboardShouldPersistTaps="handled">
         <Card style={{ gap: 16, padding: 22 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <View style={{ width: 10, height: 22, borderRadius: 3, backgroundColor: c.accent }} />
+            <KovaMark size={30} />
             <T size={20} w="medium" style={{ letterSpacing: 1.6 }}>Kova Health</T>
           </View>
           <T size={22} w="medium">{k.title}</T>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Kova Health, "Cinta Vital": two ribbons forming a K. The front ribbon (stem top and leg)
+       crosses over the back one (arm and stem bottom); the mask cuts a transparent gap there. -->
+  <defs>
+    <mask id="kova-gap" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <path d="M 180 150 L 180 206 C 180 238 192 256 218 278 L 332 372" fill="none" stroke="#000" stroke-width="80" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#161826"/>
+  <g fill="none" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 326 140 L 216 250 C 192 274 180 296 180 330 L 180 362" stroke="#5D5294" mask="url(#kova-gap)"/>
+    <path d="M 180 150 L 180 206 C 180 238 192 256 218 278 L 332 372" stroke="#9184D9"/>
+  </g>
+</svg>

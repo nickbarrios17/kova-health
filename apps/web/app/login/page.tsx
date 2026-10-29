@@ -2,6 +2,7 @@
 import { KovaError } from '@kova/domain';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
+import { KovaMark } from '@/components/KovaMark';
 import { kova } from '@/lib/client';
 import { useSession } from '@/lib/session';
 
@@ -62,7 +63,7 @@ export default function LoginPage() {
     <div className="kova-auth">
       <form className="kova-auth-card" onSubmit={submit} noValidate>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 10, height: 22, borderRadius: 3, background: 'var(--color-accent)', boxShadow: '0 0 14px var(--color-accent)' }} />
+          <KovaMark size={30} />
           <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '.08em' }}>Kova Health</span>
         </div>
         <h1 style={{ fontSize: 22, margin: 0 }}>{c.title}</h1>
