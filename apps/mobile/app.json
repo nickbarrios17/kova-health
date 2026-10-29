@@ -63,7 +63,14 @@
       "fallbackToCacheTimeout": 0,
       "requestHeaders": {
         "expo-channel-name": "production"
+      },
+      "url": "https://u.expo.dev/6ff6ff8d-bdc8-48fb-afb9-03608e3de1af"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6ff6ff8d-bdc8-48fb-afb9-03608e3de1af"
       }
-    }
+    },
+    "owner": "nickbarrios17"
   }
 }
