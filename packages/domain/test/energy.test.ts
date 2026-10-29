@@ -45,12 +45,22 @@ describe('energyTarget', () => {
     }
   });
 
-  it('more protein when losing; fat at least 0.8 g/kg and 25% of energy', () => {
-    expect(energyTarget({ ...base, goal: 'lose', pace: 'moderate' }).proteinG).toBe(156);
-    expect(energyTarget(base).proteinG).toBe(140);
-    const t = energyTarget(base);
+  it('more protein when losing; fat at least 0.8 g/kg and 25% of energy (normal weight: BMI under 25)', () => {
+    const normal = { ...base, heightCm: 180 }; // 78 kg at 1.80 m: BMI 24, reference weight = actual weight
+    expect(energyTarget({ ...normal, goal: 'lose', pace: 'moderate' }).proteinG).toBe(156);
+    expect(energyTarget(normal).proteinG).toBe(140);
+    const t = energyTarget(normal);
     expect(t.fatG).toBeGreaterThanOrEqual(Math.round(78 * 0.8));
     expect(t.fatG * 9).toBeGreaterThanOrEqual(t.kcal * 0.25 - 9);
+  });
+
+  it('heavier people: protein and fat on the reference weight, not total weight', () => {
+    // 130 kg at 1.80 m: reference = weight at BMI 25 = 81 kg.
+    const heavy = energyTarget({ ...base, weightKg: 130, heightCm: 180, goal: 'lose', pace: 'moderate' });
+    expect(heavy.proteinG).toBe(162);
+    expect(heavy.carbsG).toBeGreaterThan(150);
+    // With known body fat, the reference comes from lean mass (30% fat → 91 kg lean → 107 kg at 15%).
+    expect(energyTarget({ ...base, weightKg: 130, heightCm: 180, goal: 'lose', pace: 'moderate', bodyFatPct: 30 }).proteinG).toBe(214);
   });
 
   it('requires a pace when losing or gaining, and valid ranges', () => {
@@ -97,7 +107,7 @@ describe('navyBodyFat', () => {
 });
 
 describe('dailyTarget', () => {
-  const d = { sex: 'male' as const, restingKcal: 1729, weightKg: 78, goal: 'lose' as const, pace: 'moderate' as const, avgSteps7d: 8000 };
+  const d = { sex: 'male' as const, restingKcal: 1729, weightKg: 78, heightCm: 180, goal: 'lose' as const, pace: 'moderate' as const, avgSteps7d: 8000 };
   it('a quiet day is close to the base; an active day earns more', () => {
     const rest = dailyTarget({ ...d, steps: 3500, workoutMinutes: 0 });
     const active = dailyTarget({ ...d, steps: 12000, workoutMinutes: 60 });
@@ -111,21 +121,28 @@ describe('dailyTarget', () => {
     const t = dailyTarget({ ...d, goal: 'maintain', pace: null, steps: null, workoutMinutes: 0, proteinG: 140, fatG: 75 });
     expect(t).toMatchObject({ steps: 8000, stepsEstimated: true, kcal: 2200, proteinG: 140, fatG: 75, carbsG: 241 });
   });
+  it('heavy user: activity uses total weight, macros the reference weight', () => {
+    // The case found on the phone: 130 kg, 2,250 kcal used to leave 69 g of carbs (260 g protein, 104 g fat).
+    const t = dailyTarget({ ...d, weightKg: 130, restingKcal: 2344, steps: 3000, workoutMinutes: 0 });
+    expect(t.kcal).toBe(2250);
+    expect(t).toMatchObject({ proteinG: 162, fatG: 65 });
+    expect(t.carbsG).toBeGreaterThan(240);
+  });
   it('credits at most 1,200 kcal of activity', () => {
     expect(dailyTarget({ ...d, goal: 'maintain', pace: null, steps: 40000, avgSteps7d: null, workoutMinutes: 240 }).activityKcal).toBe(1200);
   });
   it('never below the safety floor', () => {
-    expect(dailyTarget({ ...d, sex: 'female', restingKcal: 1000, weightKg: 45, pace: 'aggressive', steps: 0, workoutMinutes: 0 })).toMatchObject({ kcal: 1200, floored: true });
+    expect(dailyTarget({ ...d, sex: 'female', restingKcal: 1000, weightKg: 45, heightCm: 160, pace: 'aggressive', steps: 0, workoutMinutes: 0 })).toMatchObject({ kcal: 1200, floored: true });
   });
 });
 
 describe('describeDailyTarget', () => {
   it('explains base, activity and goal', () => {
-    const t = dailyTarget({ sex: 'male', restingKcal: 1729, weightKg: 78, goal: 'lose', pace: 'moderate', steps: 12000, avgSteps7d: null, workoutMinutes: 60 });
+    const t = dailyTarget({ sex: 'male', restingKcal: 1729, weightKg: 78, heightCm: 180, goal: 'lose', pace: 'moderate', steps: 12000, avgSteps7d: null, workoutMinutes: 60 });
     expect(describeDailyTarget(t)).toBe('Base 2.075 kcal + 388 por actividad (12.000 pasos, 60 min de entrenamiento) − 20% por tu objetivo.');
   });
   it('says when steps come from the average', () => {
-    const t = dailyTarget({ sex: 'male', restingKcal: 1729, weightKg: 78, goal: 'maintain', pace: null, steps: null, avgSteps7d: 8000, workoutMinutes: 0 });
+    const t = dailyTarget({ sex: 'male', restingKcal: 1729, weightKg: 78, heightCm: 180, goal: 'maintain', pace: null, steps: null, avgSteps7d: 8000, workoutMinutes: 0 });
     expect(describeDailyTarget(t)).toContain('tu promedio');
   });
 });

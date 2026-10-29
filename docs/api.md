@@ -111,9 +111,9 @@ All RPCs are `security invoker`: they run as the caller, under RLS.
     - steps above 3,000 × kg × 0.0004 kcal (net of resting);
     - workouts completed in VIDA: 3.5 METs above resting × kg × active hours (strength training ≈ 4.5 METs);
     - missing steps (no watch data) use the 7-day average, never zero, and the UI says so.
-    It applies when the plan was calculated by VIDA (`nutrition_goals.is_estimated`); a plan typed by the user stays fixed. Protein and fat come from the plan; carbs absorb the day's difference.
+    It applies when the plan was calculated by VIDA (`nutrition_goals.is_estimated`); a plan typed by the user stays fixed. Protein and fat follow the reference weight; carbs absorb the day's difference.
   - Goal adjustment: lose −10 / −20 / −25 % (liviano / moderado / agresivo), maintain 0, gain +5 / +10 / +15 %. Rounded to 50 kcal and never below 1,200 kcal (female) or 1,500 kcal (male).
-  - Macros: protein 2.0 g/kg when losing, 1.8 g/kg otherwise; fat the larger of 0.8 g/kg and 25 % of energy; carbs the rest.
+  - Macros: protein 2.0 g/kg when losing, 1.8 g/kg otherwise; fat the larger of 0.8 g/kg and 25 % of energy; carbs the rest. The kg are a **reference weight** (`macroReferenceWeight`), because fat mass needs no protein: the weight at a healthy body fat (15 % men, 25 % women) when lean mass is known, otherwise the weight at BMI 25 for the person's height, never more than the actual weight. Activity energy still uses total weight. Daily targets recompute macros every day instead of copying the saved plan.
   - Sex is required for the formulas and is not used for anything else. Age comes from the birth year only, so it can be one year high.
 - The system food catalog is **empty** until a verified source is chosen (e.g. USDA FoodData Central or BEDCA), with its licence checked.
 
