@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ageFromBirthYear, bestRestingEnergy, dailyTarget, describeDailyTarget, energyTarget, navyBodyFat, resolveBodyFat, restingEnergy, tenHaaf,
+  ageFromBirthYear, bestRestingEnergy, dailyTarget, describeDailyTarget, energyTarget, goalAdjust, goalHasPace, navyBodyFat, resolveBodyFat,
+  restingEnergy, tenHaaf,
   type EnergyInput,
 } from '../src/energy.js';
 
@@ -155,5 +156,24 @@ describe('resolveBodyFat', () => {
   it('falls back to the Navy formula, or null', () => {
     expect(resolveBodyFat({ ...base2, typedPct: null })).toEqual({ pct: 16.9, source: 'tape' });
     expect(resolveBodyFat({ ...base2, typedPct: null, waistCm: null })).toBeNull();
+  });
+});
+
+describe('body recomposition goal', () => {
+  it('calories a little under maintenance, more protein, no pace needed', () => {
+    const r = energyTarget({ ...base, goal: 'recomp', pace: null });
+    expect(r.kcal).toBe(2550); // 2,680 maintenance × 0.95, rounded to 50
+    expect(r.adjust).toBe(-0.05);
+    expect(r.proteinG).toBe(169); // 2.2 g × 76.6 kg reference weight
+    expect(r.proteinG).toBeGreaterThan(energyTarget(base).proteinG);
+  });
+  it('ignores a pace and applies the same rule to the daily target', () => {
+    expect(energyTarget({ ...base, goal: 'recomp', pace: 'aggressive' }).kcal).toBe(2550);
+    expect(dailyTarget({ sex: 'male', restingKcal: 1729, weightKg: 78, heightCm: 180, goal: 'recomp', pace: null, steps: 3000, avgSteps7d: null, workoutMinutes: 0 }).adjust).toBe(-0.05);
+  });
+  it('only lose and gain have a pace', () => {
+    expect([goalHasPace('lose'), goalHasPace('gain'), goalHasPace('maintain'), goalHasPace('recomp')]).toEqual([true, true, false, false]);
+    expect(goalAdjust('lose', 'moderate')).toBe(-0.2);
+    expect(goalAdjust('gain', null)).toBe(0);
   });
 });

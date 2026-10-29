@@ -37,7 +37,7 @@ function webDeviceId(): string {
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const path = usePathname();
-  const { status, prefs, setUnit } = useSession();
+  const { status, prefs, setUnit, loadError, retryLoad } = useSession();
   const [now, setNow] = useState(() => new Date());
   const [recalc, setRecalc] = useState(false);
 
@@ -56,6 +56,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return (await c.devices.list()) as Array<{ id: string; kind: string; label: string | null; last_seen_at: string | null }>;
   }, [status]);
 
+  if (status === 'signedIn' && !prefs && loadError) {
+    return (
+      <div className="vida-auth">
+        <div className="vida-auth-card" role="alert">
+          <h1 style={{ fontSize: 20, margin: 0 }}>No pudimos cargar tu cuenta</h1>
+          <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Revisa tu conexión a internet e inténtalo de nuevo.</span>
+          <button className="btn btn-primary" onClick={retryLoad}><i className="ph ph-arrow-clockwise" />Reintentar</button>
+          <button className="btn btn-ghost" onClick={() => vida().auth.signOut().then(() => router.replace('/login'))}>Cerrar sesión</button>
+        </div>
+      </div>
+    );
+  }
   if (status !== 'signedIn' || !prefs) {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--color-bg)', color: 'var(--color-neutral-400)', fontFamily: 'var(--font-body)' }}>

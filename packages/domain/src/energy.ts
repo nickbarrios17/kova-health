@@ -16,7 +16,7 @@ import { nf } from './format.js';
 
 export const SexSchema = z.enum(['male', 'female']);
 export const ActivityLevelSchema = z.enum(['sedentary', 'light', 'moderate', 'very_active']);
-export const WeightGoalSchema = z.enum(['lose', 'maintain', 'gain']);
+export const WeightGoalSchema = z.enum(['lose', 'maintain', 'gain', 'recomp']);
 export const GoalPaceSchema = z.enum(['light', 'moderate', 'aggressive']);
 export type Sex = z.infer<typeof SexSchema>;
 export type ActivityLevel = z.infer<typeof ActivityLevelSchema>;
@@ -24,6 +24,22 @@ export type WeightGoal = z.infer<typeof WeightGoalSchema>;
 export type GoalPace = z.infer<typeof GoalPaceSchema>;
 
 export const ACTIVITY_FACTOR: Record<ActivityLevel, number> = { sedentary: 1.2, light: 1.375, moderate: 1.55, very_active: 1.725 };
+
+/** Only losing and gaining have a pace; maintain and recomposition do not. */
+export const goalHasPace = (g: WeightGoal | null | undefined): g is 'lose' | 'gain' => g === 'lose' || g === 'gain';
+
+/**
+ * Body recomposition (lose fat and gain muscle at once): calories a little under maintenance
+ * and higher protein. Works best for beginners, people returning to training, or with fat to lose.
+ */
+export const RECOMP_ADJUST = -0.05;
+
+/** Protein per kg of reference weight: higher in a deficit and during recomposition, to keep or build muscle. */
+export const PROTEIN_PER_KG: Record<WeightGoal, number> = { lose: 2.0, maintain: 1.8, gain: 1.8, recomp: 2.2 };
+
+/** Signed fraction applied to the total for a goal and pace (0 when maintaining). */
+export const goalAdjust = (goal: WeightGoal, pace: GoalPace | null | undefined): number =>
+  goal === 'recomp' ? RECOMP_ADJUST : goalHasPace(goal) && pace ? PACE_ADJUST[goal][pace] : 0;
 
 /** Fraction added to (gain) or removed from (lose) the total. */
 export const PACE_ADJUST: Record<'lose' | 'gain', Record<GoalPace, number>> = {
@@ -41,7 +57,13 @@ export const ACTIVITY_LABEL: Record<ActivityLevel, [label: string, hint: string]
   moderate: ['Moderada', 'Entrenas 3–5 días por semana'],
   very_active: ['Muy activa', 'Entrenas 6–7 días o trabajo físico'],
 };
-export const GOAL_LABEL: Record<WeightGoal, string> = { lose: 'Bajar de peso', maintain: 'Mantener', gain: 'Subir de peso' };
+export const GOAL_LABEL: Record<WeightGoal, string> = { lose: 'Bajar de peso', maintain: 'Mantener', gain: 'Subir de peso', recomp: 'Recomposición corporal' };
+export const GOAL_HINT: Record<WeightGoal, string> = {
+  lose: 'Perder grasa con un déficit de calorías',
+  maintain: 'Mantener tu peso actual',
+  gain: 'Ganar peso y músculo con un excedente',
+  recomp: 'Perder grasa y ganar músculo a la vez: calorías cerca de mantenimiento y más proteína',
+};
 export const PACE_LABEL: Record<GoalPace, string> = { light: 'Liviano', moderate: 'Moderado', aggressive: 'Agresivo' };
 
 export const EnergyInputSchema = z
@@ -56,7 +78,7 @@ export const EnergyInputSchema = z
     /** Body fat %, if known: switches resting energy to the lean-mass formula. */
     bodyFatPct: z.number().min(3).max(60).nullish(),
   })
-  .refine((v) => v.goal === 'maintain' || v.pace != null, { message: 'Elige un ritmo', path: ['pace'] });
+  .refine((v) => !goalHasPace(v.goal) || v.pace != null, { message: 'Elige un ritmo', path: ['pace'] });
 export type EnergyInput = z.input<typeof EnergyInputSchema>;
 
 export interface EnergyTarget {
@@ -148,7 +170,7 @@ export function macroReferenceWeight(p: { sex: Sex; weightKg: number; heightCm: 
 }
 
 const macros = (kcal: number, refWeightKg: number, goal: WeightGoal) => {
-  const proteinG = Math.round(refWeightKg * (goal === 'lose' ? 2.0 : 1.8));
+  const proteinG = Math.round(refWeightKg * PROTEIN_PER_KG[goal]);
   const fatG = Math.round(Math.max(refWeightKg * 0.8, (kcal * 0.25) / 9));
   return { proteinG, fatG, carbsG: Math.max(0, Math.round((kcal - proteinG * 4 - fatG * 9) / 4)) };
 };
@@ -157,7 +179,7 @@ export function energyTarget(input: EnergyInput): EnergyTarget {
   const { sex, age, heightCm, weightKg, activity, goal, pace, bodyFatPct } = EnergyInputSchema.parse(input);
   const rmr = bestRestingEnergy({ sex, age, heightCm, weightKg, activity, bodyFatPct });
   const tdee = rmr.kcal * ACTIVITY_FACTOR[activity];
-  const adjust = goal === 'maintain' ? 0 : PACE_ADJUST[goal][pace!];
+  const adjust = goalAdjust(goal, pace);
   const raw = Math.round((tdee * (1 + adjust)) / 50) * 50;
   const kcal = Math.max(KCAL_FLOOR[sex], raw);
   const ref = macroReferenceWeight({ sex, weightKg, heightCm, leanMassKg: rmr.leanMassKg });
@@ -221,7 +243,7 @@ export function dailyTarget(i: DailyTargetInput): DailyTarget {
   const stepsKcal = Math.max(0, steps - D.stepAllowance) * i.weightKg * D.kcalPerKgStep;
   const workoutKcal = (D.strengthMet - 1) * i.weightKg * (Math.max(0, i.workoutMinutes) / 60);
   const activityKcal = Math.min(D.maxActivityKcal, (stepsKcal + workoutKcal) * D.credit);
-  const adjust = i.goal === 'maintain' || !i.pace ? 0 : PACE_ADJUST[i.goal][i.pace];
+  const adjust = goalAdjust(i.goal, i.pace);
   const raw = Math.round(((base + activityKcal) * (1 + adjust)) / 50) * 50;
   const kcal = Math.max(KCAL_FLOOR[i.sex], raw);
   const def = macros(kcal, macroReferenceWeight({ sex: i.sex, weightKg: i.weightKg, heightCm: i.heightCm, leanMassKg: i.leanMassKg }), i.goal);
@@ -237,7 +259,7 @@ export function dailyTarget(i: DailyTargetInput): DailyTarget {
 /** Plain-language breakdown of a daily target, e.g. "Base 2.075 kcal + 388 por actividad (12.000 pasos, 60 min de entrenamiento) − 20% por tu objetivo". */
 export function describeDailyTarget(d: DailyTarget): string {
   const what = [
-    d.steps ? nf(d.steps, 0) + ' pasos' + (d.stepsEstimated ? ' (tu promedio: hoy no hay datos del reloj)' : '') : null,
+    d.steps ? nf(d.steps, 0) + ' pasos' + (d.stepsEstimated ? ' según tu promedio, porque hoy no hay datos del reloj' : '') : null,
     d.workoutMinutes ? d.workoutMinutes + ' min de entrenamiento' : null,
   ].filter(Boolean).join(', ');
   let out = 'Base ' + nf(d.base, 0) + ' kcal';
@@ -269,5 +291,5 @@ export const OnboardingSchema = z
     timeZone: z.string().optional(),
   })
   .strict()
-  .refine((v) => v.goal === 'maintain' || v.pace != null, { message: 'Elige un ritmo', path: ['pace'] });
+  .refine((v) => !goalHasPace(v.goal) || v.pace != null, { message: 'Elige un ritmo', path: ['pace'] });
 export type OnboardingInput = z.input<typeof OnboardingSchema>;
