@@ -58,7 +58,7 @@ Una misma cuenta sirve para la web, el teléfono y el reloj.
 ### Configuración inicial (obligatoria)
 La primera vez que entrás, en la web o en el teléfono, VIDA te pide tres pasos antes de mostrar la app:
 1. **Bienvenida:** tu nombre y si preferís kilos o libras.
-2. **Tus datos:** año de nacimiento, altura, peso actual, sexo, nivel de actividad y objetivo (bajar de peso, mantener o subir de peso). Para bajar o subir elegís un ritmo: **liviano, moderado o agresivo**.
+2. **Tus datos:** año de nacimiento, altura, peso actual, sexo, nivel de actividad y objetivo: bajar de peso, mantener, subir de peso o **recomposición corporal** (perder grasa y ganar músculo a la vez). Para bajar o subir elegís un ritmo: **liviano, moderado o agresivo**. La recomposición no tiene ritmo: usa calorías un 5 % por debajo de mantenimiento y más proteína (2,2 g por kg de referencia). Funciona sobre todo si empezás a entrenar, volvés después de un parón o tenés grasa para perder; en ese caso el peso puede quedarse igual aunque avances, así que conviene seguir el % de grasa, la cintura y la fuerza.
 3. **Tu meta diaria:** VIDA calcula las calorías y los macros (proteína, carbohidratos y grasa). Podés guardarla tal cual o tocar **Editar a mano** y poner tus propios números.
 
 En el paso 2 también podés completar tu **composición corporal (opcional)**: el % de grasa (si tu reloj lo mide, aparece solo) o, con un centímetro, cuello y cintura a la altura del ombligo (y cadera, en mujeres). Con eso VIDA usa una fórmula basada en tu masa magra, que es más precisa.

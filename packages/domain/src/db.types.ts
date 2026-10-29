@@ -1946,7 +1946,7 @@ export type Database = {
       onboarding_state: "new" | "profile" | "goals" | "done"
       session_status: "in_progress" | "paused" | "completed" | "abandoned"
       set_type: "warmup" | "working" | "drop" | "failure"
-      weight_goal: "lose" | "maintain" | "gain"
+      weight_goal: "lose" | "maintain" | "gain" | "recomp"
       weight_unit: "kg" | "lb"
     }
     CompositeTypes: {
@@ -2143,7 +2143,7 @@ export const Constants = {
       onboarding_state: ["new", "profile", "goals", "done"],
       session_status: ["in_progress", "paused", "completed", "abandoned"],
       set_type: ["warmup", "working", "drop", "failure"],
-      weight_goal: ["lose", "maintain", "gain"],
+      weight_goal: ["lose", "maintain", "gain", "recomp"],
       weight_unit: ["kg", "lb"],
     },
   },
