@@ -13,7 +13,7 @@ insert into auth.users (id, instance_id, aud, role, email) values
   ('11111111-1111-4111-8111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@test.local'),
   ('22222222-2222-4222-8222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'b@test.local');
 
-select is((select count(*)::int from public.exercises where owner_id is null), 5, 'system catalog seeded with the 5 prototype exercises');
+select cmp_ok((select count(*)::int from public.exercises where owner_id is null), '>=', 5, 'system catalog seeded (5 prototype exercises + the image catalog)');
 select is((select count(*)::int from public.exercise_muscles m join public.exercises e on e.id = m.exercise_id
            where e.slug = 'sentadilla' and e.owner_id is null and m.role = 'primary'), 1, 'squat has one primary muscle');
 
@@ -25,7 +25,7 @@ select lives_ok($$ insert into public.exercises (id, slug, name) values ('eeeeee
   'A creates a private exercise');
 select is((select owner_id from public.exercises where id = 'eeeeeeee-0000-4000-8000-00000000000a'),
   '11111111-1111-4111-8111-111111111111'::uuid, 'owner defaults to the caller');
-select is((select count(*)::int from public.exercises), 6, 'A sees system + own exercises');
+select is((select count(*)::int from public.exercises), (select count(*)::int from public.exercises where owner_id is null) + 1, 'A sees system + own exercises');
 
 select is_empty($$ update public.exercises set name = 'x' where owner_id is null returning id $$, 'A cannot modify system exercises');
 select throws_ok($$ insert into public.exercise_muscles (exercise_id, muscle_code)
