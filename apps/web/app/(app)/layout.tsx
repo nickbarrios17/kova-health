@@ -4,6 +4,7 @@ import { newId } from '@kova/domain';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { KovaMark } from '@/components/KovaMark';
 import { Onboarding } from '@/components/Onboarding';
 import { kova } from '@/lib/client';
 import { ago, greeting, headerDate, seg } from '@/lib/format';
@@ -84,7 +85,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <div style={{ minHeight: '100vh', display: 'flex', flexWrap: 'wrap', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
       <aside data-screen-label="Barra lateral" style={{ flex: '1 0 232px', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 20, padding: '20px 14px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px' }}>
-          <span style={{ width: 10, height: 22, borderRadius: 3, background: 'var(--color-accent)', boxShadow: '0 0 14px var(--color-accent)' }} />
+          <KovaMark size={30} />
           <span style={{ fontSize: 20, fontWeight: 500, letterSpacing: '.08em' }}>Kova Health</span>
         </div>
         <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: 2 }}>
