@@ -2,7 +2,7 @@
 -- two images in the public exercise-media bucket, which app users cannot write to.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(9);
 
 select cmp_ok((select count(*)::int from public.exercises where owner_id is null), '>=', 150, 'the system catalog has at least 150 exercises');
 select is((select count(*)::int from public.exercises where owner_id is null
@@ -12,6 +12,9 @@ select is((select count(*)::int from public.exercises e where owner_id is null
 select is((select count(*)::int from public.exercises e, jsonb_array_elements(e.media) m
            where e.owner_id is null and m->>'kind' = 'image' and m->>'ref' !~ '^exercise-media/[a-z0-9-]+/[01]\.jpg$'), 0,
           'images reference our own bucket only');
+select is((select count(*)::int from public.exercises e where owner_id is null
+           and (select count(*) from jsonb_array_elements(e.media) m where m->>'kind' = 'animation' and m->>'ref' = 'kova-mannequin' and m ? 'slug' and m ? 'muscle') <> 1), 0,
+          'every system exercise has exactly one 3D mannequin animation');
 select ok((select instructions ? 'cues' from public.exercises where owner_id is null and slug = 'press-banca'), 'the original 5 keep their coaching cues');
 select ok((select public from storage.buckets where id = 'exercise-media'), 'the exercise-media bucket is public');
 

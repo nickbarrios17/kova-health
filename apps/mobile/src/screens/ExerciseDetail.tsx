@@ -3,11 +3,12 @@
  * coaching cues, common errors, breathing and muscles. An exercise of the user's own (name only)
  * borrows the content of the catalog entry it matches by name.
  */
-import { EQUIPMENT_LABEL, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
+import { EQUIPMENT_LABEL, exerciseAnimation, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
 import { X } from 'phosphor-react-native';
-import { useEffect, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { kova } from '../client';
+import { ExerciseFrames } from '../ExerciseFrames';
+import { MannequinView } from '../MannequinView';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Card, ErrorNote, Loading, Row, T } from '../ui';
@@ -21,23 +22,6 @@ interface ExerciseRow {
   media: unknown;
   exercise_muscles: Array<{ muscle_code: string; role: 'primary' | 'secondary' }>;
   exercise_equipment: Array<{ equipment_code: string }>;
-}
-
-function Frames({ urls }: { urls: string[] }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    if (urls.length < 2) return;
-    const iv = setInterval(() => setI((x) => (x + 1) % urls.length), 1100);
-    return () => clearInterval(iv);
-  }, [urls.length]);
-  return (
-    <View style={{ height: 240, borderRadius: r.lg, backgroundColor: '#fff', overflow: 'hidden' }}>
-      {urls.map((u, n) => (
-        <Image key={u} source={{ uri: u }} resizeMode="contain" accessibilityIgnoresInvertColors
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: n === i ? 1 : 0 }} />
-      ))}
-    </View>
-  );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -63,6 +47,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
 
   const ex = q.data?.ex;
   const ins = ex?.instructions ?? {};
+  const anim = ex ? exerciseAnimation(ex.media) : null;
   const urls = ex ? exerciseImages(ex.media, supabaseUrl) : [];
   const primary = ex?.exercise_muscles.filter((m) => m.role === 'primary').map((m) => MUSCLE_LABEL[m.muscle_code] ?? m.muscle_code) ?? [];
   const secondary = ex?.exercise_muscles.filter((m) => m.role === 'secondary').map((m) => MUSCLE_LABEL[m.muscle_code] ?? m.muscle_code) ?? [];
@@ -82,7 +67,13 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
           <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>
         ) : ex ? (
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
-            {urls.length ? <Frames urls={urls} /> : null}
+            {anim ? (
+              <View style={{ gap: 4 }}>
+                <MannequinView spec={anim} />
+                <T size={12} color={c.n400}>Arrastra para girar el modelo. Los músculos que trabajan se iluminan.</T>
+              </View>
+            ) : null}
+            <ExerciseFrames urls={urls} />
             {q.data?.borrowed ? <T size={12} color={c.n400}>Instrucciones de «{ex.name}», el ejercicio del catálogo más parecido.</T> : null}
             {primary.length || equipment.length ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>

@@ -4,7 +4,7 @@
  * errors, breathing and muscles. Same rules as the phone (apps/mobile/src/screens/ExerciseDetail.tsx):
  * an exercise of the user's own borrows the content of the catalog entry it matches by name.
  */
-import { EQUIPMENT_LABEL, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
+import { EQUIPMENT_LABEL, exerciseAnimation, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
 import { useEffect, useState } from 'react';
 import { kova } from '@/lib/client';
 import { useAsync } from '@/lib/useAsync';
@@ -33,6 +33,17 @@ function Frames({ urls }: { urls: string[] }) {
   );
 }
 
+/** Loads Kova Health's 3D mannequin (public/mannequin.js) once; it registers <gym-mannequin>. */
+function useMannequinScript() {
+  useEffect(() => {
+    if (document.querySelector('script[data-kova-mannequin]')) return;
+    const s = document.createElement('script');
+    s.src = '/mannequin.js';
+    s.dataset.kovaMannequin = '';
+    document.head.appendChild(s);
+  }, []);
+}
+
 const h = { fontSize: 15, fontWeight: 500, marginTop: 4 } as const;
 const muted = { fontSize: 13, color: 'var(--color-neutral-300)' } as const;
 
@@ -50,6 +61,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
     return match ? { ex: (await c.exercises.get(match.id)) as ExerciseFull, borrowed: true } : { ex: own, borrowed: false };
   }, [exerciseId]);
 
+  useMannequinScript();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -58,6 +70,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
 
   const ex = q.data?.ex;
   const ins = ex?.instructions ?? {};
+  const anim = ex ? exerciseAnimation(ex.media) : null;
   const urls = ex ? exerciseImages(ex.media, process.env.NEXT_PUBLIC_SUPABASE_URL ?? '') : [];
   const label = (role: string) => ex?.exercise_muscles.filter((m) => m.role === role).map((m) => MUSCLE_LABEL[m.muscle_code] ?? m.muscle_code) ?? [];
 
@@ -72,6 +85,13 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
           <div className="kova-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)' }} /><span>{q.error}</span></div>
         ) : ex ? (
           <>
+            {anim && (
+              <div style={{ display: 'grid', gap: 4 }}>
+                <gym-mannequin slug={anim.slug} muscle={anim.muscle} equipment={anim.equipment} category={anim.category} layer="muscles" view="34"
+                  style={{ display: 'block', height: 280, borderRadius: 'var(--radius-lg)', background: '#0f1019' }} />
+                <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Arrastra para girar el modelo. Los músculos que trabajan se iluminan.</span>
+              </div>
+            )}
             {urls.length > 0 && <Frames urls={urls} />}
             {q.data?.borrowed && <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Instrucciones de «{ex.name}», el ejercicio del catálogo más parecido.</span>}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

@@ -1,9 +1,10 @@
 /** Routines + history (prototype "Rutinas"), with the routine editor (new, edit, duplicate, delete). */
-import { dayMonth, draftFromRoutine, dur, emptyDraft, isoDays, newId, nf, toDisplayWeight, type RoutineDraft } from '@kova/domain';
+import { dayMonth, draftFromRoutine, imagesFor, dur, emptyDraft, isoDays, newId, nf, toDisplayWeight, type RoutineDraft } from '@kova/domain';
 import { Barbell, CaretRight, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { kova } from '../client';
+import { ExerciseThumb } from '../ExerciseFrames';
 import { useSession } from '../session';
 import { c } from '../theme';
 import { loadTraining, scheme, type TrainingData } from '../training';
@@ -11,6 +12,8 @@ import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Loading, Row, T } from '../ui';
 import { ExerciseDetail } from './ExerciseDetail';
 import { RoutineEditor } from './RoutineEditor';
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 
 export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (routineId: string, data: TrainingData) => void }) {
   const { prefs } = useSession();
@@ -50,8 +53,9 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
               {[...r.routine_exercises].sort((a, b) => a.position - b.position).map((it, i) => (
                 <Pressable key={i} onPress={() => setHowTo({ id: it.exercise_id, name: training.names.get(it.exercise_id) ?? 'Ejercicio' })}
                   accessibilityRole="button" accessibilityHint="Muestra cómo se hace"
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32 }}>
-                  <T size={13} color={c.n300} style={{ flex: 1 }}>{training.names.get(it.exercise_id) ?? 'Ejercicio'}</T>
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 }}>
+                  <ExerciseThumb url={imagesFor(it.exercise_id, training.catalog, supabaseUrl)[0]} />
+                  <T size={14} color={c.n300} style={{ flex: 1 }}>{training.names.get(it.exercise_id) ?? 'Ejercicio'}</T>
                   <T size={13} color={c.n400}>{scheme(it)}</T>
                   <CaretRight size={14} color={c.n500} />
                 </Pressable>

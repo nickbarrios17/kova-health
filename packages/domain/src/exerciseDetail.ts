@@ -19,6 +19,28 @@ export interface ExerciseMedia {
   ref: string;
   license?: string;
   source?: string;
+  /** kind 'animation', ref 'kova-mannequin': the inputs of the 3D mannequin (see MannequinSpec). */
+  slug?: string;
+  muscle?: string;
+  equipment?: string;
+  category?: string;
+}
+
+/** What <gym-mannequin> needs to pick and animate a movement (English slug, its own vocabularies). */
+export interface MannequinSpec {
+  slug: string;
+  muscle: string;
+  equipment: string;
+  category: string;
+}
+
+/** The 3D mannequin animation of an exercise, if it has one. */
+export function exerciseAnimation(media: unknown): MannequinSpec | null {
+  if (!Array.isArray(media)) return null;
+  const a = (media as ExerciseMedia[]).find((m) => m?.kind === 'animation' && m.ref === 'kova-mannequin' && typeof m.slug === 'string');
+  if (!a) return null;
+  const clean = (v: unknown) => String(v ?? '').replace(/[^a-z0-9-]/g, '').slice(0, 80);
+  return { slug: clean(a.slug), muscle: clean(a.muscle), equipment: clean(a.equipment) || 'bodyweight', category: clean(a.category) };
 }
 
 /** Public URLs of an exercise's images, in order (start and end position for catalog entries). */
@@ -32,7 +54,7 @@ export function exerciseImages(media: unknown, supabaseUrl: string): string[] {
 
 export function hasHowTo(instructions: unknown, media: unknown): boolean {
   const i = (instructions ?? {}) as ExerciseInstructions;
-  return Boolean(i.steps?.length || i.cues?.length || (Array.isArray(media) && media.some((m) => m?.kind === 'image')));
+  return Boolean(i.steps?.length || i.cues?.length || (Array.isArray(media) && media.some((m) => m?.kind === 'image' || exerciseAnimation([m]))));
 }
 
 export const MUSCLE_LABEL: Record<string, string> = {
@@ -142,4 +164,21 @@ export function findCatalogMatch<T extends { name: string; short_name?: string |
 
   const syn = SYNONYMS.find(([re]) => re.test(n));
   return (syn && byName.get(normalize(syn[1]))) || null;
+}
+
+/**
+ * Images to show for an exercise: its own, else those of the catalog entry its name matches
+ * (a user's "Press plano" shows the bench press photos).
+ */
+export function imagesFor(
+  exerciseId: string,
+  catalog: Array<{ id: string; name: string; short_name?: string | null; owner_id: string | null; media: unknown }>,
+  supabaseUrl: string,
+): string[] {
+  const ex = catalog.find((e) => e.id === exerciseId);
+  if (!ex) return [];
+  const own = exerciseImages(ex.media, supabaseUrl);
+  if (own.length || ex.owner_id == null) return own;
+  const match = findCatalogMatch(ex.name, catalog.filter((e) => e.owner_id == null));
+  return match ? exerciseImages(match.media, supabaseUrl) : [];
 }
