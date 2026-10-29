@@ -108,6 +108,8 @@ describe('toKovaError', () => {
     expect(toKovaError({ code: '42501', message: 'new row violates row-level security policy for table "x"' }).message)
       .not.toMatch(/row-level|table/);
     expect(toKovaError(new TypeError('fetch failed')).code).toBe('NETWORK');
+    expect(toKovaError(new TypeError('Network request failed')).code).toBe('NETWORK'); // React Native
+    expect(toKovaError(new TypeError("Cannot read property 'x' of undefined")).code).toBe('INTERNAL'); // a bug, not offline
     expect(toKovaError({ message: 'boom' }, 503).retryable).toBe(true);
     expect(toKovaError({ message: 'nope' }, 401).code).toBe('UNAUTHENTICATED');
   });

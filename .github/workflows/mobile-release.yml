@@ -78,7 +78,7 @@ jobs:
         working-directory: apps/mobile
         env:
           MESSAGE: ${{ github.event.head_commit.message || 'Manual release' }}
-        run: npx -y "$EAS_CLI" update --branch production --platform android --message "${MESSAGE%%$'\n'*}" --non-interactive
+        run: npx -y "$EAS_CLI" update --channel production --platform android --message "${MESSAGE%%$'\n'*}" --non-interactive
 
       - name: Set up Java (APK build)
         if: steps.rt.outputs.current != steps.rt.outputs.published || inputs.force_apk

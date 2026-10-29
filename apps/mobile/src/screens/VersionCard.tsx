@@ -19,10 +19,18 @@ export function VersionCard() {
     try {
       const rel = await checkApkUpdate();
       if (rel) return setApk(rel);
+    } catch (e) {
+      console.warn('[kova] APK update check failed:', String(e).slice(0, 300));
+      setBusy(false);
+      return setMsg('No se pudo buscar actualizaciones. Revisa tu conexión.');
+    }
+    // The code-update service (Expo) is separate: if it fails, the installed APK is still the latest.
+    try {
       if (await fetchOtaNow()) return setOtaReady(true);
       setMsg('Tenés la última versión.');
-    } catch {
-      setMsg('No se pudo buscar actualizaciones. Revisa tu conexión.');
+    } catch (e) {
+      console.warn('[kova] OTA update check failed:', String(e).slice(0, 300));
+      setMsg('Tenés la última versión de la app. Las mejoras automáticas no respondieron; se reintentan al abrirla.');
     } finally {
       setBusy(false);
     }
