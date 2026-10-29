@@ -3,11 +3,12 @@
  * coaching cues, common errors, breathing and muscles. An exercise of the user's own (name only)
  * borrows the content of the catalog entry it matches by name.
  */
-import { EQUIPMENT_LABEL, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
+import { EQUIPMENT_LABEL, exerciseAnimation, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
 import { X } from 'phosphor-react-native';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { kova } from '../client';
 import { ExerciseFrames } from '../ExerciseFrames';
+import { MannequinView } from '../MannequinView';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Card, ErrorNote, Loading, Row, T } from '../ui';
@@ -46,6 +47,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
 
   const ex = q.data?.ex;
   const ins = ex?.instructions ?? {};
+  const anim = ex ? exerciseAnimation(ex.media) : null;
   const urls = ex ? exerciseImages(ex.media, supabaseUrl) : [];
   const primary = ex?.exercise_muscles.filter((m) => m.role === 'primary').map((m) => MUSCLE_LABEL[m.muscle_code] ?? m.muscle_code) ?? [];
   const secondary = ex?.exercise_muscles.filter((m) => m.role === 'secondary').map((m) => MUSCLE_LABEL[m.muscle_code] ?? m.muscle_code) ?? [];
@@ -65,6 +67,12 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
           <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>
         ) : ex ? (
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
+            {anim ? (
+              <View style={{ gap: 4 }}>
+                <MannequinView spec={anim} />
+                <T size={12} color={c.n400}>Arrastra para girar el modelo. Los músculos que trabajan se iluminan.</T>
+              </View>
+            ) : null}
             <ExerciseFrames urls={urls} />
             {q.data?.borrowed ? <T size={12} color={c.n400}>Instrucciones de «{ex.name}», el ejercicio del catálogo más parecido.</T> : null}
             {primary.length || equipment.length ? (

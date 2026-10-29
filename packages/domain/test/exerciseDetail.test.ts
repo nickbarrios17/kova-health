@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exerciseImages, findCatalogMatch, hasHowTo, imagesFor } from '../src/index.js';
+import { exerciseAnimation, exerciseImages, findCatalogMatch, hasHowTo, imagesFor } from '../src/index.js';
 import { CATALOG_NAMES } from './catalogNames.js';
 
 const catalog = CATALOG_NAMES.map((name, i) => ({ id: String(i), name }));
@@ -64,5 +64,15 @@ describe('imagesFor', () => {
     expect(imagesFor('own', cat, url)).toEqual([url + '/storage/v1/object/public/exercise-media/press-banca/0.jpg']);
     expect(imagesFor('odd', cat, url)).toEqual([]);
     expect(imagesFor('missing', cat, url)).toEqual([]);
+  });
+});
+
+describe('exerciseAnimation', () => {
+  it('reads the mannequin inputs and strips anything odd', () => {
+    const media = [{ kind: 'image', ref: 'exercise-media/x/0.jpg' }, { kind: 'animation', ref: 'kova-mannequin', slug: 'barbell-squat', muscle: 'quads', equipment: 'barbell', category: '' }];
+    expect(exerciseAnimation(media)).toEqual({ slug: 'barbell-squat', muscle: 'quads', equipment: 'barbell', category: '' });
+    expect(exerciseAnimation([{ kind: 'animation', ref: 'kova-mannequin', slug: 'a"><script>', muscle: 'quads' }])?.slug).toBe('ascript');
+    expect(exerciseAnimation([{ kind: 'animation', ref: 'gym-mannequin:squat' }])).toBeNull();
+    expect(exerciseAnimation(null)).toBeNull();
   });
 });
