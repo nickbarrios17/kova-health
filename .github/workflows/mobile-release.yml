@@ -1,0 +1,134 @@
+# Publishes the phone app after every change that reaches master (docs/android.md → "Actualizaciones"):
+# - Code-only change (same runtime fingerprint as the published APK): over-the-air update with
+#   EAS Update. Phones download it on their own the next time the app opens.
+# - Native change (new fingerprint), or "force_apk": builds a signed APK, uploads it to the public
+#   Supabase bucket `releases` with latest.json, and the app shows "Actualizar app".
+# Needs (scripts/setup-releases.ps1 sets them): secrets EXPO_TOKEN, VIDA_KEYSTORE_BASE64,
+# VIDA_KEYSTORE_PASSWORD, VIDA_KEY_ALIAS, VIDA_KEY_PASSWORD, SUPABASE_SERVICE_ROLE_KEY; variables
+# EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY.
+name: Mobile release
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/domain/**'
+      - 'packages/api-client/**'
+      - 'package-lock.json'
+  workflow_dispatch:
+    inputs:
+      force_apk:
+        description: 'Build and publish a new APK even if only code changed'
+        type: boolean
+        default: false
+
+concurrency:
+  group: mobile-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Skipped (not failed) until scripts/setup-releases.ps1 has configured the repository.
+    if: vars.EXPO_PUBLIC_SUPABASE_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_CLI: eas-cli@24.13.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check configuration
+        env:
+          KEYSTORE: ${{ secrets.VIDA_KEYSTORE_BASE64 }}
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          missing=""
+          [ -n "$EXPO_PUBLIC_SUPABASE_URL" ] || missing="$missing EXPO_PUBLIC_SUPABASE_URL"
+          [ -n "$EXPO_PUBLIC_SUPABASE_ANON_KEY" ] || missing="$missing EXPO_PUBLIC_SUPABASE_ANON_KEY"
+          [ -n "$EXPO_TOKEN" ] || missing="$missing EXPO_TOKEN"
+          [ -n "$KEYSTORE" ] || missing="$missing VIDA_KEYSTORE_BASE64"
+          [ -n "$SERVICE_KEY" ] || missing="$missing SUPABASE_SERVICE_ROLE_KEY"
+          if [ -n "$missing" ]; then echo "::error::Missing:$missing (run scripts/setup-releases.ps1)"; exit 1; fi
+
+      - name: Runtime of this commit and of the published APK
+        id: rt
+        working-directory: apps/mobile
+        run: |
+          current=$(npx expo-updates runtimeversion:resolve --platform android | jq -r '.runtimeVersion')
+          published=$(curl -sf "$EXPO_PUBLIC_SUPABASE_URL/storage/v1/object/public/releases/android/latest.json" || echo '{}')
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "published=$(echo "$published" | jq -r '.runtimeVersion // ""')" >> "$GITHUB_OUTPUT"
+          echo "code=$(echo "$published" | jq -r '.versionCode // 1')" >> "$GITHUB_OUTPUT"
+          echo "This commit: $current · published APK: $(echo "$published" | jq -c .)"
+
+      - name: Over-the-air update (code-only change)
+        if: steps.rt.outputs.current == steps.rt.outputs.published && !inputs.force_apk
+        working-directory: apps/mobile
+        env:
+          MESSAGE: ${{ github.event.head_commit.message || 'Manual release' }}
+        run: npx -y "$EAS_CLI" update --branch production --platform android --message "${MESSAGE%%$'\n'*}" --non-interactive
+
+      - name: Set up Java (APK build)
+        if: steps.rt.outputs.current != steps.rt.outputs.published || inputs.force_apk
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build the signed APK (native change)
+        id: build
+        if: steps.rt.outputs.current != steps.rt.outputs.published || inputs.force_apk
+        working-directory: apps/mobile
+        env:
+          KEYSTORE_BASE64: ${{ secrets.VIDA_KEYSTORE_BASE64 }}
+          VIDA_KEYSTORE_PASSWORD: ${{ secrets.VIDA_KEYSTORE_PASSWORD }}
+          VIDA_KEY_ALIAS: ${{ secrets.VIDA_KEY_ALIAS }}
+          VIDA_KEY_PASSWORD: ${{ secrets.VIDA_KEY_PASSWORD }}
+        run: |
+          code=$(( ${{ steps.rt.outputs.code }} + 1 ))
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/vida-release.jks"
+          export VIDA_KEYSTORE_FILE="$RUNNER_TEMP/vida-release.jks" VIDA_VERSION_CODE="$code"
+          npx expo prebuild --platform android --clean --no-install
+          (cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a)
+          rm -f "$RUNNER_TEMP/vida-release.jks"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "name=$(jq -r '.expo.version' app.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the APK to Supabase Storage
+        if: steps.build.outcome == 'success'
+        env:
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CODE: ${{ steps.build.outputs.code }}
+          NAME: ${{ steps.build.outputs.name }}
+          RUNTIME: ${{ steps.rt.outputs.current }}
+          MESSAGE: ${{ github.event.head_commit.message || 'Nueva versión' }}
+        run: |
+          apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          base="$EXPO_PUBLIC_SUPABASE_URL/storage/v1/object"
+          up() { curl -sf -X POST "$base/releases/$1" -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
+            -H "x-upsert: true" -H "Content-Type: $2" -H "Cache-Control: no-cache" --data-binary "@$3"; }
+          up "android/vida-$CODE.apk" application/vnd.android.package-archive "$apk"
+          jq -n --argjson code "$CODE" --arg name "$NAME" --arg runtime "$RUNTIME" --arg notes "${MESSAGE%%$'\n'*}" \
+            --arg url "$base/public/releases/android/vida-$CODE.apk" --arg at "$(date -u +%FT%TZ)" \
+            '{versionCode: $code, versionName: $name, runtimeVersion: $runtime, url: $url, notes: $notes, publishedAt: $at}' > latest.json
+          up android/latest.json application/json latest.json
+          cat latest.json
+
+      - name: Keep the APK as a build artifact
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vida-android-${{ steps.build.outputs.code }}
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30

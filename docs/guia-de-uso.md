@@ -23,6 +23,8 @@ Todo lo que registras en un dispositivo aparece en los demás. Si no hay conexi�
 2. Ábrelo y permite **instalar apps de origen desconocido** para la app con la que lo abriste.
 3. Pulsa **Instalar** (si Play Protect avisa, «Instalar de todos modos») y abre **VIDA**.
 
+**Actualizaciones:** la mayoría de las mejoras llegan solas: VIDA las descarga al abrirse y las usa la próxima vez que la abrís. Cuando hace falta una versión nueva completa, aparece **«Hay una versión nueva de VIDA»**: tocá **Actualizar**, esperá la descarga y tocá **Instalar** en la pantalla de Android (la primera vez, Android te pide permitir que VIDA instale apps). Tus datos no se pierden. También podés revisar a mano en **Progreso → Versión de la app → Buscar actualizaciones**.
+
 ### Reloj (Wear OS 3 o superior)
 Los relojes se instalan desde este PC por Wi-Fi. Resumen (paso a paso completo en `docs/android.md` §2):
 1. En el reloj: **Ajustes → Sistema → Información** → toca «Número de compilación» 7 veces.
@@ -234,7 +236,7 @@ Cosas que solo puedes hacer tú, porque requieren tu cuenta, tu dispositivo o un
 | 4 | **Correo propio para Supabase (SMTP)** | El correo incluido tiene pocos envíos por hora y es para pruebas | Crear una cuenta en Resend, SendGrid o Brevo y configurarla en Supabase → Authentication → Emails |
 | 5 | **Elegir el catálogo de alimentos** | Para tener alimentos «verificados»; hay que revisar su licencia | Opciones: USDA FoodData Central (dominio público), BEDCA (España), Open Food Facts (ODbL) |
 | 6 | **Decidir sobre `git push`** | Hay commits locales sin subir y el CI de GitHub aún no corrió | Dime y lo subo |
-| 7 | **Publicar en Google Play** (opcional) | Distribución pública y actualizaciones automáticas | Cuenta de desarrollador (pago único), clave de publicación, política de privacidad, declaración de datos de salud (`docs/android.md` §5) |
+| 7 | **Publicar en Google Play** (opcional) | Distribución pública y actualizaciones automáticas | Cuenta de desarrollador (pago único), clave de publicación, política de privacidad, declaración de datos de salud (`docs/android.md` §6) |
 | 8 | **Decisiones de producto** | Afectan a cumplimiento legal y monetización | Mercados de lanzamiento (GDPR o leyes locales de datos de salud), proveedor de pagos, inicio de sesión con Google/Apple |
 | 9 | **Borrar `C:\v`** cuando ya no compiles | Es una copia de compilación (unos 2 GB) | Borrar la carpeta |
 

@@ -25,7 +25,7 @@ Alternativa con cable, con la depuración USB activada en el teléfono:
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\Users\nicol\Desktop\Proyectos personales\VIDA HEALT\dist\VIDA-movil-0.1.0.apk"
 ```
 
-**Actualizar:** instala el APK nuevo encima del anterior. Los datos se conservan porque están en la nube y la firma es la misma (ver §5).
+**Actualizar:** instala el APK nuevo encima del anterior. Los datos se conservan porque están en la nube y la firma es la misma. Con las actualizaciones automáticas (§5) esto pasa solo.
 
 ---
 
@@ -162,9 +162,30 @@ El protocolo es el de `docs/sync.md`. El reloj genera sus propios UUID (sesión,
 
 ---
 
-## 5. Firma y publicación en Play Store
+## 5. Actualizaciones automáticas del teléfono
 
-- Los dos APK están firmados con la **clave de depuración local**. Sirve para instalar a mano y para actualizar encima desde este mismo PC.
+Dos caminos, decididos solos por GitHub Actions (`.github/workflows/mobile-release.yml`) en cada cambio que llega a `master` y toca la app, `packages/domain` o `packages/api-client`:
+
+| Cambio | Cómo llega al teléfono |
+| --- | --- |
+| Solo código (pantallas, cálculos, arreglos) | **Por aire** con EAS Update (`expo-updates`): la app lo descarga al abrirse y lo usa en el siguiente arranque, sin hacer nada. |
+| Nativo (permisos, librerías nativas, versión de Expo) | **APK nuevo** firmado con la clave de VIDA, subido al bucket público `releases` de Supabase con `android/latest.json`. La app muestra «Hay una versión nueva de VIDA» → **Actualizar** → descarga → instalador de Android → **Instalar**. |
+
+- **Cómo decide:** el `runtimeVersion` de la app usa la política `fingerprint`: un hash de todo lo nativo. Si coincide con el del APK publicado (`latest.json.runtimeVersion`), alcanza con una actualización por aire; si no, se compila un APK. *Run workflow* con `force_apk` obliga a compilarlo.
+- **Aviso en la app:** `apps/mobile/src/appUpdate.ts` lee `latest.json` al abrir y al volver a la app (como mucho cada 6 h). Solo acepta APK del mismo proyecto de Supabase, y Android rechaza cualquier APK que no esté firmado con la misma clave. `minVersionCode` en `latest.json` vuelve la actualización obligatoria. No aparece durante un entrenamiento. En **Progreso → Versión de la app** se ve la versión y hay **Buscar actualizaciones**.
+- **Android no permite instalar solo** fuera de Play Store: siempre hace falta tocar «Instalar». La primera vez pide permitir que VIDA instale apps (`REQUEST_INSTALL_PACKAGES`).
+- **Firma:** `plugins/withReleaseSigning.js` firma con la clave de VIDA cuando existen `VIDA_KEYSTORE_FILE`, `VIDA_KEYSTORE_PASSWORD`, `VIDA_KEY_ALIAS` y `VIDA_KEY_PASSWORD`; si no, con la de depuración (compilaciones locales). `VIDA_VERSION_CODE` fija el `versionCode` (CI usa el publicado + 1).
+- **Desde ahora los APK que se reparten salen de GitHub Actions**, no de este PC: así todos tienen la misma firma y reciben las actualizaciones por aire. Un APK compilado localmente con la clave de depuración no puede actualizarse encima de uno oficial (ni al revés).
+- **Configuración inicial (una vez, la hacés vos):**
+  1. Cuenta gratis en https://expo.dev y, en la PC, `npx eas-cli@24.13.0 login`.
+  2. `.\scripts\setup-releases.ps1` en PowerShell desde la raíz del repo: crea la clave de firma en `%USERPROFILE%\vida-release` (**hacé una copia: sin ella no se pueden publicar actualizaciones**) y carga en GitHub los secretos `VIDA_KEYSTORE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `EXPO_TOKEN` y las variables `EXPO_PUBLIC_SUPABASE_*`.
+  3. Vincular el proyecto de Expo (`eas init` + `eas update:configure`, agrega `extra.eas.projectId` y `updates.url` a `app.json`) y lanzar la primera versión.
+  4. En cada teléfono que tenía un APK firmado con la clave de depuración: **desinstalar VIDA una vez** e instalar el APK oficial (el enlace está en `latest.json`). Los datos están en la nube; antes, abrir la app con conexión para que se envíe lo pendiente.
+- **Límite:** el plan gratis de Supabase sube archivos de hasta 50 MB; el APK pesa ~44 MB.
+
+## 6. Firma y publicación en Play Store
+
+- Los APK compilados en este PC están firmados con la **clave de depuración local**. Los oficiales usan la clave de VIDA (§5).
 - Para **Google Play** hace falta una clave de publicación propia. Se crea una sola vez y se guarda en un lugar seguro: si se pierde, no se puede actualizar la app publicada. Es una tarea tuya (ver la guía de uso). Opciones:
   - **EAS Build** (`npx eas-cli build -p android`), que gestiona la clave en la nube de Expo y requiere una cuenta de Expo.
   - Una clave local con `keytool` y un plugin que configure `signingConfigs.release`.
@@ -172,7 +193,7 @@ El protocolo es el de `docs/sync.md`. El reloj genera sus propios UUID (sesión,
 
 ---
 
-## 6. Health Connect (móvil) y Health Services (reloj)
+## 7. Health Connect (móvil) y Health Services (reloj)
 
 **Móvil:** `react-native-health-connect` 4.1, que trae su plugin de Expo (filtro de intención y alias para la pantalla de privacidad), con `expo-build-properties` para `minSdkVersion 26`. Pide permisos de **solo lectura**: `READ_STEPS`, `READ_SLEEP`, `READ_WEIGHT`, `READ_RESTING_HEART_RATE` y `READ_HEART_RATE_VARIABILITY` (`app.json`).
 - `src/health.ts` lee los últimos días, valida cada fila con los esquemas Zod de la API y llama a `record_observations` y `record_body_measurements` con `external_id` = id del registro en Health Connect y `source_app` = app de origen. Así es idempotente y no cuenta dos veces los pasos de dos fuentes (el resumen diario usa la mayor).
@@ -184,7 +205,7 @@ El protocolo es el de `docs/sync.md`. El reloj genera sus propios UUID (sesión,
 
 ---
 
-## 7. Problemas frecuentes
+## 8. Problemas frecuentes
 
 | Síntoma | Causa | Solución |
 | --- | --- | --- |
