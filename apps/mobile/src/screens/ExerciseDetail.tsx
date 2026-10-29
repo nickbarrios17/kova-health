@@ -14,6 +14,7 @@ import { MannequinView } from '../MannequinView';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Card, ErrorNote, Loading, Row, T } from '../ui';
+import { ReportButton } from '../report';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 
@@ -62,6 +63,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
       <View style={{ flex: 1, backgroundColor: c.bg }}>
         <Row style={{ paddingHorizontal: 12, paddingTop: 40, paddingBottom: 8 }}>
           <T size={18} w="medium" style={{ flex: 1, paddingLeft: 8 }} numberOfLines={2}>{name}</T>
+          <ReportButton onPress={() => setReport(true)} />
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
             <X size={22} color={c.text} />
           </Pressable>
@@ -135,8 +137,8 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
           </ScrollView>
         ) : null}
       </View>
-      <ReportSheet visible={report} onClose={() => setReport(false)} category={anim ? 'model3d' : 'exercise'}
-        context={{ screen: 'exercise', exercise_id: ex?.id, exercise_name: ex?.name ?? name }} />
+      <ReportSheet visible={report} onClose={() => setReport(false)} screen="exercise"
+        context={{ exercise_id: ex?.id, exercise_name: ex?.name ?? name }} />
     </Modal>
   );
 }

@@ -134,6 +134,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
       {report && <ReportDialog onClose={() => setReport(false)} />}
+      {/* ⚠️ on every page: opens the report with this page's quick options. */}
+      <button type="button" onClick={() => setReport(true)} aria-label="Reportar un problema en esta página" title="Reportar un problema"
+        style={{ position: 'fixed', right: 18, bottom: 18, width: 44, height: 44, borderRadius: '50%', border: '1px solid var(--color-divider, rgba(233,233,237,.16))',
+          background: 'var(--color-surface)', color: 'var(--kova-warn, #EFC173)', cursor: 'pointer', display: 'grid', placeItems: 'center', zIndex: 20, boxShadow: 'var(--shadow-md)' }}>
+        <i className="ph ph-warning" style={{ fontSize: 20 }} />
+      </button>
 
       <main style={{ flex: '9999 1 640px', minWidth: 0, padding: '28px clamp(16px,3vw,40px) 48px', boxSizing: 'border-box' }}>
         <div style={{ maxWidth: 1360, display: 'flex', flexDirection: 'column', gap: 22 }}>

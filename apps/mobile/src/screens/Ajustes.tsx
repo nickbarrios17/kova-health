@@ -12,11 +12,13 @@ import { Button, Card, Notice, Row, Seg, T } from '../ui';
 import { HealthCard } from './HealthCard';
 import { Onboarding } from './Onboarding';
 import { VersionCard } from './VersionCard';
+import { useReportTarget } from '../report';
 
 export function Ajustes({ onClose }: { onClose: () => void }) {
   const { prefs, setUnit } = useSession();
   const [recalc, setRecalc] = useState(false);
   const [report, setReport] = useState(false);
+  useReportTarget('ajustes');
   const [error, setError] = useState<string | null>(null);
   useBack(!recalc, onClose);
   useBack(recalc, () => setRecalc(false));
@@ -51,7 +53,7 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
         <T size={13} color={c.n400}>Contanos sobre un ejercicio, el modelo 3D, el diseño o un error. Lo leemos todo.</T>
         <Button variant="secondary" label="Reportar un problema" icon={Bug} onPress={() => setReport(true)} />
       </Card>
-      <ReportSheet visible={report} onClose={() => setReport(false)} context={{ screen: 'ajustes' }} />
+      <ReportSheet visible={report} onClose={() => setReport(false)} screen="ajustes" />
       <HealthCard onSynced={() => undefined} />
       <VersionCard />
       <Card>

@@ -15,6 +15,7 @@ import { useAsync } from '../useAsync';
 import { Empty, ErrorNote, Loading, Row, Seg, T } from '../ui';
 import { Ajustes } from './Ajustes';
 import { Metric, METRIC, metricFormat } from './Metric';
+import { useReportTarget } from '../report';
 
 const ORDER: MetricKey[] = ['training', 'weight', 'food', 'sleep', 'steps', 'mood', 'habits', 'heart'];
 
@@ -25,6 +26,7 @@ export function Progreso() {
   const [range, setRange] = useState<'30' | '90'>('30');
   const [open, setOpen] = useState<MetricKey | null>(null);
   const [settings, setSettings] = useState(false);
+  useReportTarget('progreso');
 
   const q = useAsync(async () => {
     const [days, goals] = await Promise.all([kova.summaries.daily(addDays(today, -91), today), kova.goals.list()]);

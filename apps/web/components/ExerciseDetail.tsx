@@ -81,6 +81,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
       <div className="dialog" style={{ width: 'min(560px, 100%)', maxHeight: '88vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <span className="dialog-title" style={{ flex: 1 }}>{name}</span>
+          <button className="btn btn-icon btn-secondary" aria-label="Reportar un problema en este ejercicio" title="Reportar un problema" style={{ border: 0, color: 'var(--kova-warn, #EFC173)' }} onClick={() => setReport(true)}><i className="ph ph-warning" /></button>
           <button className="btn btn-icon btn-secondary" aria-label="Cerrar" style={{ border: 0 }} onClick={onClose}><i className="ph ph-x" /></button>
         </div>
         {q.loading && !q.data ? <span style={muted}>Cargando…</span> : q.error ? (
@@ -113,7 +114,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
           </>
         ) : null}
       </div>
-      {report && <ReportDialog onClose={() => setReport(false)} category={anim ? 'model3d' : 'exercise'} context={{ screen: 'exercise', exercise_id: ex?.id, exercise_name: ex?.name ?? name }} />}
+      {report && <ReportDialog onClose={() => setReport(false)} screen="exercise" context={{ exercise_id: ex?.id, exercise_name: ex?.name ?? name }} />}
     </div>
   );
 }

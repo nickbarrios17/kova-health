@@ -1,9 +1,8 @@
 # Reportar un problema
 
-Cualquier persona con cuenta puede reportar un error o proponer una mejora desde:
+Cualquier persona con cuenta puede reportar un error o proponer una mejora con el botón **⚠️**, que está en todas las pantallas (celular: abajo a la derecha; web: abajo a la derecha de cada página; en el detalle de un ejercicio, arriba junto a cerrar). También desde Ajustes y el menú lateral de la web.
 
-- **Celular:** Ajustes › «Reportar un problema», y en cada ejercicio («Cómo se hace») el link «Reportar un error en este ejercicio o su modelo 3D».
-- **Web:** «Reportar un problema» en el menú lateral, y el mismo link en el detalle de cada ejercicio.
+El reporte ofrece **opciones rápidas según la pantalla** (`reportOptions(screen)` en `@kova/domain`): en un ejercicio, «El modelo 3D no hace bien el movimiento», «Las instrucciones están mal»…; en la sesión, «No se guardó una serie»…; más las generales (se cierra, se ve mal, una idea). Se pueden marcar varias y escribir un comentario con el síntoma y qué estaban haciendo. Cada pantalla se registra con `useReportTarget(screen, contexto)` en el celular; en la web la pantalla sale de la ruta.
 
 Cada reporte guarda la categoría (`bug`, `exercise`, `model3d`, `interface`, `idea`, `other`), el mensaje y, solos, la pantalla, el ejercicio, la plataforma y la versión de la app. No se guarda nada más del dispositivo.
 
