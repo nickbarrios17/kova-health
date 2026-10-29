@@ -142,14 +142,16 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
   const periodRows = [...(days as Array<Record<string, unknown> & { local_date: string }>)].sort((a, b) => a.local_date.localeCompare(b.local_date)).slice(-period);
   const all = series(days as Array<Record<string, unknown> & { local_date: string }>, metric);
   const daily = all.slice(-period);
-  const st = stats(daily);
+  const st0 = stats(daily);
+  // Days with zero sessions are data, but a period without any session reads as «sin datos».
+  const st = metric === 'training' && !st0.total ? { ...st0, days: 0 } : st0;
   const change = period < 90 ? periodChange(all, period, metric) : null;
   const latestKcalGoal = [...(days as Array<Record<string, unknown>>)].reverse().map((d) => d.kcal_goal).find((v) => v != null);
   const goal = metric === 'steps' ? stepGoal : metric === 'food' ? (latestKcalGoal != null ? Number(latestKcalGoal) : null) : metric === 'sleep' ? SLEEP_REF_MIN : null;
   // Sessions read better per week over 30/90 days.
   const chartPoints: DayPoint[] = metric === 'training' && period > 7 ? weekly(daily, 'training') : daily;
   const isWeekly = chartPoints !== daily;
-  const label = (d: string) => (isWeekly ? 'Semana del ' + dayMonth(d) : period === 7 ? dayShort(d) + ' ' + dayMonth(d) : dayMonth(d));
+  const label = (d: string) => (isWeekly ? 'Semana del ' + dayMonth(d) : dayMonth(d));
   const changeText = (delta: number) => {
     if (metric === 'sleep') return (delta >= 0 ? '+' : '−') + hm(Math.abs(delta));
     if (metric === 'weight') return (delta >= 0 ? '+' : '−') + nf(Math.abs(units === 'kg' ? delta : toDisplayWeight(delta, 'lb')), 1) + ' ' + units;
@@ -310,7 +312,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
           <T size={14} w="medium" style={{ paddingVertical: 10 }}>Día por día</T>
           {listDays.map((p, i) => (
             <Row key={p.date} style={{ paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderTopColor: 'rgba(233,233,237,0.06)', justifyContent: 'space-between' }}>
-              <T size={13} color={c.n300}>{p.date === today ? 'Hoy' : dayShort(p.date) + ' ' + dayMonth(p.date)}</T>
+              <T size={13} color={c.n300}>{p.date === today ? 'Hoy' : dayMonth(p.date)}</T>
               <T size={13}>{fmt(p.value!)}</T>
             </Row>
           ))}

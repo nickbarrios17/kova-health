@@ -43,7 +43,8 @@ export function Progreso() {
   const cards = ORDER.map((k) => {
     const all = series(rows, k);
     const pts = all.slice(-period);
-    const st = stats(pts);
+    const st0 = stats(pts);
+    const st = k === 'training' && !st0.total ? { ...st0, days: 0 } : st0; // no sessions: «sin datos»
     const fmt = metricFormat(k, units);
     const ch = period < 90 ? periodChange(all, period, k) : null;
     const main = !st.days ? null : k === 'training' ? fmt(st.total ?? 0) : k === 'weight' ? fmt(st.last!) : fmt(st.avg!);
@@ -51,7 +52,7 @@ export function Progreso() {
       : k === 'training' ? 'en ' + period + ' días'
       : k === 'weight' ? (st.days > 1 ? (st.last! - st.first! >= 0 ? '+' : '−') + weightFmt(Math.abs(st.last! - st.first!)) + ' en el período' : 'último registro')
       : 'promedio · ' + st.days + (st.days === 1 ? ' día' : ' días');
-    const trend = ch && k !== 'weight'
+    const trend = ch && k !== 'weight' && Math.round(ch.delta) !== 0
       ? (ch.delta >= 0 ? '▲ ' : '▼ ') + (k === 'training' ? Math.abs(ch.delta) + ' vs. antes' : Math.round(Math.abs(ch.delta / (ch.before || 1)) * 100) + ' % vs. antes')
       : null;
     return { k, st, main, sub, trend, spark: k === 'training' ? weekly(pts, 'training') : pts, goal: k === 'steps' ? stepGoal : null };
