@@ -9,6 +9,7 @@ import { kova } from '@/lib/client';
 import { chip, dayMonth, dur, hm, isoDays, nf, shortDate } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { exerciseName, lastWeights, routineItems, type ExerciseRow, type HistoryRow, type RoutineRow } from '@/lib/training';
+import { ExerciseDetail } from '@/components/ExerciseDetail';
 import { useAsync } from '@/lib/useAsync';
 
 interface SummaryRow {
@@ -29,12 +30,13 @@ export default function EntrenamientoPage() {
   const [ex, setEx] = useState<string | null>(null);
   const [editing, setEditing] = useState<RoutineDraft | null>(null);
   const [copying, setCopying] = useState<string | null>(null);
+  const [howTo, setHowTo] = useState<{ id: string; name: string } | null>(null);
 
   const q = useAsync(async () => {
     const c = kova();
     const [routines, exercises, history, records, active, summaries] = await Promise.all([
       c.routines.list(),
-      c.exercises.search({ limit: 100 }),
+      c.exercises.catalog(),
       c.workouts.recentHistory(500),
       c.workouts.personalRecords(),
       c.workouts.active(),
@@ -125,10 +127,11 @@ export default function EntrenamientoPage() {
                   <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{isoDays(r.schedule_days)}</span>
                 </div>
                 {routineItems(r, exercises, lastW, fw).map((it) => (
-                  <div key={it.key} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                    <span style={{ color: 'var(--color-neutral-300)' }}>{it.name}</span>
+                  <button key={it.key} type="button" className="kova-exercise-row" title="Cómo se hace" onClick={() => setHowTo({ id: it.exerciseId, name: it.name })}>
+                    <span style={{ color: 'var(--color-neutral-300)', flex: 1, textAlign: 'left' }}>{it.name}</span>
                     <span style={{ color: 'var(--color-neutral-400)' }}>{it.scheme} · {it.w}</span>
-                  </div>
+                    <i className="ph ph-info" style={{ color: 'var(--color-accent)' }} aria-hidden />
+                  </button>
                 ))}
                 <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
                   <button className="btn btn-ghost" style={{ fontSize: 13 }}
@@ -243,6 +246,7 @@ export default function EntrenamientoPage() {
           </div>
         )}
       </div>
+      {howTo && <ExerciseDetail exerciseId={howTo.id} name={howTo.name} catalog={exercises} onClose={() => setHowTo(null)} />}
     </div>
   );
 }

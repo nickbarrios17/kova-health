@@ -44,9 +44,10 @@ describe.skipIf(!run)('Kova Health backend (local Supabase)', () => {
   beforeAll(async () => {
     a = await newUser('a');
     b = await newUser('b');
-    const ex = (await a.c.exercises.search({ limit: 100 })) as Array<{ id: string; slug: string }>;
-    squatId = ex.find((e) => e.slug === 'sentadilla')!.id;
-    benchId = ex.find((e) => e.slug === 'press-banca')!.id;
+    const find = async (q: string, slug: string) =>
+      ((await a.c.exercises.search({ q })) as Array<{ id: string; slug: string }>).find((e) => e.slug === slug)!.id;
+    squatId = await find('Sentadilla con barra', 'sentadilla');
+    benchId = await find('Press de banca', 'press-banca');
   });
 
   afterAll(async () => {
