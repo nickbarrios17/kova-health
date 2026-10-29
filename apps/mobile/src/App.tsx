@@ -8,6 +8,7 @@ import { Barbell, ChartLineUp, ForkKnife, House, type Icon } from 'phosphor-reac
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, Pressable, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { checkApkUpdate, type ApkRelease } from './appUpdate';
 import { configured, outbox, vida } from './client';
 import * as hc from './health';
 import { Comida } from './screens/Comida';
@@ -17,6 +18,7 @@ import { Login } from './screens/Login';
 import { Onboarding } from './screens/Onboarding';
 import { Progreso } from './screens/Progreso';
 import { Session, SessionSummary } from './screens/Session';
+import { UpdatePrompt } from './screens/UpdatePrompt';
 import { SessionProvider, useSession } from './session';
 import { c } from './theme';
 import type { TrainingData } from './training';
@@ -37,6 +39,25 @@ function Shell() {
   const [live, setLive] = useState<LiveSession | null>(null);
   const [showLive, setShowLive] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [apkUpdate, setApkUpdate] = useState<ApkRelease | null>(null);
+  const [laterVersion, setLaterVersion] = useState<number | null>(null);
+
+  // A new APK (native changes) is offered when the app opens and when it comes back to the
+  // foreground, at most every 6 hours. Code-only updates arrive silently via expo-updates.
+  useEffect(() => {
+    let last = 0;
+    const check = () => {
+      if (Date.now() - last < 6 * 3600_000) return;
+      last = Date.now();
+      checkApkUpdate().then(setApkUpdate).catch(() => undefined);
+    };
+    check();
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && check());
+    return () => sub.remove();
+  }, []);
+  const prompt = apkUpdate && apkUpdate.versionCode !== laterVersion
+    ? <UpdatePrompt release={apkUpdate} onLater={() => setLaterVersion(apkUpdate.versionCode)} />
+    : null;
 
   // Recover an interrupted session and retry pending writes on start and when returning to the app.
   useEffect(() => {
@@ -66,8 +87,8 @@ function Shell() {
   if (status === 'loading' || (status === 'signedIn' && !prefs)) {
     return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={c.accent} /></View>;
   }
-  if (status === 'signedOut') return <Login />;
-  if (!prefs!.onboarded) return <Onboarding />;
+  if (status === 'signedOut') return <>{prompt}<Login /></>;
+  if (!prefs!.onboarded) return <>{prompt}<Onboarding /></>;
 
   const start = async (routineId: string, data: TrainingData) => {
     const routine = data.routines.find((x) => x.id === routineId);
@@ -88,6 +109,7 @@ function Shell() {
 
   return (
     <View style={{ flex: 1 }}>
+      {prompt}
       <View style={{ flex: 1 }}>
         {tab === 'hoy' ? <Hoy live={live} onOpenLive={() => setShowLive(true)} onStart={start} />
           : tab === 'entrenar' ? <Entrenar hasLive={!!live} onStart={start} />

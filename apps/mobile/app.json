@@ -32,7 +32,8 @@
         "android.permission.health.READ_WEIGHT",
         "android.permission.health.READ_RESTING_HEART_RATE",
         "android.permission.health.READ_HEART_RATE_VARIABILITY",
-        "android.permission.health.READ_BODY_FAT"
+        "android.permission.health.READ_BODY_FAT",
+        "android.permission.REQUEST_INSTALL_PACKAGES"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
@@ -51,7 +52,18 @@
           }
         }
       ],
-      "./plugins/withShortCxxDir"
-    ]
+      "./plugins/withShortCxxDir",
+      "./plugins/withReleaseSigning"
+    ],
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    }
   }
 }
