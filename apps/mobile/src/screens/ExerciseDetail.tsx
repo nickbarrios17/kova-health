@@ -73,7 +73,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
                 <T size={12} color={c.n400}>Arrastra para girar el modelo. Los músculos que trabajan se iluminan.</T>
               </View>
             ) : null}
-            <ExerciseFrames urls={urls} />
+            {anim ? null : <ExerciseFrames urls={urls} />}
             {q.data?.borrowed ? <T size={12} color={c.n400}>Instrucciones de «{ex.name}», el ejercicio del catálogo más parecido.</T> : null}
             {primary.length || equipment.length ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -123,7 +123,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
                 {ins.breath?.map((b) => <T key={b} size={13} color={c.n300}>• {b}</T>)}
               </Section>
             ) : null}
-            {urls.length ? <T size={11} color={c.n600}>Imágenes: free-exercise-db (dominio público).</T> : null}
+            {urls.length && !anim ? <T size={11} color={c.n600}>Imágenes: free-exercise-db (dominio público).</T> : null}
           </ScrollView>
         ) : null}
       </View>

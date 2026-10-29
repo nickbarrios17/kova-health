@@ -92,7 +92,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
                 <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Arrastra para girar el modelo. Los músculos que trabajan se iluminan.</span>
               </div>
             )}
-            {urls.length > 0 && <Frames urls={urls} />}
+            {urls.length > 0 && !anim && <Frames urls={urls} />}
             {q.data?.borrowed && <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Instrucciones de «{ex.name}», el ejercicio del catálogo más parecido.</span>}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {label('primary').map((m) => <span key={'p' + m} className="kova-chip strong">{m}</span>)}
@@ -104,7 +104,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
             {ins.cues?.length ? (<><span style={h}>Claves</span>{ins.cues.map((c) => <div key={c.title} style={{ display: 'grid', gap: 2 }}><span style={{ fontSize: 14, fontWeight: 500 }}>{c.title}</span><span style={muted}>{c.body}</span></div>)}</>) : null}
             {ins.errors?.length ? (<><span style={h}>Errores comunes</span>{ins.errors.map((e) => <div key={e.title} style={{ display: 'grid', gap: 2 }}><span style={{ fontSize: 14, fontWeight: 500, color: 'var(--kova-warn, #EFC173)' }}>{e.title}</span><span style={muted}>{e.fix}</span></div>)}</>) : null}
             {ins.breath?.length || ins.tempo ? (<><span style={h}>Respiración y ritmo</span>{ins.tempo && <span style={muted}>Ritmo: {ins.tempo}</span>}{ins.breath?.map((b) => <span key={b} style={muted}>• {b}</span>)}</>) : null}
-            {urls.length > 0 && <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>Imágenes: free-exercise-db (dominio público).</span>}
+            {urls.length > 0 && !anim && <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>Imágenes: free-exercise-db (dominio público).</span>}
           </>
         ) : null}
       </div>

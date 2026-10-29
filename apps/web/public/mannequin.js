@@ -1503,14 +1503,23 @@ class GymMannequinEl extends HTMLElement{
   constructor(){
     super();
     var root=this.attachShadow({mode:'open'});
-    root.innerHTML='<style>:host{display:block;position:relative;min-height:120px}canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}</style><canvas></canvas>';
+    /* touch-action pan-y: vertical swipes scroll the page (or the app screen around a WebView);
+       horizontal drags turn the model. */
+    root.innerHTML='<style>:host{display:block;position:relative;min-height:120px}canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab}canvas:active{cursor:grabbing}</style><canvas></canvas>';
     this.cv=root.querySelector('canvas');this.ctx=this.cv.getContext('2d');
-    this.t=0;this.last=0;this.dyaw=0;this.dpitch=0;this.zoom=1;this.visible=true;this.spec=null;
+    this.t=0;this.last=0;this.dyaw=0;this.dpitch=0;this.zoom=1;this.visible=true;this.spec=null;this.vyaw=0;
     var self=this,drag=null;
-    this.cv.addEventListener('pointerdown',function(e){drag={x:e.clientX,y:e.clientY};self.cv.setPointerCapture(e.pointerId);});
-    this.cv.addEventListener('pointermove',function(e){if(!drag)return;self.dyaw-=(e.clientX-drag.x)*.01;self.dpitch=clamp(self.dpitch+(e.clientY-drag.y)*.006,-.25,1.1);drag={x:e.clientX,y:e.clientY};self.paint();});
-    this.cv.addEventListener('pointerup',function(){drag=null;});
-    this.cv.addEventListener('dblclick',function(){self.dyaw=0;self.dpitch=0;self.zoom=1;self.paint();});
+    /* Drag turns the model around its vertical axis only (no pitch, so it never tips over), following
+       the finger 1:1; on release it keeps spinning a little and slows down (vyaw, see loop). */
+    this.cv.addEventListener('pointerdown',function(e){drag={x:e.clientX,t:e.timeStamp,v:0};self.vyaw=0;self.cv.setPointerCapture(e.pointerId);});
+    this.cv.addEventListener('pointermove',function(e){
+      if(!drag)return;
+      var dx=e.clientX-drag.x,dt=Math.max(1,e.timeStamp-drag.t),k=4/Math.max(200,self.clientWidth);
+      self.dyaw-=dx*k;drag.v=.7*drag.v+.3*(-dx*k/dt*1000);drag.x=e.clientX;drag.t=e.timeStamp;});
+    var end=function(){if(drag)self.vyaw=clamp(drag.v,-6,6);drag=null;};
+    this.cv.addEventListener('pointerup',end);
+    this.cv.addEventListener('pointercancel',function(){drag=null;self.vyaw=0;});
+    this.cv.addEventListener('dblclick',function(){self.dyaw=0;self.dpitch=0;self.zoom=1;self.vyaw=0;self.paint();});
     this.cv.addEventListener('wheel',function(e){if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();self.zoom=clamp(self.zoom*(e.deltaY>0?1.08:.93),.6,1.8);self.paint();},{passive:false});
     this.loop=this.loop.bind(this);
   }
@@ -1532,6 +1541,7 @@ class GymMannequinEl extends HTMLElement{
     this.raf=requestAnimationFrame(this.loop);
     var dt=this.last?Math.min(.1,(ts-this.last)/1000):0;this.last=ts;
     if(!this.visible)return;
+    if(this.vyaw){this.dyaw+=this.vyaw*dt;this.vyaw*=Math.pow(.04,dt);if(Math.abs(this.vyaw)<.02)this.vyaw=0;}
     if(this.getAttribute('paused')!=='true'){var sp=parseFloat(this.getAttribute('speed')||'1')||1;this.t+=dt*sp/this.spec.dur;}
     this.paint();
   }

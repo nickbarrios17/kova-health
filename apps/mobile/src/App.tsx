@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, AppState, Pressable, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { checkApkUpdate, type ApkRelease } from './appUpdate';
+import { useBack } from './back';
 import { configured, outbox, kova } from './client';
 import * as hc from './health';
 import { Comida } from './screens/Comida';
@@ -72,6 +73,11 @@ function Shell() {
     const sub = AppState.addEventListener('change', (s) => s === 'active' && autoSync());
     return () => sub.remove();
   }, [status, prefs, deviceId]);
+
+  // Back: summary → Entrenar, live session → minimized, another tab → Hoy, Hoy → Android closes the app.
+  useBack(!!summary, () => { setSummary(null); setTab('entrenar'); });
+  useBack(!summary && !!live && showLive, () => setShowLive(false));
+  useBack(!summary && !(live && showLive) && tab !== 'hoy', () => setTab('hoy'));
 
   if (status === 'signedIn' && !prefs && bootError) {
     return (
