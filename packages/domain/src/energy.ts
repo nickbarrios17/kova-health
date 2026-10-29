@@ -136,9 +136,20 @@ export function bestRestingEnergy(p: {
   return { kcal: Math.round(restingEnergy(p.sex, p.weightKg, p.heightCm, p.age)), method: 'mifflin', leanMassKg: null };
 }
 
-const macros = (kcal: number, weightKg: number, goal: WeightGoal) => {
-  const proteinG = Math.round(weightKg * (goal === 'lose' ? 2.0 : 1.8));
-  const fatG = Math.round(Math.max(weightKg * 0.8, (kcal * 0.25) / 9));
+/**
+ * Weight that protein and fat are scaled to. Fat mass needs no protein, so per-kg rules on total
+ * weight overshoot for heavier people (e.g. 260 g of protein at 130 kg). Uses the weight at a
+ * healthy body fat (15% men, 25% women) when lean mass is known, else the weight at BMI 25;
+ * never more than the actual weight, so it changes nothing for people of normal weight.
+ */
+export function macroReferenceWeight(p: { sex: Sex; weightKg: number; heightCm: number; leanMassKg?: number | null }): number {
+  const ref = p.leanMassKg != null ? p.leanMassKg / (1 - (p.sex === 'male' ? 0.15 : 0.25)) : 25 * (p.heightCm / 100) ** 2;
+  return Math.round(Math.min(p.weightKg, ref) * 10) / 10;
+}
+
+const macros = (kcal: number, refWeightKg: number, goal: WeightGoal) => {
+  const proteinG = Math.round(refWeightKg * (goal === 'lose' ? 2.0 : 1.8));
+  const fatG = Math.round(Math.max(refWeightKg * 0.8, (kcal * 0.25) / 9));
   return { proteinG, fatG, carbsG: Math.max(0, Math.round((kcal - proteinG * 4 - fatG * 9) / 4)) };
 };
 
@@ -149,7 +160,8 @@ export function energyTarget(input: EnergyInput): EnergyTarget {
   const adjust = goal === 'maintain' ? 0 : PACE_ADJUST[goal][pace!];
   const raw = Math.round((tdee * (1 + adjust)) / 50) * 50;
   const kcal = Math.max(KCAL_FLOOR[sex], raw);
-  return { bmr: rmr.kcal, method: rmr.method, tdee: Math.round(tdee), adjust, kcal, ...macros(kcal, weightKg, goal), floored: kcal > raw };
+  const ref = macroReferenceWeight({ sex, weightKg, heightCm, leanMassKg: rmr.leanMassKg });
+  return { bmr: rmr.kcal, method: rmr.method, tdee: Math.round(tdee), adjust, kcal, ...macros(kcal, ref, goal), floored: kcal > raw };
 }
 
 // ── Daily target from the day's activity ─────────────────────────────────────
@@ -165,7 +177,11 @@ export const DAILY_TARGET = { baseFactor: 1.2, stepAllowance: 3000, kcalPerKgSte
 export interface DailyTargetInput {
   sex: Sex;
   restingKcal: number;
+  /** Total weight: drives the energy cost of activity. */
   weightKg: number;
+  heightCm: number;
+  /** Known lean mass, if any (from body fat): used for the macro reference weight. */
+  leanMassKg?: number | null;
   goal: WeightGoal;
   pace: GoalPace | null;
   /** Steps counted today; null means no data (watch not synced), not zero. */
@@ -174,7 +190,7 @@ export interface DailyTargetInput {
   avgSteps7d: number | null;
   /** Active minutes of workouts completed today. */
   workoutMinutes: number;
-  /** Fixed macros from the user's plan; carbs flex with the day. Defaults follow energyTarget. */
+  /** Fixed protein/fat to use instead of the computed ones; carbs flex with the day. */
   proteinG?: number | null;
   fatG?: number | null;
 }
@@ -208,7 +224,7 @@ export function dailyTarget(i: DailyTargetInput): DailyTarget {
   const adjust = i.goal === 'maintain' || !i.pace ? 0 : PACE_ADJUST[i.goal][i.pace];
   const raw = Math.round(((base + activityKcal) * (1 + adjust)) / 50) * 50;
   const kcal = Math.max(KCAL_FLOOR[i.sex], raw);
-  const def = macros(kcal, i.weightKg, i.goal);
+  const def = macros(kcal, macroReferenceWeight({ sex: i.sex, weightKg: i.weightKg, heightCm: i.heightCm, leanMassKg: i.leanMassKg }), i.goal);
   const proteinG = i.proteinG ?? def.proteinG;
   const fatG = i.fatG ?? def.fatG;
   return {

@@ -316,10 +316,12 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
       });
       const todayRow = days.find((d) => String(d.local_date) === today);
       const past = days.filter((d) => String(d.local_date) !== today && d.steps != null).map((d) => Number(d.steps));
+      // Macros are recomputed with today's data (reference weight, body fat), not copied from the saved plan.
       const day = dailyTarget({
-        sex, restingKcal: rmr.kcal, weightKg: w, goal: p.weight_goal as WeightGoal, pace: (p.goal_pace as GoalPace | null) ?? null,
+        sex, restingKcal: rmr.kcal, weightKg: w, heightCm, leanMassKg: rmr.leanMassKg,
+        goal: p.weight_goal as WeightGoal, pace: (p.goal_pace as GoalPace | null) ?? null,
         steps: n(todayRow?.steps), avgSteps7d: past.length ? past.reduce((a, b) => a + b, 0) / past.length : null,
-        workoutMinutes: (n(todayRow?.workout_active_s) ?? 0) / 60, proteinG: plan.proteinG, fatG: plan.fatG,
+        workoutMinutes: (n(todayRow?.workout_active_s) ?? 0) / 60,
       });
       return { mode: 'dynamic', plan, kcal: day.kcal, proteinG: day.proteinG, carbsG: day.carbsG, fatG: day.fatG, rmr, bodyFat, day };
     },
