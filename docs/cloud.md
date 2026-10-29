@@ -40,7 +40,7 @@ supabase test db --linked
 `supabase db push` pide la contraseña de la base: está en `supabase/.env.remote`.
 
 ### Ajustes de autenticación (panel → Authentication)
-- **Confirmar correo:** activado (el valor por defecto en la nube). Cada cuenta nueva recibe un correo de confirmación antes de poder entrar.
+- **Confirmar correo:** desactivado desde el 29/10/2026 para las pruebas con amigos. El SMTP incluido en Supabase rechazaba los registros («Demasiados intentos»): permite muy pocos correos por hora y solo entrega a direcciones del equipo. Ahora las cuentas nuevas entran directamente, sin verificar el correo. **Antes de publicar:** configurar un SMTP propio (punto siguiente) y volver a activarlo (`[auth.email] enable_confirmations = true`), con el método de `config push` desde una carpeta aparte.
 - **Envío de correos:** el SMTP incluido en Supabase tiene límites estrictos (pocos correos por hora) y está pensado para pruebas. Para usuarios reales hay que configurar un SMTP propio (Resend, SendGrid, Brevo…) en Authentication → Emails → SMTP Settings.
 - **Site URL y Redirect URLs** (actualizado el 29/10/2026 con el nombre Kova Health):
   - Site URL: `https://kova-health.vercel.app`.
