@@ -182,3 +182,16 @@ export function imagesFor(
   const match = findCatalogMatch(ex.name, catalog.filter((e) => e.owner_id == null));
   return match ? exerciseImages(match.media, supabaseUrl) : [];
 }
+
+/** The 3D mannequin of an exercise: its own, else that of the catalog entry its name matches. */
+export function animationFor(
+  exerciseId: string,
+  catalog: Array<{ id: string; name: string; short_name?: string | null; owner_id: string | null; media: unknown }>,
+): MannequinSpec | null {
+  const ex = catalog.find((e) => e.id === exerciseId);
+  if (!ex) return null;
+  const own = exerciseAnimation(ex.media);
+  if (own || ex.owner_id == null) return own;
+  const match = findCatalogMatch(ex.name, catalog.filter((e) => e.owner_id == null));
+  return match ? exerciseAnimation(match.media) : null;
+}

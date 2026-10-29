@@ -1,5 +1,5 @@
 /** "Sesión en vivo" + "Resumen de sesión" from the prototype, persisted and offline-capable. */
-import { imagesFor, clock, dayMonth, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, KovaError, type WeightUnit } from '@kova/domain';
+import { animationFor, clock, dayMonth, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, KovaError, type WeightUnit } from '@kova/domain';
 import { CaretDown, Check, CheckCircle, HourglassMedium, Info, Pause, Play, Plus, Trophy } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
@@ -7,7 +7,7 @@ import { useSession } from '../session';
 import { c, font, r } from '../theme';
 import { Button, Card, Confirm, Notice, Row, Seg, T } from '../ui';
 import { kova } from '../client';
-import { ExerciseFrames } from '../ExerciseFrames';
+import { MannequinView } from '../MannequinView';
 import { useAsync } from '../useAsync';
 import { ExerciseDetail } from './ExerciseDetail';
 import { addSet, elapsedS, fillForward, saveLive, summarize, toggleSet, transition, type LiveSession, type Summary } from '../workout';
@@ -29,7 +29,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [howTo, setHowTo] = useState(false);
-  // Names + media of every exercise, to show the photos of the current one (also for own exercises).
+  // Names + media of every exercise, to show the 3D model of the current one (also for own exercises).
   const catalog = useAsync(() => kova.exercises.catalog(), []);
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -119,9 +119,10 @@ export function Session({ live, setLive, onClose, onFinished }: {
           </Pressable>
           <Seg options={[['kg', 'kg'], ['lb', 'lb']]} value={units} onChange={setUnit} />
         </Row>
-        <Pressable onPress={() => setHowTo(true)} accessibilityRole="button" accessibilityLabel={'Cómo se hace ' + ex.name}>
-          <ExerciseFrames urls={catalog.data ? imagesFor(ex.exercise_id, catalog.data, process.env.EXPO_PUBLIC_SUPABASE_URL ?? '') : []} height={190} />
-        </Pressable>
+        {(() => {
+          const anim = catalog.data ? animationFor(ex.exercise_id, catalog.data) : null;
+          return anim ? <MannequinView spec={anim} height={200} /> : null;
+        })()}
         {error ? <Notice tone="warn" text={error} /> : null}
 
         <View>

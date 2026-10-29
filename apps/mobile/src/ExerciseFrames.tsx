@@ -22,11 +22,3 @@ export function ExerciseFrames({ urls, height = 240 }: { urls: string[]; height?
   );
 }
 
-/** First photo of an exercise as a small square, for lists. */
-export function ExerciseThumb({ url, size = 44 }: { url?: string; size?: number }) {
-  return (
-    <View style={{ width: size, height: size, borderRadius: r.md, backgroundColor: url ? '#fff' : 'rgba(233,233,237,0.06)', overflow: 'hidden' }}>
-      {url ? <Image source={{ uri: url }} resizeMode="cover" style={{ width: size, height: size }} accessibilityIgnoresInvertColors /> : null}
-    </View>
-  );
-}

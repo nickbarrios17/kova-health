@@ -9,9 +9,7 @@ describe('mannequin copies', () => {
     const m = mobile.match(/export const MANNEQUIN_JS = (".*");/s);
     expect(m, 'run node scripts/sync-mannequin.mjs').not.toBeNull();
     // Line endings may differ on a Windows checkout (core.autocrlf).
-    const eol = (t: string) => t.replace(/
-/g, '
-');
+    const eol = (t: string) => t.replace(/\r\n/g, '\n');
     expect(eol(JSON.parse(m![1]!))).toBe(eol(web));
   });
 });

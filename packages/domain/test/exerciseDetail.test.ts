@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exerciseAnimation, exerciseImages, findCatalogMatch, hasHowTo, imagesFor } from '../src/index.js';
+import { animationFor, exerciseAnimation, exerciseImages, findCatalogMatch, hasHowTo, imagesFor } from '../src/index.js';
 import { CATALOG_NAMES } from './catalogNames.js';
 
 const catalog = CATALOG_NAMES.map((name, i) => ({ id: String(i), name }));
@@ -74,5 +74,19 @@ describe('exerciseAnimation', () => {
     expect(exerciseAnimation([{ kind: 'animation', ref: 'kova-mannequin', slug: 'a"><script>', muscle: 'quads' }])?.slug).toBe('ascript');
     expect(exerciseAnimation([{ kind: 'animation', ref: 'gym-mannequin:squat' }])).toBeNull();
     expect(exerciseAnimation(null)).toBeNull();
+  });
+});
+
+describe('animationFor', () => {
+  const anim = { kind: 'animation', ref: 'kova-mannequin', slug: 'barbell-bench-press-medium-grip', muscle: 'pectorals', equipment: 'barbell', category: '' };
+  const cat = [
+    { id: 'sys', name: 'Press de banca', short_name: 'Press banca', owner_id: null, media: [anim] },
+    { id: 'own', name: 'Press plano', short_name: null, owner_id: 'u1', media: [] },
+    { id: 'odd', name: 'Algo raro', short_name: null, owner_id: 'u1', media: [] },
+  ];
+  it('own animation, else the matched catalog entry, else none', () => {
+    expect(animationFor('sys', cat)?.slug).toBe('barbell-bench-press-medium-grip');
+    expect(animationFor('own', cat)?.slug).toBe('barbell-bench-press-medium-grip');
+    expect(animationFor('odd', cat)).toBeNull();
   });
 });

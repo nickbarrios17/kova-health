@@ -13,6 +13,7 @@ import { Button, Card, Empty, ErrorNote, Field, Loading, Notice, Row, T } from '
 import { HealthCard } from './HealthCard';
 import { Onboarding } from './Onboarding';
 import { VersionCard } from './VersionCard';
+import { useBack } from '../back';
 
 const MOOD_ICONS: Icon[] = [SmileySad, SmileyNervous, SmileyMeh, Smiley, SmileyWink];
 
@@ -87,6 +88,7 @@ export function Progreso() {
       { text: 'Borrar todo', style: 'destructive', onPress: () => run(() => kova.account.delete()) },
     ]);
 
+  useBack(recalc, () => setRecalc(false));
   if (recalc) return <Onboarding onCancel={() => setRecalc(false)} />;
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>;
