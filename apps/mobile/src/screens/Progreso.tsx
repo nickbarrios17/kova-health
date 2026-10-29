@@ -12,6 +12,7 @@ import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Field, Loading, Notice, Row, T } from '../ui';
 import { HealthCard } from './HealthCard';
 import { Onboarding } from './Onboarding';
+import { VersionCard } from './VersionCard';
 
 const MOOD_ICONS: Icon[] = [SmileySad, SmileyNervous, SmileyMeh, Smiley, SmileyWink];
 
@@ -156,6 +157,8 @@ export function Progreso() {
       </Card>
 
       <HealthCard onSynced={q.reload} />
+
+      <VersionCard />
 
       <Card>
         <T size={16} w="medium">Cuenta</T>
