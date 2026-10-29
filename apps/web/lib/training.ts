@@ -4,6 +4,7 @@ export interface ExerciseRow {
   id: string;
   name: string;
   short_name: string | null;
+  owner_id?: string | null;
 }
 
 export interface RoutineRow {
@@ -65,6 +66,7 @@ export function routineItems(r: RoutineRow, exercises: ExerciseRow[], lastW: Map
       const kg = lastW.get(it.exercise_id) ?? (it.target_load_kg != null ? Number(it.target_load_kg) : null);
       return {
         key: it.id,
+        exerciseId: it.exercise_id,
         name: exerciseName(exercises, it.exercise_id),
         scheme: it.target_sets + (reps ? '×' + reps : ' series'),
         w: kg != null ? fw(kg) : '—',

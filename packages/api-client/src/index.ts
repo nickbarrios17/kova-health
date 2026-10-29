@@ -173,6 +173,17 @@ export function createKovaClient(opts: KovaClientOptions) {
     },
     get: (id: string) =>
       call(sb.from('exercises').select('*, exercise_muscles(muscle_code, role), exercise_equipment(equipment_code)').eq('id', id).single()),
+    /** Every exercise the user can see (system catalog + own, not archived), names only, for lookups. */
+    catalog: async () => {
+      const out: Array<{ id: string; name: string; short_name: string | null; owner_id: string | null }> = [];
+      for (let from = 0; ; from += 1000) {
+        const page = (await call(
+          sb.from('exercises').select('id, name, short_name, owner_id').is('archived_at', null).order('name').order('id').range(from, from + 999),
+        )) as typeof out;
+        out.push(...page);
+        if (page.length < 1000) return out;
+      }
+    },
     /** Idempotent on input.id. */
     create: async (input: ExerciseCreate) => {
       const e = parse(ExerciseCreateSchema, input);

@@ -1,11 +1,12 @@
 /** "Sesión en vivo" + "Resumen de sesión" from the prototype, persisted and offline-capable. */
 import { clock, dayMonth, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, KovaError, type WeightUnit } from '@kova/domain';
-import { CaretDown, Check, CheckCircle, HourglassMedium, Pause, Play, Plus, Trophy } from 'phosphor-react-native';
+import { CaretDown, Check, CheckCircle, HourglassMedium, Info, Pause, Play, Plus, Trophy } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useSession } from '../session';
 import { c, font, r } from '../theme';
 import { Button, Card, Confirm, Notice, Row, Seg, T } from '../ui';
+import { ExerciseDetail } from './ExerciseDetail';
 import { addSet, elapsedS, fillForward, saveLive, summarize, toggleSet, transition, type LiveSession, type Summary } from '../workout';
 
 const parseNum = (s: string) => {
@@ -24,6 +25,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [howTo, setHowTo] = useState(false);
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
@@ -105,7 +107,11 @@ export function Session({ live, setLive, onClose, onFinished }: {
         </ScrollView>
 
         <Row style={{ justifyContent: 'space-between' }}>
-          <T size={20} w="medium" style={{ flex: 1 }}>{ex.name}</T>
+          <Pressable onPress={() => setHowTo(true)} accessibilityRole="button" accessibilityHint="Muestra cómo se hace"
+            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 }}>
+            <T size={20} w="medium" style={{ flexShrink: 1 }}>{ex.name}</T>
+            <Info size={20} color={c.accent} />
+          </Pressable>
           <Seg options={[['kg', 'kg'], ['lb', 'lb']]} value={units} onChange={setUnit} />
         </Row>
         {error ? <Notice tone="warn" text={error} /> : null}
@@ -144,6 +150,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
         ) : null}
         <Notice text="Las series se guardan en el teléfono al instante y se envían cuando hay conexión." />
       </ScrollView>
+      <ExerciseDetail exerciseId={howTo ? ex.exercise_id : null} name={ex.name} onClose={() => setHowTo(false)} />
       <Confirm
         visible={confirming}
         title="Terminar sesión"

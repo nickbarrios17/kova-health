@@ -48,14 +48,7 @@ export default function ImportPage() {
   const [done, setDone] = useState<number | null>(null);
 
   const catalog = useAsync(async () => {
-    const c = kova();
-    const all: CatalogExercise[] = [];
-    for (let offset = 0; offset < 1000; offset += 100) {
-      const page = (await c.exercises.search({ limit: 100, offset })) as Array<{ id: string; name: string }>;
-      all.push(...page.map((e) => ({ id: e.id, name: e.name })));
-      if (page.length < 100) break;
-    }
-    return all;
+    return (await kova().exercises.catalog()).map((e): CatalogExercise => ({ id: e.id, name: e.name }));
   }, []);
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {

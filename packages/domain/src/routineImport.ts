@@ -6,6 +6,7 @@
  * be below a title, "4x8", "8-10", "1:30", "60 kg" or "135 lb" are understood, and a row with only a
  * title ("Día A", "Lunes") starts a new routine. Anything doubtful becomes an issue in the preview.
  */
+import { findCatalogMatch } from './exerciseDetail.js';
 import { KG_PER_LB } from './units.js';
 
 export type Cell = string | number | boolean | Date | null | undefined;
@@ -338,31 +339,14 @@ export function parseCsv(text: string): Cell[][] {
 }
 
 // ── Exercise matching ──────────────────────────────────────────────────────
-/** Common English and colloquial names → words found in the Spanish catalog names. */
-const ALIASES: Array<[RegExp, string]> = [
-  [/\bbench( press)?\b|\bpress plano\b|\bbanco plano\b/, 'press de banca'],
-  [/\bsquats?\b|\bback squat\b/, 'sentadilla'],
-  [/\bdeadlifts?\b|\bpeso muerto convencional\b/, 'peso muerto'],
-  [/\b(overhead|military|shoulder) press\b|\bpress de hombros?\b|\bpress hombro\b/, 'press militar'],
-  [/\b(barbell )?curls?\b|\bcurl de biceps\b/, 'curl'],
-];
-
 export interface CatalogExercise {
   id: string;
   name: string;
 }
 
-/** Best catalog match for a typed name, or null when unsure. */
+/** Best catalog match for a typed name, or null when unsure (same matcher as the exercise detail). */
 export function matchExercise(raw: string, catalog: CatalogExercise[]): CatalogExercise | null {
-  const n = normalize(raw);
-  if (!n) return null;
-  const norm = catalog.map((e) => ({ e, n: normalize(e.name) }));
-  const exact = norm.find((x) => x.n === n);
-  if (exact) return exact.e;
-  const alias = ALIASES.find(([re]) => re.test(n))?.[1];
-  const target = alias ?? n;
-  const hits = norm.filter((x) => x.n.includes(target) || (target.length >= 5 && target.includes(x.n)));
-  return hits.length === 1 ? hits[0]!.e : null;
+  return findCatalogMatch(raw, catalog);
 }
 
 /** URL-safe slug for a user exercise created from an imported name. */

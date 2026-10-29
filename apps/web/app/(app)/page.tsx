@@ -62,7 +62,7 @@ export default function HoyPage() {
       c.summaries.daily(addDays(today, -6), today),
       c.routines.list(),
       c.workouts.active(),
-      c.exercises.search({ limit: 100 }),
+      c.exercises.catalog(),
       c.workouts.recentHistory(500),
       c.goals.list(),
       c.energy.today(today).catch(() => null),

@@ -1,14 +1,15 @@
 /** Routines + history (prototype "Rutinas"), with the routine editor (new, edit, duplicate, delete). */
 import { dayMonth, draftFromRoutine, dur, emptyDraft, isoDays, newId, nf, toDisplayWeight, type RoutineDraft } from '@kova/domain';
-import { Barbell, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
+import { Barbell, CaretRight, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { kova } from '../client';
 import { useSession } from '../session';
 import { c } from '../theme';
 import { loadTraining, scheme, type TrainingData } from '../training';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Loading, Row, T } from '../ui';
+import { ExerciseDetail } from './ExerciseDetail';
 import { RoutineEditor } from './RoutineEditor';
 
 export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (routineId: string, data: TrainingData) => void }) {
@@ -20,6 +21,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
   }, []);
   const [editing, setEditing] = useState<RoutineDraft | null>(null);
   const [copying, setCopying] = useState<string | null>(null);
+  const [howTo, setHowTo] = useState<{ id: string; name: string } | null>(null);
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>;
@@ -46,10 +48,13 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
             </Row>
             <View style={{ gap: 6 }}>
               {[...r.routine_exercises].sort((a, b) => a.position - b.position).map((it, i) => (
-                <Row key={i} style={{ justifyContent: 'space-between' }}>
-                  <T size={13} color={c.n300}>{training.names.get(it.exercise_id) ?? 'Ejercicio'}</T>
+                <Pressable key={i} onPress={() => setHowTo({ id: it.exercise_id, name: training.names.get(it.exercise_id) ?? 'Ejercicio' })}
+                  accessibilityRole="button" accessibilityHint="Muestra cómo se hace"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32 }}>
+                  <T size={13} color={c.n300} style={{ flex: 1 }}>{training.names.get(it.exercise_id) ?? 'Ejercicio'}</T>
                   <T size={13} color={c.n400}>{scheme(it)}</T>
-                </Row>
+                  <CaretRight size={14} color={c.n500} />
+                </Pressable>
               ))}
             </View>
             <Button label="Empezar" icon={Play} disabled={hasLive} onPress={() => onStart(r.id, training)} />
@@ -65,6 +70,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
         ))
       )}
       {hasLive ? <T size={12} color={c.n400}>Termina la sesión en curso para empezar otra.</T> : null}
+      <ExerciseDetail exerciseId={howTo?.id ?? null} name={howTo?.name ?? ''} catalog={training.catalog} onClose={() => setHowTo(null)} />
 
       <T size={16} w="medium" style={{ marginTop: 8 }}>Historial</T>
       {done.length === 0 ? (

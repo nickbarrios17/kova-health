@@ -8,6 +8,8 @@ export interface TrainingData {
     routine_exercises: Array<RoutineForStart['routine_exercises'][number] & { notes: string | null }>;
   }>;
   names: Map<string, string>;
+  /** Every visible exercise (system catalog + own), for the exercise detail's catalog match. */
+  catalog: Array<{ id: string; name: string; short_name: string | null; owner_id: string | null }>;
   lastKg: Map<string, number>;
   bestKg: Map<string, number>;
 }
@@ -16,11 +18,11 @@ export interface TrainingData {
 export async function loadTraining(): Promise<TrainingData> {
   const [routines, exercises, history, records] = await Promise.all([
     kova.routines.list(),
-    kova.exercises.search({ limit: 100 }),
+    kova.exercises.catalog(),
     kova.workouts.recentHistory(500),
     kova.workouts.personalRecords(),
   ]);
-  const names = new Map((exercises as Array<{ id: string; name: string; short_name: string | null }>).map((e) => [e.id, e.short_name ?? e.name]));
+  const names = new Map(exercises.map((e) => [e.id, e.short_name ?? e.name]));
   const lastKg = new Map<string, number>();
   const lastSession = new Map<string, string>();
   for (const h of history as Array<{ exercise_id: string; session_id: string; weight_kg: number | string | null }>) {
@@ -35,7 +37,7 @@ export async function loadTraining(): Promise<TrainingData> {
       .filter((r) => r.max_weight_kg != null)
       .map((r) => [r.exercise_id, Number(r.max_weight_kg)]),
   );
-  return { routines: routines as TrainingData['routines'], names, lastKg, bestKg };
+  return { routines: routines as TrainingData['routines'], names, catalog: exercises, lastKg, bestKg };
 }
 
 export function scheme(it: { target_sets: number; target_reps_min: number | null; target_reps_max: number | null }) {
