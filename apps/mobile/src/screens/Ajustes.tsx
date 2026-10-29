@@ -1,10 +1,11 @@
 /** Ajustes: Health Connect, app version and account (moved out of Progreso, which is only progress). */
 import { KovaError } from '@kova/domain';
-import { ArrowLeft, SignOut, Target, Trash } from 'phosphor-react-native';
+import { ArrowLeft, Bug, SignOut, Target, Trash } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { useBack } from '../back';
 import { kova } from '../client';
+import { ReportSheet } from '../ReportSheet';
 import { useSession } from '../session';
 import { c } from '../theme';
 import { Button, Card, Notice, Row, Seg, T } from '../ui';
@@ -15,6 +16,7 @@ import { VersionCard } from './VersionCard';
 export function Ajustes({ onClose }: { onClose: () => void }) {
   const { prefs, setUnit } = useSession();
   const [recalc, setRecalc] = useState(false);
+  const [report, setReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useBack(!recalc, onClose);
   useBack(recalc, () => setRecalc(false));
@@ -44,6 +46,12 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
           <Seg options={[['kg', 'kg'], ['lb', 'lb']]} value={prefs!.weight_unit} onChange={setUnit} />
         </Row>
       </Card>
+      <Card>
+        <T size={16} w="medium">¿Algo no anda o se te ocurre una mejora?</T>
+        <T size={13} color={c.n400}>Contanos sobre un ejercicio, el modelo 3D, el diseño o un error. Lo leemos todo.</T>
+        <Button variant="secondary" label="Reportar un problema" icon={Bug} onPress={() => setReport(true)} />
+      </Card>
+      <ReportSheet visible={report} onClose={() => setReport(false)} context={{ screen: 'ajustes' }} />
       <HealthCard onSynced={() => undefined} />
       <VersionCard />
       <Card>

@@ -4,9 +4,11 @@
  * borrows the content of the catalog entry it matches by name.
  */
 import { EQUIPMENT_LABEL, exerciseAnimation, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
-import { X } from 'phosphor-react-native';
+import { Flag, X } from 'phosphor-react-native';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { kova } from '../client';
+import { ReportSheet } from '../ReportSheet';
 import { ExerciseFrames } from '../ExerciseFrames';
 import { MannequinView } from '../MannequinView';
 import { c, r } from '../theme';
@@ -35,6 +37,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
   catalog?: Array<{ id: string; name: string; owner_id: string | null }>;
   onClose: () => void;
 }) {
+  const [report, setReport] = useState(false);
   const q = useAsync(async () => {
     if (!exerciseId) return null;
     const own = (await kova.exercises.get(exerciseId)) as ExerciseRow;
@@ -124,9 +127,16 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
               </Section>
             ) : null}
             {urls.length && !anim ? <T size={11} color={c.n600}>Imágenes: free-exercise-db (dominio público).</T> : null}
+            <Pressable onPress={() => setReport(true)} accessibilityRole="button"
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, alignSelf: 'flex-start' }}>
+              <Flag size={16} color={c.n400} />
+              <T size={13} color={c.n400}>Reportar un error en este ejercicio o su modelo 3D</T>
+            </Pressable>
           </ScrollView>
         ) : null}
       </View>
+      <ReportSheet visible={report} onClose={() => setReport(false)} category={anim ? 'model3d' : 'exercise'}
+        context={{ screen: 'exercise', exercise_id: ex?.id, exercise_name: ex?.name ?? name }} />
     </Modal>
   );
 }
