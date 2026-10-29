@@ -1,6 +1,6 @@
 /** Ajustes: Health Connect, app version and account (moved out of Progreso, which is only progress). */
 import { KovaError } from '@kova/domain';
-import { ArrowLeft, SignOut, Target, Trash } from 'phosphor-react-native';
+import { ArrowLeft, CaretRight, SignOut, Target, Trash, UsersThree } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { useBack } from '../back';
@@ -10,13 +10,15 @@ import { c } from '../theme';
 import { Button, Card, Notice, Row, Seg, T } from '../ui';
 import { HealthCard } from './HealthCard';
 import { Onboarding } from './Onboarding';
+import { Personas } from './Personas';
 import { VersionCard } from './VersionCard';
 
 export function Ajustes({ onClose }: { onClose: () => void }) {
   const { prefs, setUnit } = useSession();
   const [recalc, setRecalc] = useState(false);
+  const [people, setPeople] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useBack(!recalc, onClose);
+  useBack(!recalc && !people, onClose);
   useBack(recalc, () => setRecalc(false));
 
   const deleteAccount = () =>
@@ -29,6 +31,7 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
     ]);
 
   if (recalc) return <Onboarding onCancel={() => setRecalc(false)} />;
+  if (people) return <Personas onClose={() => setPeople(false)} />;
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}>
       <Row style={{ gap: 4 }}>
@@ -44,6 +47,15 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
           <Seg options={[['kg', 'kg'], ['lb', 'lb']]} value={prefs!.weight_unit} onChange={setUnit} />
         </Row>
       </Card>
+      <Pressable onPress={() => setPeople(true)} accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 14, backgroundColor: c.surface }}>
+        <UsersThree size={20} color={c.a300} />
+        <View style={{ flex: 1 }}>
+          <T size={15} w="medium">Coach y amigos</T>
+          <T size={12} color={c.n400}>Invita a tu coach, a tus alumnos o a tus amigos</T>
+        </View>
+        <CaretRight size={16} color={c.n500} />
+      </Pressable>
       <HealthCard onSynced={() => undefined} />
       <VersionCard />
       <Card>
