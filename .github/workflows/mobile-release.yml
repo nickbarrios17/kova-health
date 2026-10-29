@@ -3,6 +3,7 @@
 #   EAS Update. Phones download it on their own the next time the app opens.
 # - Native change (new fingerprint), or "force_apk": builds a signed APK, uploads it to the public
 #   Supabase bucket `releases` with latest.json, and the app shows "Actualizar app".
+# Signing secrets are read as KOVA_* or, if missing, their pre-rename VIDA_* names (same key).
 # Needs (scripts/setup-releases.ps1 sets them): secrets EXPO_TOKEN, KOVA_KEYSTORE_BASE64,
 # KOVA_KEYSTORE_PASSWORD, KOVA_KEY_ALIAS, KOVA_KEY_PASSWORD, SUPABASE_SERVICE_ROLE_KEY; variables
 # EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY.
@@ -50,7 +51,7 @@ jobs:
 
       - name: Check configuration
         env:
-          KEYSTORE: ${{ secrets.KOVA_KEYSTORE_BASE64 }}
+          KEYSTORE: ${{ secrets.KOVA_KEYSTORE_BASE64 || secrets.VIDA_KEYSTORE_BASE64 }}
           SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           missing=""
@@ -91,10 +92,10 @@ jobs:
         if: steps.rt.outputs.current != steps.rt.outputs.published || inputs.force_apk
         working-directory: apps/mobile
         env:
-          KEYSTORE_BASE64: ${{ secrets.KOVA_KEYSTORE_BASE64 }}
-          KOVA_KEYSTORE_PASSWORD: ${{ secrets.KOVA_KEYSTORE_PASSWORD }}
-          KOVA_KEY_ALIAS: ${{ secrets.KOVA_KEY_ALIAS }}
-          KOVA_KEY_PASSWORD: ${{ secrets.KOVA_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KOVA_KEYSTORE_BASE64 || secrets.VIDA_KEYSTORE_BASE64 }}
+          KOVA_KEYSTORE_PASSWORD: ${{ secrets.KOVA_KEYSTORE_PASSWORD || secrets.VIDA_KEYSTORE_PASSWORD }}
+          KOVA_KEY_ALIAS: ${{ secrets.KOVA_KEY_ALIAS || secrets.VIDA_KEY_ALIAS }}
+          KOVA_KEY_PASSWORD: ${{ secrets.KOVA_KEY_PASSWORD || secrets.VIDA_KEY_PASSWORD }}
         run: |
           code=$(( ${{ steps.rt.outputs.code }} + 1 ))
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/kova-release.jks"
