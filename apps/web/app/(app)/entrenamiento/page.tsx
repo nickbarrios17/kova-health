@@ -126,6 +126,7 @@ export default function EntrenamientoPage() {
                   <span style={{ fontSize: 17, fontWeight: 500 }}>{r.name}</span>
                   <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{isoDays(r.schedule_days)}</span>
                 </div>
+                {r.assigned_by && <span style={{ fontSize: 12, color: 'var(--color-accent-300, #d2cefd)' }}>De tu coach</span>}
                 {routineItems(r, exercises, lastW, fw).map((it) => (
                   <button key={it.key} type="button" className="kova-exercise-row" title="Cómo se hace" onClick={() => setHowTo({ id: it.exerciseId, name: it.name })}>
                     <span style={{ color: 'var(--color-neutral-300)', flex: 1, textAlign: 'left' }}>{it.name}</span>

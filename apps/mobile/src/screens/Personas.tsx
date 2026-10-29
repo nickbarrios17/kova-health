@@ -4,7 +4,7 @@
  */
 import { inviteCode } from '@kova/api-client';
 import { linkLabel, KovaError, type LinkKind, type PersonLink } from '@kova/domain';
-import { ArrowLeft, Copy, ShareNetwork, UserPlus, UsersThree } from 'phosphor-react-native';
+import { ArrowLeft, CaretRight, Copy, ShareNetwork, UserPlus, UsersThree } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Keyboard, Pressable, ScrollView, Share, Switch, View } from 'react-native';
 import { useBack } from '../back';
@@ -12,6 +12,7 @@ import { kova } from '../client';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Confirm, Empty, ErrorNote, Field, Loading, Notice, Row, T } from '../ui';
+import { Alumno } from './Alumno';
 
 const WEB = 'https://kova-health.vercel.app';
 const inviteText = (code: string, kind: LinkKind) =>
@@ -40,7 +41,8 @@ function ShareRow({ link, onChanged }: { link: PersonLink; onChanged: () => void
 }
 
 export function Personas({ initialCode, onClose }: { initialCode?: string | null; onClose: () => void }) {
-  useBack(true, onClose);
+  const [student, setStudent] = useState<PersonLink | null>(null);
+  useBack(student == null, onClose);
   const q = useAsync(() => kova.people.links(), []);
   const [code, setCode] = useState(initialCode ?? '');
   const [preview, setPreview] = useState<{ code: string; kind: LinkKind; inviter_name: string } | null>(null);
@@ -89,6 +91,8 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
   const students = links.filter((l) => l.kind === 'coach' && l.role === 'viewer');
   // A friendship is two links; show each friend once, from the side where they see you (shares live there).
   const friends = links.filter((l) => l.kind === 'friend' && l.role === 'owner');
+
+  if (student) return <Alumno link={student} onClose={() => { setStudent(null); q.reload(); }} />;
 
   const header = (
     <Row style={{ gap: 4 }}>
@@ -162,11 +166,15 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
             <Card style={{ gap: 0 }}>
               <T size={16} w="medium" style={{ paddingBottom: 6 }}>Tus alumnos</T>
               {students.map((l, i) => (
-                <Row key={l.id} style={{ paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: 'rgba(233,233,237,0.06)' }}>
-                  <View style={{ flex: 1 }}>
-                    <T size={14}>{l.person_name}</T>
-                    <T size={12} color={c.n400}>{l.sessions_7d ? l.sessions_7d + (l.sessions_7d === 1 ? ' entrenamiento' : ' entrenamientos') + ' esta semana' : 'Sin entrenar esta semana'}</T>
-                  </View>
+                <Row key={l.id} style={{ paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: 'rgba(233,233,237,0.06)' }}>
+                  <Pressable onPress={() => setStudent(l)} accessibilityRole="button" accessibilityLabel={'Ver a ' + l.person_name}
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 }}>
+                    <View style={{ flex: 1 }}>
+                      <T size={14}>{l.person_name}</T>
+                      <T size={12} color={c.n400}>{l.sessions_7d ? l.sessions_7d + (l.sessions_7d === 1 ? ' entrenamiento' : ' entrenamientos') + ' esta semana' : 'Sin entrenar esta semana'}</T>
+                    </View>
+                    <CaretRight size={16} color={c.n500} />
+                  </Pressable>
                   <Button variant="ghost" label="Cortar" onPress={() => setEnding(l)} />
                 </Row>
               ))}

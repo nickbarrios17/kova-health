@@ -3,7 +3,6 @@ import { dayMonth, draftFromRoutine, dur, emptyDraft, isoDays, newId, nf, toDisp
 import { Barbell, CaretRight, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
-import { useBack } from '../back';
 import { kova } from '../client';
 import { useSession } from '../session';
 import { c } from '../theme';
@@ -25,7 +24,6 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
   const [howTo, setHowTo] = useState<{ id: string; name: string } | null>(null);
 
   // Back closes the routine editor without saving, like «Cancelar».
-  useBack(editing != null, () => setEditing(null));
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>;
@@ -50,6 +48,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
               <T size={18} w="medium">{r.name}</T>
               <T size={12} color={c.n400}>{isoDays(r.schedule_days)}</T>
             </Row>
+            {r.assigned_by ? <T size={12} color={c.a300}>De tu coach</T> : null}
             <View style={{ gap: 6 }}>
               {[...r.routine_exercises].sort((a, b) => a.position - b.position).map((it, i) => (
                 <Pressable key={i} onPress={() => setHowTo({ id: it.exercise_id, name: training.names.get(it.exercise_id) ?? 'Ejercicio' })}

@@ -6,7 +6,7 @@ Cualquier cuenta puede entrenar, ser coach y tener amigos. Plan completo: el doc
 
 | Tipo | Quién ve a quién | Qué ve | Qué edita |
 | --- | --- | --- | --- |
-| Coach | El coach ve al alumno | Entrenamientos y rutinas; peso, comida y salud solo si el alumno los comparte | Las rutinas del alumno (fase 2) |
+| Coach | El coach ve al alumno | Entrenamientos y rutinas; peso, comida y salud solo si el alumno los comparte | Las rutinas del alumno: crear, editar, borrar, importar una planilla (el alumno también puede editarlas) |
 | Amigo | Los dos se ven (dos vínculos, uno por dirección) | Entrenamientos; el resto solo si cada uno lo comparte | Nada |
 
 - Un alumno tiene como máximo un coach activo. Aceptar un coach que ya era amigo convierte ese lado en vínculo de coach.
@@ -27,5 +27,8 @@ Los vínculos **no** agregan políticas RLS a las tablas del dueño: las consult
 | `my_links()` | Mis vínculos en las dos direcciones, con el nombre de la otra persona y, si soy quien ve, su última sesión y sesiones en 7 días |
 | `end_link(id)` | Corta un vínculo |
 | `set_link_shares(id, body, nutrition, health)` | El dueño elige qué más ve el otro |
+| `coach_routines(alumno)` · `coach_exercises(alumno)` | Rutinas (con nombres de ejercicio) y ejercicios propios del alumno |
+| `coach_save_routine(alumno, …)` · `coach_delete_routine(alumno, id)` | Igual que `save_routine`, en la cuenta del alumno; marca `routines.assigned_by` |
+| `coach_create_exercise(alumno, id, nombre, slug)` | Ejercicio nuevo del alumno (el coach no puede usar sus ejercicios privados) |
 
 En las apps: `kova.people` (`@kova/api-client`), pantalla «Coach y amigos» (celular: Ajustes; web: menú lateral).

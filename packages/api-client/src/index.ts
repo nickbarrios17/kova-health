@@ -41,7 +41,7 @@ export type { EnergyToday } from './tracking.js';
 
 export { toKovaError } from './errors.js';
 export { withRetry } from './retry.js';
-export { inviteCode } from './people.js';
+export { inviteCode, type CoachRoutine } from './people.js';
 export * from './outbox.js';
 
 export interface KovaClientOptions {
