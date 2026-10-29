@@ -80,7 +80,7 @@ grant execute on function private.can_view(uuid, text) to authenticated;
 
 -- ── Invitations ──────────────────────────────────────────────────────────────
 
-create function public.create_invite(p_kind public.link_kind) returns public.people_invites
+create function private.create_invite(p_kind public.link_kind) returns public.people_invites
 language plpgsql security definer set search_path = '' as $$
 declare
   uid uuid := (select auth.uid());
@@ -104,7 +104,7 @@ begin
 end $$;
 
 -- What an invitation is, before accepting it (who invites and as what).
-create function public.invite_info(p_code text)
+create function private.invite_info(p_code text)
 returns table (kind public.link_kind, inviter_name text, valid boolean)
 language sql stable security definer set search_path = '' as $$
   select i.kind, private.person_name(i.inviter_id),
@@ -112,7 +112,7 @@ language sql stable security definer set search_path = '' as $$
   from public.people_invites i where i.code = upper(btrim(p_code));
 $$;
 
-create function public.accept_invite(p_code text) returns public.people_links
+create function private.accept_invite(p_code text) returns public.people_links
 language plpgsql security definer set search_path = '' as $$
 declare
   uid uuid := (select auth.uid());
@@ -155,7 +155,7 @@ end $$;
 
 -- The caller's links, both directions, with the other person's name and, where the caller is the
 -- viewer, their last completed session and sessions in the last 7 days.
-create function public.my_links()
+create function private.my_links()
 returns table (
   id uuid, kind public.link_kind, role text, person_id uuid, person_name text,
   share_body boolean, share_nutrition boolean, share_health boolean, created_at timestamptz,
@@ -179,7 +179,7 @@ language sql stable security definer set search_path = '' as $$
 $$;
 
 -- Either side ends a link; for friends both directions end.
-create function public.end_link(p_link_id uuid) returns void
+create function private.end_link(p_link_id uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 declare
   uid uuid := (select auth.uid());
@@ -194,7 +194,7 @@ begin
 end $$;
 
 -- The owner chooses what else the viewer sees.
-create function public.set_link_shares(p_link_id uuid, p_body boolean, p_nutrition boolean, p_health boolean)
+create function private.set_link_shares(p_link_id uuid, p_body boolean, p_nutrition boolean, p_health boolean)
 returns public.people_links
 language plpgsql security definer set search_path = '' as $$
 declare r public.people_links;
@@ -206,6 +206,30 @@ begin
   if not found then raise exception 'NOT_FOUND' using errcode = 'VD404'; end if;
   return r;
 end $$;
+
+revoke all on function private.create_invite(public.link_kind), private.invite_info(text), private.accept_invite(text),
+  private.my_links(), private.end_link(uuid), private.set_link_shares(uuid, boolean, boolean, boolean) from public, anon;
+grant execute on function private.create_invite(public.link_kind), private.invite_info(text), private.accept_invite(text),
+  private.my_links(), private.end_link(uuid), private.set_link_shares(uuid, boolean, boolean, boolean) to authenticated;
+
+-- ── Public API: invoker wrappers (no SECURITY DEFINER in public, see 01_foundation) ──────────────
+create function public.create_invite(p_kind public.link_kind) returns public.people_invites
+language sql security invoker set search_path = '' as $$ select private.create_invite(p_kind) $$;
+create function public.invite_info(p_code text) returns table (kind public.link_kind, inviter_name text, valid boolean)
+language sql stable security invoker set search_path = '' as $$ select * from private.invite_info(p_code) $$;
+create function public.accept_invite(p_code text) returns public.people_links
+language sql security invoker set search_path = '' as $$ select private.accept_invite(p_code) $$;
+create function public.my_links()
+returns table (
+  id uuid, kind public.link_kind, role text, person_id uuid, person_name text,
+  share_body boolean, share_nutrition boolean, share_health boolean, created_at timestamptz,
+  last_session_at timestamptz, sessions_7d integer)
+language sql stable security invoker set search_path = '' as $$ select * from private.my_links() $$;
+create function public.end_link(p_link_id uuid) returns void
+language sql security invoker set search_path = '' as $$ select private.end_link(p_link_id) $$;
+create function public.set_link_shares(p_link_id uuid, p_body boolean, p_nutrition boolean, p_health boolean)
+returns public.people_links
+language sql security invoker set search_path = '' as $$ select private.set_link_shares(p_link_id, p_body, p_nutrition, p_health) $$;
 
 revoke all on function public.create_invite(public.link_kind), public.invite_info(text), public.accept_invite(text),
   public.my_links(), public.end_link(uuid), public.set_link_shares(uuid, boolean, boolean, boolean) from public, anon;
