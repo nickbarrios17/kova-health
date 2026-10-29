@@ -156,8 +156,9 @@ export async function sync(timeZone: string, deviceId: string | null, days = 7):
     .flatMap((r) => (r.success ? [r.data] : []));
 
   let stored = 0;
-  for (const c of chunks(obs, 500)) stored += await kova.health.record(c);
-  for (const c of chunks(meas, 500)) stored += await kova.body.record(c);
+  // 200 rows per call keeps each request far from the 20 s timeout on a slow connection.
+  for (const c of chunks(obs, 200)) stored += await kova.health.record(c);
+  for (const c of chunks(meas, 200)) stored += await kova.body.record(c);
   await AsyncStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
   return stored;
 }
