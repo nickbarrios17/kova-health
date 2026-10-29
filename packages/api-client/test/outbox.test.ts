@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { newId, VidaError } from '@vida/domain';
+import { newId, KovaError } from '@kova/domain';
 import { MemoryOutboxStorage, Outbox, type OutboxOp } from '../src/outbox.js';
 import { withRetry } from '../src/retry.js';
-import { toVidaError } from '../src/errors.js';
-import { createVidaClient } from '../src/index.js';
+import { toKovaError } from '../src/errors.js';
+import { createKovaClient } from '../src/index.js';
 
 const sessionId = newId();
 const exId = newId();
@@ -17,7 +17,7 @@ describe('Outbox', () => {
     const sent: OutboxOp[] = [];
     let online = false;
     const outbox = new Outbox(async (op) => {
-      if (!online) throw new VidaError('NETWORK');
+      if (!online) throw new KovaError('NETWORK');
       sent.push(op);
     });
     await outbox.enqueue({ kind: 'start_session', input: { id: sessionId } });
@@ -33,7 +33,7 @@ describe('Outbox', () => {
 
   it('survives a restart: a new Outbox on the same storage resumes the queue', async () => {
     const storage = new MemoryOutboxStorage();
-    await new Outbox(async () => { throw new VidaError('NETWORK'); }, storage).enqueue(setOp(0));
+    await new Outbox(async () => { throw new KovaError('NETWORK'); }, storage).enqueue(setOp(0));
     const send = vi.fn(async () => undefined);
     expect(await new Outbox(send, storage).flush()).toMatchObject({ confirmed: 1, pending: 0 });
     expect(send).toHaveBeenCalledTimes(1);
@@ -41,7 +41,7 @@ describe('Outbox', () => {
 
   it('marks non-retryable failures and keeps going', async () => {
     const outbox = new Outbox(async (op) => {
-      if (op.kind === 'record_set' && op.input.set_index === 1) throw new VidaError('SESSION_CLOSED');
+      if (op.kind === 'record_set' && op.input.set_index === 1) throw new KovaError('SESSION_CLOSED');
     });
     for (const i of [0, 1, 2]) await outbox.enqueue(setOp(i));
     expect(await outbox.flush()).toEqual({ confirmed: 2, failed: 1, pending: 0 });
@@ -71,7 +71,7 @@ describe('withRetry', () => {
   it('retries transient errors, then succeeds', async () => {
     let n = 0;
     const r = await withRetry(async () => {
-      if (++n < 3) throw new VidaError('NETWORK');
+      if (++n < 3) throw new KovaError('NETWORK');
       return 'ok';
     }, { sleep });
     expect(r).toBe('ok');
@@ -79,13 +79,13 @@ describe('withRetry', () => {
   });
 
   it('never retries business errors', async () => {
-    const fn = vi.fn(async () => { throw new VidaError('VERSION_CONFLICT'); });
+    const fn = vi.fn(async () => { throw new KovaError('VERSION_CONFLICT'); });
     await expect(withRetry(fn, { sleep })).rejects.toMatchObject({ code: 'VERSION_CONFLICT' });
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('gives up after the attempt budget', async () => {
-    const fn = vi.fn(async () => { throw new VidaError('NETWORK'); });
+    const fn = vi.fn(async () => { throw new KovaError('NETWORK'); });
     await expect(withRetry(fn, { sleep, attempts: 3 })).rejects.toMatchObject({ code: 'NETWORK' });
     expect(fn).toHaveBeenCalledTimes(3);
   });
@@ -93,7 +93,7 @@ describe('withRetry', () => {
 
 describe('client validation', () => {
   it('reports invalid input as a rejected promise, before any request', async () => {
-    const c = createVidaClient({ url: 'http://127.0.0.1:1', anonKey: 'unused' });
+    const c = createKovaClient({ url: 'http://127.0.0.1:1', anonKey: 'unused' });
     const call = c.workouts.recordSet({ id: newId(), session_exercise_id: exId, set_index: 0 });
     expect(call).toBeInstanceOf(Promise);
     await expect(call).rejects.toMatchObject({ code: 'INVALID_INPUT' });
@@ -102,13 +102,13 @@ describe('client validation', () => {
   });
 });
 
-describe('toVidaError', () => {
+describe('toKovaError', () => {
   it('maps PostgREST and network errors to safe codes', () => {
-    expect(toVidaError({ code: 'VD001', message: 'ACTIVE_SESSION_EXISTS' }).code).toBe('ACTIVE_SESSION_EXISTS');
-    expect(toVidaError({ code: '42501', message: 'new row violates row-level security policy for table "x"' }).message)
+    expect(toKovaError({ code: 'VD001', message: 'ACTIVE_SESSION_EXISTS' }).code).toBe('ACTIVE_SESSION_EXISTS');
+    expect(toKovaError({ code: '42501', message: 'new row violates row-level security policy for table "x"' }).message)
       .not.toMatch(/row-level|table/);
-    expect(toVidaError(new TypeError('fetch failed')).code).toBe('NETWORK');
-    expect(toVidaError({ message: 'boom' }, 503).retryable).toBe(true);
-    expect(toVidaError({ message: 'nope' }, 401).code).toBe('UNAUTHENTICATED');
+    expect(toKovaError(new TypeError('fetch failed')).code).toBe('NETWORK');
+    expect(toKovaError({ message: 'boom' }, 503).retryable).toBe(true);
+    expect(toKovaError({ message: 'nope' }, 401).code).toBe('UNAUTHENTICATED');
   });
 });

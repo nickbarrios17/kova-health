@@ -1,11 +1,11 @@
 /** Weight, mood, habits (with streaks) and account actions. */
 import {
-  addDays, dailyStreak, dayMonth, fromDisplayWeight, localDate, MOODS, newId, nf, toDisplayWeight, VidaError, type HabitDay,
-} from '@vida/domain';
+  addDays, dailyStreak, dayMonth, fromDisplayWeight, localDate, MOODS, newId, nf, toDisplayWeight, KovaError, type HabitDay,
+} from '@kova/domain';
 import { Check, Flame, Plus, Scales, SignOut, Smiley, SmileyMeh, SmileyNervous, SmileySad, SmileyWink, Target, Trash, type Icon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, Keyboard, Pressable, RefreshControl, ScrollView, View } from 'react-native';
-import { outbox, vida } from '../client';
+import { outbox, kova } from '../client';
 import { useSession } from '../session';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
@@ -28,10 +28,10 @@ export function Progreso() {
 
   const q = useAsync(async () => {
     const [weights, habits, days, moods] = await Promise.all([
-      vida.body.history('weight_kg', 10),
-      vida.habits.list(),
-      vida.habits.days(addDays(today, -60), today),
-      vida.health.series('mood', today, today),
+      kova.body.history('weight_kg', 10),
+      kova.habits.list(),
+      kova.habits.days(addDays(today, -60), today),
+      kova.health.series('mood', today, today),
     ]);
     return {
       weights: weights as Array<{ id: string; value: number | string; local_date: string }>,
@@ -47,7 +47,7 @@ export function Progreso() {
       await fn();
       q.reload();
     } catch (e) {
-      setError(e instanceof VidaError ? e.message : 'Algo salió mal.');
+      setError(e instanceof KovaError ? e.message : 'Algo salió mal.');
     }
   };
 
@@ -70,21 +70,21 @@ export function Progreso() {
       await outbox.flush();
     } else {
       // Undo today's logs for this habit.
-      const logs = await vida.supabase.from('habit_logs').select('id').eq('habit_id', habitId).eq('local_date', today).is('deleted_at', null);
-      for (const l of logs.data ?? []) await vida.habits.unlog(l.id as string);
+      const logs = await kova.supabase.from('habit_logs').select('id').eq('habit_id', habitId).eq('local_date', today).is('deleted_at', null);
+      for (const l of logs.data ?? []) await kova.habits.unlog(l.id as string);
     }
   });
 
   const addHabit = () => run(async () => {
     Keyboard.dismiss();
-    await vida.habits.save({ id: newId(), name: habitName.trim(), effective_from: today });
+    await kova.habits.save({ id: newId(), name: habitName.trim(), effective_from: today });
     setHabitName('');
   });
 
   const deleteAccount = () =>
     Alert.alert('Borrar cuenta', 'Se borrarán para siempre tu cuenta y todos tus datos (entrenamientos, comidas, hábitos, medidas). No se puede deshacer.', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Borrar todo', style: 'destructive', onPress: () => run(() => vida.account.delete()) },
+      { text: 'Borrar todo', style: 'destructive', onPress: () => run(() => kova.account.delete()) },
     ]);
 
   if (recalc) return <Onboarding onCancel={() => setRecalc(false)} />;
@@ -163,7 +163,7 @@ export function Progreso() {
       <Card>
         <T size={16} w="medium">Cuenta</T>
         <Button variant="secondary" label="Recalcular mi meta diaria" icon={Target} onPress={() => setRecalc(true)} />
-        <Button variant="secondary" label="Cerrar sesión" icon={SignOut} onPress={() => vida.auth.signOut()} />
+        <Button variant="secondary" label="Cerrar sesión" icon={SignOut} onPress={() => kova.auth.signOut()} />
         <Button variant="ghost" label="Borrar mi cuenta y mis datos" icon={Trash} onPress={deleteAccount} style={{ alignSelf: 'flex-start' }} />
       </Card>
     </ScrollView>

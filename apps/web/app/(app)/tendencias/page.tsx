@@ -1,9 +1,9 @@
 'use client';
 /** Tendencias — 28-day charts from daily_summaries. Days without data are gaps, never zeros. */
-import { addDays, dayShort, hm, localDate, nf, shortDate, toDisplayWeight } from '@vida/domain';
+import { addDays, dayShort, hm, localDate, nf, shortDate, toDisplayWeight } from '@kova/domain';
 import { useState } from 'react';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { chip } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { useAsync } from '@/lib/useAsync';
@@ -26,7 +26,7 @@ export default function TendenciasPage() {
   const units = prefs!.weight_unit;
   const today = localDate(new Date(), prefs!.time_zone);
   const [metric, setMetric] = useState<Metric>('sleep_min');
-  const q = useAsync(() => vida().summaries.daily(addDays(today, -27), today), [today]);
+  const q = useAsync(() => kova().summaries.daily(addDays(today, -27), today), [today]);
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <ErrorNotice message={q.error} onRetry={q.reload} />;

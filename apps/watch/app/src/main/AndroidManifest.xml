@@ -15,11 +15,11 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="VIDA"
+        android:label="Kova Health"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
 
-        <!-- Works without a paired phone app: it talks to the VIDA backend directly. -->
+        <!-- Works without a paired phone app: it talks to the Kova Health backend directly. -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />

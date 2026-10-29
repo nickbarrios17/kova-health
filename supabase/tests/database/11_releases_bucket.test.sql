@@ -13,7 +13,7 @@ select throws_ok($$ insert into storage.objects (bucket_id, name) values ('relea
   '42501', null, 'signed-in users cannot upload releases');
 
 set local role anon;
-select throws_ok($$ insert into storage.objects (bucket_id, name) values ('releases', 'android/vida.apk') $$,
+select throws_ok($$ insert into storage.objects (bucket_id, name) values ('releases', 'android/kova-health.apk') $$,
   '42501', null, 'anonymous users cannot upload releases');
 
 select * from finish();

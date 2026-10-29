@@ -1,11 +1,11 @@
 'use client';
 /** Comida — today's meals, totals vs goal, and adding food with frozen nutrient snapshots. */
 import {
-  addDays, describeDailyTarget, localDate, MEAL_SLOTS, newId, nf, nutritionSourceLabel, scaleNutrients, VidaError, type NutritionSource,
-} from '@vida/domain';
+  addDays, describeDailyTarget, localDate, MEAL_SLOTS, newId, nf, nutritionSourceLabel, scaleNutrients, KovaError, type NutritionSource,
+} from '@kova/domain';
 import { useState } from 'react';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { seg } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { useAsync } from '@/lib/useAsync';
@@ -22,9 +22,9 @@ export default function ComidaPage() {
   const [adding, setAdding] = useState<Slot | null>(null);
   const q = useAsync(async () => {
     const [meals, sum, energy] = await Promise.all([
-      vida().nutrition.day(day), vida().summaries.daily(day, day),
+      kova().nutrition.day(day), kova().summaries.daily(day, day),
       // Today's target follows today's activity; past days keep the saved plan.
-      day === today ? vida().energy.today(today).catch(() => null) : Promise.resolve(null),
+      day === today ? kova().energy.today(today).catch(() => null) : Promise.resolve(null),
     ]);
     const dynamic = energy?.mode === 'dynamic' ? energy : null;
     const s = { ...(sum[0] ?? {}) } as Record<string, unknown>;
@@ -92,7 +92,7 @@ export default function ComidaPage() {
                     </span>
                   </span>
                   <button className="btn btn-icon btn-secondary" aria-label={'Quitar ' + i.name} style={{ border: 0 }}
-                    onClick={() => vida().nutrition.removeItem(i.id).then(q.reload)}><i className="ph ph-trash" /></button>
+                    onClick={() => kova().nutrition.removeItem(i.id).then(q.reload)}><i className="ph ph-trash" /></button>
                 </div>
               ))}
               <button className="btn btn-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setAdding(slot)}><i className="ph ph-plus" />Añadir</button>
@@ -113,7 +113,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
   const [mf, setMf] = useState({ name: '', ref: '100', unit: 'g' as 'g' | 'serving', kcal: '', p: '', c: '', f: '' });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const results = useAsync(async () => (query.trim().length >= 2 ? ((await vida().nutrition.searchFoods(query)) as Food[]) : []), [query]);
+  const results = useAsync(async () => (query.trim().length >= 2 ? ((await kova().nutrition.searchFoods(query)) as Food[]) : []), [query]);
   const num = (x: string) => Number(x.replace(',', '.'));
   const qn = num(qty);
   const preview = picked && qn > 0
@@ -122,7 +122,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
     setError(null);
-    try { await fn(); } catch (e) { setError(e instanceof VidaError ? e.message : 'Algo salió mal.'); } finally { setBusy(false); }
+    try { await fn(); } catch (e) { setError(e instanceof KovaError ? e.message : 'Algo salió mal.'); } finally { setBusy(false); }
   };
   const label = MEAL_SLOTS.find(([s]) => s === slot)![1];
   const field = (l: string, v: string, on: (x: string) => void, mode: 'text' | 'decimal' = 'decimal') => (
@@ -139,7 +139,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
           <span className="dialog-title" style={{ flex: 1 }}>Añadir a {label}</span>
           <button className="btn btn-icon btn-secondary" aria-label="Cerrar" style={{ border: 0 }} onClick={onClose}><i className="ph ph-x" /></button>
         </div>
-        {error && <div className="vida-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--vida-crit)' }} /><span>{error}</span></div>}
+        {error && <div className="kova-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)' }} /><span>{error}</span></div>}
         {picked ? (
           <>
             <span style={{ fontSize: 16, fontWeight: 500 }}>{picked.name}</span>
@@ -149,7 +149,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
             <div className="dialog-actions">
               <button className="btn btn-ghost" onClick={() => setPicked(null)}>Elegir otro</button>
               <button className="btn btn-primary" disabled={busy || !(qn > 0)} onClick={() => run(async () => {
-                await vida().nutrition.logFood({ id: newId(), local_date: day, slot, quantity: qn, food_id: picked.id });
+                await kova().nutrition.logFood({ id: newId(), local_date: day, slot, quantity: qn, food_id: picked.id });
                 onAdded();
               })}><i className="ph ph-plus" />Añadir</button>
             </div>
@@ -169,7 +169,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
             <div className="dialog-actions">
               <button className="btn btn-ghost" onClick={() => setManual(false)}>Volver</button>
               <button className="btn btn-primary" disabled={busy || !mf.name || !mf.kcal || !mf.p || !mf.c || !mf.f} onClick={() => run(async () => {
-                const food = (await vida().nutrition.createFood({
+                const food = (await kova().nutrition.createFood({
                   id: newId(), name: mf.name, ref_amount: mf.unit === 'serving' ? 1 : num(mf.ref), ref_unit: mf.unit,
                   kcal: num(mf.kcal), protein_g: num(mf.p), carbs_g: num(mf.c), fat_g: num(mf.f), data_source: 'user',
                 })) as Food;

@@ -1,4 +1,4 @@
-package com.vida.watch
+package com.kovahealth.watch
 
 import android.os.Bundle
 import android.view.WindowManager
@@ -99,15 +99,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) // the active set stays visible in the gym
         val store = Store(this)
-        val api = VidaApi(store)
-        setContent { VidaWatch(store, api) }
+        val api = KovaApi(store)
+        setContent { KovaWatch(store, api) }
     }
 }
 
 internal data class Routine(val id: String, val name: String, val days: List<Int>, val items: JSONArray)
 
 @Composable
-private fun VidaWatch(store: Store, api: VidaApi) {
+private fun KovaWatch(store: Store, api: KovaApi) {
     val scope = rememberCoroutineScope()
     var screen by remember { mutableStateOf<Screen>(if (store.signedIn) Screen.Home else Screen.Login) }
     var live by remember { mutableStateOf(store.live) }
@@ -440,7 +440,7 @@ private fun LoginScreen(error: String?, onSubmit: (String, String) -> Unit) {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 30.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Label("VIDA", TextC, 18, FontWeight.Medium)
+        Label("Kova Health", TextC, 18, FontWeight.Medium)
         if (error != null) Label(error, Warn, 12)
         Input(email, "Correo", KeyboardType.Email, false) { email = it }
         Input(pass, "Contraseña", KeyboardType.Password, true) { pass = it }

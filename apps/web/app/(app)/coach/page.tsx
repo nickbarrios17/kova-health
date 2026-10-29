@@ -1,16 +1,16 @@
 'use client';
-/** Coach — VIDA Intelligence v1: deterministic insights over your last 60 days (no AI). */
-import { EVIDENCE_LABEL, KIND_LABEL, localDate } from '@vida/domain';
+/** Coach — Kova Intelligence v1: deterministic insights over your last 60 days (no AI). */
+import { EVIDENCE_LABEL, KIND_LABEL, localDate } from '@kova/domain';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
 import { InsightCard } from '@/components/InsightCard';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { useSession } from '@/lib/session';
 import { useAsync } from '@/lib/useAsync';
 
 export default function CoachPage() {
   const { prefs } = useSession();
   const today = localDate(new Date(), prefs!.time_zone);
-  const q = useAsync(() => vida().insights.today(today, 10), [today]);
+  const q = useAsync(() => kova().insights.today(today, 10), [today]);
 
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <ErrorNotice message={q.error} onRetry={q.reload} />;
@@ -21,11 +21,11 @@ export default function CoachPage() {
       <div style={{ flex: '2 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {list.length === 0 ? (
           <EmptyState icon="ph ph-lightbulb-filament" title="Todavía no hay nada que contarte">
-            VIDA busca hechos y patrones en tus últimos 60 días de entrenamiento, comida, sueño, hábitos y peso. Aparecerán aquí cuando haya datos suficientes; no mostramos ejemplos inventados.
+            Kova Health busca hechos y patrones en tus últimos 60 días de entrenamiento, comida, sueño, hábitos y peso. Aparecerán aquí cuando haya datos suficientes; no mostramos ejemplos inventados.
           </EmptyState>
         ) : (
           list.map((i) => (
-            <InsightCard key={i.key} insight={i} onFeedback={(v) => vida().insights.feedback(i.key, today, v).catch(() => undefined)} />
+            <InsightCard key={i.key} insight={i} onFeedback={(v) => kova().insights.feedback(i.key, today, v).catch(() => undefined)} />
           ))
         )}
       </div>

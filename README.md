@@ -1,4 +1,4 @@
-# VIDA
+# Kova Health
 
 Health and fitness platform: web (analysis), mobile (daily actions and the gym), Wear OS (one-tap logging). This repository holds the backend foundation and shared TypeScript packages. The UI prototypes are kept verbatim in `design/`.
 
@@ -30,11 +30,11 @@ Quick start: see [docs/setup.md](docs/setup.md) (requires Docker Desktop and the
 | 4 Nutrition, habits, body | Done: foods with provenance, snapshotted meals, dated habit schedules, measurements, goals, daily summaries |
 | 5 Clients | Web (Next.js): Hoy, Tendencias, Comida, Entrenamiento, Coach. Mobile (Expo): Hoy, Entrenar + live session, Comida, Progreso. Watch (Kotlin/Wear OS): live workout, rest timer, mood, offline queue. |
 | 6 Health & sync | Health Connect import on mobile (steps, sleep, weight, resting HR, HRV); Health Services heart rate on the watch; offline outbox on mobile and watch |
-| 7 Intelligence & ops | VIDA Intelligence v1 (deterministic insights with kind/evidence, novelty/fatigue memory). Cloud Supabase deployed. Billing intentionally not implemented (no provider chosen). |
+| 7 Intelligence & ops | Kova Intelligence v1 (deterministic insights with kind/evidence, novelty/fatigue memory). Cloud Supabase deployed. Billing intentionally not implemented (no provider chosen). |
 
 **Artifacts**
-- `dist/VIDA-movil-0.1.0.apk` and `dist/VIDA-reloj-wearos-0.1.0.apk` (not in git; rebuild with `docs/android.md`).
-- Cloud backend: Supabase project `vida` (`docs/cloud.md`).
+- `dist/Kova-Health-movil-0.1.0.apk` and `dist/Kova-Health-reloj-wearos-0.1.0.apk` (not in git; rebuild with `docs/android.md`).
+- Cloud backend: Supabase project `oxfucatgikqbwowtgkow` (`docs/cloud.md`); web at https://kova-health.vercel.app.
 
 **Verified**
 - Local stack: 12 migrations, `supabase test db` (7 files, 121 assertions), `db lint`, typecheck of all workspaces, 48 domain + 23 api-client tests (incl. integration), web checked in the browser.

@@ -1,12 +1,12 @@
-# VIDA — Backend architecture
+# Kova Health — Backend architecture
 
 ## Shape
 
 ```
  apps/web (Next.js)   apps/mobile (Expo)        apps/watch (Kotlin, Wear OS)
         │                    │                          │
-        └── @vida/api-client ┘   (supabase-js)          │ PostgREST/RPC over HTTPS
-                 │  @vida/domain (Zod, types, math)     │ same contract (docs/api.md)
+        └── @kova/api-client ┘   (supabase-js)          │ PostgREST/RPC over HTTPS
+                 │  @kova/domain (Zod, types, math)     │ same contract (docs/api.md)
                  ▼                                      ▼
         Supabase: Auth ─ PostgREST ─ Postgres (RLS on every table) ─ Edge Functions
 ```
@@ -20,13 +20,13 @@
 
 | Client | Stack | Data access | Offline |
 | --- | --- | --- | --- |
-| `apps/web` | Next.js 15 + React 19 (static pages, client-side data) | `@vida/api-client` | — (always online) |
-| `apps/mobile` | Expo SDK 58 / React Native 0.88 | `@vida/api-client` with AsyncStorage session | Durable outbox (AsyncStorage) + recoverable live session |
+| `apps/web` | Next.js 15 + React 19 (static pages, client-side data) | `@kova/api-client` | — (always online) |
+| `apps/mobile` | Expo SDK 58 / React Native 0.88 | `@kova/api-client` with AsyncStorage session | Durable outbox (AsyncStorage) + recoverable live session |
 | `apps/watch` | Kotlin + Compose for Wear OS (no RN/web) | Minimal HTTPS client (GoTrue + PostgREST), same RPC contract | Durable outbox (SharedPreferences) + recoverable live session |
 
-All three use only the public anon key plus the user's JWT; authorization is RLS. Shared TypeScript logic (schemas, units, workout math, habits, nutrition, insights, formatting) lives in `@vida/domain`; the watch mirrors the few rules it needs in Kotlin.
+All three use only the public anon key plus the user's JWT; authorization is RLS. Shared TypeScript logic (schemas, units, workout math, habits, nutrition, insights, formatting) lives in `@kova/domain`; the watch mirrors the few rules it needs in Kotlin.
 
-## VIDA Intelligence v1
+## Kova Intelligence v1
 Deterministic detectors in `packages/domain/src/insights.ts` (no AI, no network): training week (fact), protein vs goal (fact), sleep↔mood (pattern/hypothesis by evidence), weakest habit weekday (pattern), weight trend (least-squares projection), missing sleep data (honest fact). Each insight carries `kind`, `evidence`, `domains`, `support` numbers and a score `severity + evidence + actionable + novelty − fatigue`. `shown_insights` stores what was shown (novelty/fatigue) and feedback. Language rules: patterns never say "porque"; predictions state their assumption; hypotheses are conditional. The core app works without it.
 
 ## Modules (migrations)

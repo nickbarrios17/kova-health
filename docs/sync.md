@@ -1,6 +1,6 @@
 # Cross-device sync (v1)
 
-This replaces the prototype's shared `localStorage['vida:sync']`, which only worked between tabs of one browser.
+This replaces the prototype's shared `localStorage['kova:sync']`, which only worked between tabs of one browser.
 
 ## Model
 - **Postgres is authoritative.** Web, mobile and watch read and write the same tables through the same RPCs.
@@ -8,7 +8,7 @@ This replaces the prototype's shared `localStorage['vida:sync']`, which only wor
 - **Source attribution.** `devices` rows (`web|mobile|watch`) are referenced by `workout_sessions.device_id` and `workout_sets.device_id`. `client_recorded_at` keeps the device's own timestamp.
 
 ## Push: the outbox
-`@vida/api-client` exposes `createOutbox(storage)`.
+`@kova/api-client` exposes `createOutbox(storage)`.
 
 ```
 user taps "Serie hecha"
@@ -26,7 +26,7 @@ user taps "Serie hecha"
 
 ## Pull: keyset cursor
 `sync.pull(table, cursor)` returns rows with `(updated_at, id) > cursor`, ordered, including tombstones (`deleted_at` not null). Clients keep one cursor per table:
-`routines`, `routine_exercises`, `exercises`, `workout_sessions`, `workout_session_exercises`, `workout_sets`, `foods`, `recipes`, `recipe_ingredients`, `meals`, `meal_items`, `nutrition_goals`, `habits`, `habit_schedules`, `habit_logs`, `body_measurements`, `health_observations`, `goals` (`SYNC_TABLES` in `@vida/api-client`).
+`routines`, `routine_exercises`, `exercises`, `workout_sessions`, `workout_session_exercises`, `workout_sets`, `foods`, `recipes`, `recipe_ingredients`, `meals`, `meal_items`, `nutrition_goals`, `habits`, `habit_schedules`, `habit_logs`, `body_measurements`, `health_observations`, `goals` (`SYNC_TABLES` in `@kova/api-client`).
 
 Supabase Realtime can later push "something changed" hints, so the web shows the watch's sets live. The pull stays the source of correctness.
 
@@ -59,7 +59,7 @@ Supabase Realtime can later push "something changed" hints, so the web shows the
 | Anything else | Last write wins on server time (`updated_at`). |
 
 ## Clients implementing the outbox
-- **Mobile** (`apps/mobile/src/client.ts`, `workout.ts`): `Outbox` from `@vida/api-client` persisted in AsyncStorage. Flushes on enqueue, on app start and when the app returns to the foreground. The live session is saved on every change.
+- **Mobile** (`apps/mobile/src/client.ts`, `workout.ts`): `Outbox` from `@kova/api-client` persisted in AsyncStorage. Flushes on enqueue, on app start and when the app returns to the foreground. The live session is saved on every change.
 - **Watch** (`apps/watch/.../Store.kt`): the same ordered, idempotent RPC queue in SharedPreferences. Flushes on every enqueue and every 30 s while items are pending. Network errors keep items pending; 4xx marks them failed. A local `__patch_session_hr` op sets `avg_hr` after completion.
 - **Health Connect import** (`apps/mobile/src/health.ts`): batches deduplicated by (`source`, `external_id`), so re-syncing is safe.
 

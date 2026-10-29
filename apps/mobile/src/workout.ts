@@ -4,8 +4,8 @@
  * safe (docs/sync.md). The server stays authoritative.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { localDate, newId, VidaError } from '@vida/domain';
-import { outbox, vida } from './client';
+import { localDate, newId, KovaError } from '@kova/domain';
+import { outbox, kova } from './client';
 
 export interface LiveSet {
   id: string;
@@ -37,7 +37,7 @@ export interface LiveSession {
   restTotal: number;
 }
 
-const KEY = 'vida:live-session';
+const KEY = 'kova:live-session';
 
 export async function loadLive(): Promise<LiveSession | null> {
   try {
@@ -118,7 +118,7 @@ export async function toggleSet(s: LiveSession, exIdx: number, setIdx: number, d
   const ex = s.exercises[exIdx]!;
   const set = ex.sets[setIdx]!;
   if (!set.done) {
-    if (set.reps == null || set.reps < 0) throw new VidaError('INVALID_INPUT', 'Indica las repeticiones.');
+    if (set.reps == null || set.reps < 0) throw new KovaError('INVALID_INPUT', 'Indica las repeticiones.');
     const completedAt = new Date().toISOString();
     await outbox.enqueue({
       kind: 'record_set',
@@ -133,7 +133,7 @@ export async function toggleSet(s: LiveSession, exIdx: number, setIdx: number, d
   }
   // Undo: the set may still be queued; flush first, then soft-delete on the server.
   await outbox.flush().catch(() => undefined);
-  await vida.workouts.deleteSet(set.id);
+  await kova.workouts.deleteSet(set.id);
   // Re-recording needs a new id (the old one is now a tombstone).
   const next = patchSet(s, exIdx, setIdx, { done: false, completedAt: undefined, id: newId() });
   await saveLive(next);

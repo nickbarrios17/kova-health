@@ -1,11 +1,11 @@
 /** Food log for today: meals by slot, totals vs goal, search + add (snapshotted on the server). */
 import {
-  addDays, describeDailyTarget, localDate, MEAL_SLOTS, newId, nf, nutritionSourceLabel, scaleNutrients, VidaError, type NutritionSource,
-} from '@vida/domain';
+  addDays, describeDailyTarget, localDate, MEAL_SLOTS, newId, nf, nutritionSourceLabel, scaleNutrients, KovaError, type NutritionSource,
+} from '@kova/domain';
 import { ForkKnife, MagnifyingGlass, Plus, Trash, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native';
-import { outbox, vida } from '../client';
+import { outbox, kova } from '../client';
 import { useSession } from '../session';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
@@ -26,9 +26,9 @@ export function Comida() {
 
   const q = useAsync(async () => {
     const [meals, sum, energy] = await Promise.all([
-      vida.nutrition.day(day), vida.summaries.daily(day, day),
+      kova.nutrition.day(day), kova.summaries.daily(day, day),
       // Today's target follows today's activity; past days keep the saved plan.
-      day === today ? vida.energy.today(today).catch(() => null) : Promise.resolve(null),
+      day === today ? kova.energy.today(today).catch(() => null) : Promise.resolve(null),
     ]);
     const s = (sum[0] ?? {}) as Record<string, unknown>;
     const dynamic = energy?.mode === 'dynamic' ? energy : null;
@@ -39,7 +39,7 @@ export function Comida() {
   }, [day]);
 
   const remove = async (id: string) => {
-    await vida.nutrition.removeItem(id).catch(() => undefined);
+    await kova.nutrition.removeItem(id).catch(() => undefined);
     q.reload();
   };
 
@@ -111,7 +111,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
   const [mf, setMf] = useState({ name: '', ref: '100', unit: 'g' as 'g' | 'serving', kcal: '', p: '', c: '', f: '' });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const results = useAsync(async () => (query.trim().length >= 2 ? ((await vida.nutrition.searchFoods(query)) as Food[]) : []), [query]);
+  const results = useAsync(async () => (query.trim().length >= 2 ? ((await kova.nutrition.searchFoods(query)) as Food[]) : []), [query]);
   const label = MEAL_SLOTS.find(([s]) => s === slot)![1];
 
   const log = async (food: Food, quantity: number) => {
@@ -122,7 +122,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
       await outbox.flush();
       onAdded();
     } catch (e) {
-      setError(e instanceof VidaError ? e.message : 'Algo salió mal.');
+      setError(e instanceof KovaError ? e.message : 'Algo salió mal.');
     } finally {
       setBusy(false);
     }
@@ -133,7 +133,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
     setBusy(true);
     setError(null);
     try {
-      const food = (await vida.nutrition.createFood({
+      const food = (await kova.nutrition.createFood({
         id: newId(), name: mf.name, ref_amount: mf.unit === 'serving' ? 1 : num(mf.ref), ref_unit: mf.unit,
         kcal: num(mf.kcal), protein_g: num(mf.p), carbs_g: num(mf.c), fat_g: num(mf.f), data_source: 'user',
       })) as Food;
@@ -141,7 +141,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
       setPicked(food);
       setQty(String(food.ref_amount));
     } catch (e) {
-      setError(e instanceof VidaError ? e.message : 'Algo salió mal.');
+      setError(e instanceof KovaError ? e.message : 'Algo salió mal.');
     } finally {
       setBusy(false);
     }

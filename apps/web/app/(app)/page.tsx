@@ -3,13 +3,13 @@
  * "Hoy" — markup ported from design/prototypes/VIDA Web v2.dc.html (isHoy). Every number comes from
  * daily_summaries / routines / history; missing data shows the design system's empty state.
  * Readiness needs an HRV/sleep baseline model (not built), so it shows the raw facts instead of a
- * score. "VIDA ve hoy" shows VIDA Intelligence v1 insights (deterministic rules, @vida/domain).
+ * score. "Kova Health ve hoy" shows Kova Intelligence v1 insights (deterministic rules, @kova/domain).
  */
-import { formatWeight, localDate, toDisplayWeight, type WeightUnit } from '@vida/domain';
+import { formatWeight, localDate, toDisplayWeight, type WeightUnit } from '@kova/domain';
 import Link from 'next/link';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
 import { InsightCard } from '@/components/InsightCard';
-import { vida } from '@/lib/client';
+import { kova } from '@/lib/client';
 import { addDays, dayShort, hm, MOODS, nf, ring, sp, warnFg } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { useAsync } from '@/lib/useAsync';
@@ -57,7 +57,7 @@ export default function HoyPage() {
   const today = localDate(new Date(), tz);
 
   const q = useAsync(async () => {
-    const c = vida();
+    const c = kova();
     const [days, routines, active, exercises, history, goals, energy] = await Promise.all([
       c.summaries.daily(addDays(today, -6), today),
       c.routines.list(),
@@ -69,7 +69,7 @@ export default function HoyPage() {
     ]);
     const insights = await c.insights.today(today, 3).catch(() => []);
     const rows = days.map((d) => Object.fromEntries(Object.entries(d).map(([k, v]) => [k, k === 'local_date' ? v : num(v) ?? v])) as unknown as Summary);
-    // Today's target follows today's activity when the plan was calculated by VIDA.
+    // Today's target follows today's activity when the plan was calculated by Kova Health.
     const last = rows[rows.length - 1];
     if (last && energy?.mode === 'dynamic') last.kcal_goal = energy.kcal;
     return {
@@ -114,14 +114,14 @@ export default function HoyPage() {
       ? { icon: 'ph ph-sneaker-move', name: 'Pasos', period: 'Hoy', value: nf(t.steps, 0), unit: stepGoal ? 'de ' + nf(stepGoal, 0) : 'pasos',
           spark: sp(days.map((d) => d.steps), 0, Math.max(13000, stepGoal ?? 0)),
           ...(stepGoal == null ? { cmp: 'Sin objetivo de pasos', cmpIcon: 'ph ph-info' }
-            : t.steps >= stepGoal ? { cmp: 'Objetivo cumplido', cmpIcon: 'ph ph-check-circle', cmpFg: 'var(--vida-ok)' }
+            : t.steps >= stepGoal ? { cmp: 'Objetivo cumplido', cmpIcon: 'ph ph-check-circle', cmpFg: 'var(--kova-ok)' }
             : { cmp: 'Faltan ' + nf(stepGoal - t.steps, 0), cmpIcon: 'ph ph-arrow-up-right' }), href: '/tendencias' }
       : { icon: 'ph ph-sneaker-move', name: 'Pasos', period: 'Hoy', emptyTxt: 'Sin datos', spark: sp(days.map((d) => d.steps), 0, 13000),
           cmp: 'Conecta el reloj o el móvil para ver tus pasos', cmpIcon: 'ph ph-info', href: '/tendencias' },
     t.sleep_min != null
       ? { icon: 'ph ph-moon-stars', name: 'Sueño', period: 'Anoche', value: hm(t.sleep_min), unit: '', spark: sp(days.map((d) => d.sleep_min), 300, 540),
           ...(sleepGoal != null
-            ? t.sleep_min >= sleepGoal ? { cmp: 'Dormiste lo que necesitas', cmpIcon: 'ph ph-check-circle', cmpFg: 'var(--vida-ok)' }
+            ? t.sleep_min >= sleepGoal ? { cmp: 'Dormiste lo que necesitas', cmpIcon: 'ph ph-check-circle', cmpFg: 'var(--kova-ok)' }
               : { cmp: Math.round(sleepGoal - t.sleep_min) + ' min menos de lo que necesitas', cmpIcon: 'ph ph-arrow-down' }
             : enough('sleep_min') && prevSleep != null
               ? { cmp: Math.abs(Math.round(t.sleep_min - prevSleep)) + ' min ' + (t.sleep_min >= prevSleep ? 'más' : 'menos') + ' que tu media de 7 días', cmpIcon: t.sleep_min >= prevSleep ? 'ph ph-arrow-up' : 'ph ph-arrow-down' }
@@ -133,8 +133,8 @@ export default function HoyPage() {
           const pct = prevHrv != null && enough('hrv_rmssd_ms') ? Math.round(((t.hrv_rmssd_ms - prevHrv) / prevHrv) * 100) : null;
           return { icon: 'ph ph-heartbeat', name: 'Corazón', period: 'Anoche', value: nf(t.hrv_rmssd_ms, 0), unit: 'ms HRV', spark: sp(days.map((d) => d.hrv_rmssd_ms), 30, 90),
             ...(pct == null ? { cmp: 'Aún no hay noches suficientes para comparar', cmpIcon: 'ph ph-info' }
-              : pct <= -8 ? { cmp: pct + '% frente a tu media de 7 días', cmpIcon: 'ph ph-warning', cmpFg: 'var(--vida-warn)' }
-              : { cmp: (pct > 0 ? '+' : '') + pct + '% frente a tu media de 7 días', cmpIcon: 'ph ph-check-circle', cmpFg: 'var(--vida-ok)' }), href: '/tendencias' };
+              : pct <= -8 ? { cmp: pct + '% frente a tu media de 7 días', cmpIcon: 'ph ph-warning', cmpFg: 'var(--kova-warn)' }
+              : { cmp: (pct > 0 ? '+' : '') + pct + '% frente a tu media de 7 días', cmpIcon: 'ph ph-check-circle', cmpFg: 'var(--kova-ok)' }), href: '/tendencias' };
         })()
       : { icon: 'ph ph-heartbeat', name: 'Corazón', period: 'Anoche', emptyTxt: 'Sin datos', spark: sp(days.map((d) => d.hrv_rmssd_ms), 30, 90),
           cmp: 'La HRV llega del reloj mientras duermes', cmpIcon: 'ph ph-info', href: '/tendencias' },
@@ -206,7 +206,7 @@ export default function HoyPage() {
               <span style={{ fontSize: 22, fontWeight: 500 }}>Aún sin calcular</span>
               {facts.map((p) => (
                 <span key={p.label} style={{ fontSize: 13, color: 'var(--color-neutral-400)', display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <i className={p.has ? 'ph ph-check-circle' : 'ph ph-minus-circle'} style={{ color: p.has ? 'var(--vida-ok)' : 'var(--color-neutral-500)' }} />{p.label} · {p.val}
+                  <i className={p.has ? 'ph ph-check-circle' : 'ph ph-minus-circle'} style={{ color: p.has ? 'var(--kova-ok)' : 'var(--color-neutral-500)' }} />{p.label} · {p.val}
                 </span>
               ))}
             </div>
@@ -238,12 +238,12 @@ export default function HoyPage() {
         </div>
         <div style={{ flex: '2 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px 6px' }}>
-            <span style={{ fontSize: 16, fontWeight: 500 }}>VIDA ve hoy</span>
+            <span style={{ fontSize: 16, fontWeight: 500 }}>Kova Health ve hoy</span>
             <Link className="btn btn-ghost" href="/coach" style={{ fontSize: 13 }}>Todo el Coach</Link>
           </div>
           {insights.length === 0 ? (
             <EmptyState icon="ph ph-lightbulb-filament" title="Todavía no hay observaciones">
-              Cuando haya suficientes días de sueño, entrenamiento y comida, VIDA te mostrará aquí hechos y patrones de tus datos.
+              Cuando haya suficientes días de sueño, entrenamiento y comida, Kova Health te mostrará aquí hechos y patrones de tus datos.
               No mostramos ejemplos inventados.
             </EmptyState>
           ) : (
@@ -256,7 +256,7 @@ export default function HoyPage() {
         <span style={{ fontSize: 16, fontWeight: 500 }}>Progreso de hoy</span>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))', gap: 10 }}>
           {tiles.map((tile) => (
-            <Link key={tile.name} href={tile.href} className="vida-tile"
+            <Link key={tile.name} href={tile.href} className="kova-tile"
               style={{ padding: '14px 16px', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', border: '1px solid transparent', color: 'var(--color-text)', textAlign: 'left', textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--color-neutral-400)', width: '100%' }}>
                 <i className={tile.icon} style={{ fontSize: 15, color: 'var(--color-accent-300)' }} />

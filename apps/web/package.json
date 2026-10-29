@@ -1,5 +1,5 @@
 {
-  "name": "@vida/web",
+  "name": "@kova/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@phosphor-icons/web": "2.1.2",
-    "@vida/api-client": "0.1.0",
-    "@vida/domain": "0.1.0",
+    "@kova/api-client": "0.1.0",
+    "@kova/domain": "0.1.0",
     "next": "^15.5.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",

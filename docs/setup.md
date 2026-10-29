@@ -11,18 +11,18 @@ npm install
 supabase start          # Postgres, Auth, PostgREST, Edge runtime, Mailpit
 supabase db reset       # applies supabase/migrations/* and supabase/seed.sql
 ```
-`supabase status` prints the local URL and keys. The seed creates a fake demo account, `demo@vida.test` / `demo-vida-2026`, with the prototype's Fuerza A/B routines. It exists **locally only**.
+`supabase status` prints the local URL and keys. The seed creates a fake demo account, `demo@kova.test` / `demo-kova-2026`, with the prototype's Fuerza A/B routines. It exists **locally only**.
 
 Studio: http://127.0.0.1:54323 · Mailpit (auth emails): http://127.0.0.1:54324
 
 ## Tests
 ```bash
 npm run typecheck                 # tsc for all packages
-npm run test:unit                 # @vida/domain (no database needed)
+npm run test:unit                 # @kova/domain (no database needed)
 supabase test db                  # pgTAP: schema, RLS, business rules (needs the local stack)
 supabase db lint --level warning  # plpgsql/static checks
 ```
-Integration tests (`@vida/api-client`) need the local stack and Edge Functions:
+Integration tests (`@kova/api-client`) need the local stack and Edge Functions:
 ```bash
 supabase functions serve          # in another terminal
 ```
@@ -48,7 +48,7 @@ npm run build:web
 ```bash
 npm run db:types                  # writes packages/domain/src/db.types.ts from the local schema
 ```
-Run it after every migration and commit the result. `@vida/domain` exports `Database`, `Tables`, etc. from it.
+Run it after every migration and commit the result. `@kova/domain` exports `Database`, `Tables`, etc. from it.
 
 ## Migrations
 - Add one with `supabase migration new <name>`. Never edit a migration that has been applied anywhere shared.

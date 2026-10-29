@@ -35,7 +35,7 @@ import {
   type NutritionGoalInput,
   type SaveHabitInput,
   type SaveRecipeInput,
-} from '@vida/domain';
+} from '@kova/domain';
 import type { z } from 'zod';
 import type { SupabaseResult } from './errors.js';
 
@@ -279,7 +279,7 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
   const energy = {
     /**
      * Today's nutrition target. Dynamic (resting energy + today's activity, docs/api.md §Energy) when
-     * the plan was calculated by VIDA; the user's own numbers when they typed them; null without a plan.
+     * the plan was calculated by Kova Health; the user's own numbers when they typed them; null without a plan.
      * Body fat comes from the latest measurement (≤ 30 days), else from tape measurements (≤ 90 days).
      */
     today: async (today: string): Promise<EnergyToday | null> => {

@@ -1,5 +1,5 @@
 'use client';
-import { EVIDENCE_LABEL, KIND_LABEL, type Insight } from '@vida/domain';
+import { EVIDENCE_LABEL, KIND_LABEL, type Insight } from '@kova/domain';
 import { useState } from 'react';
 
 const KIND_ICON: Record<Insight['kind'], string> = {

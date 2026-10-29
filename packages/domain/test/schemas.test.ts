@@ -8,7 +8,7 @@ import {
   StartSessionSchema,
   TransitionSessionSchema,
 } from '../src/schemas.js';
-import { codeFromSqlState, VidaError } from '../src/errors.js';
+import { codeFromSqlState, KovaError } from '../src/errors.js';
 
 const id = '7d3c6b2e-5a4f-4e1b-9c8d-0a1b2c3d4e5f';
 const id2 = '0f1e2d3c-4b5a-4968-8776-655443322110';
@@ -67,7 +67,7 @@ describe('error mapping', () => {
     expect(codeFromSqlState('XX000')).toBe('INTERNAL');
     expect(codeFromSqlState('email_not_confirmed')).toBe('EMAIL_NOT_CONFIRMED'); // Supabase Auth error code
     expect(codeFromSqlState('invalid_credentials')).toBe('UNAUTHENTICATED');
-    expect(new VidaError('NETWORK').retryable).toBe(true);
-    expect(new VidaError('VERSION_CONFLICT').retryable).toBe(false);
+    expect(new KovaError('NETWORK').retryable).toBe(true);
+    expect(new KovaError('VERSION_CONFLICT').retryable).toBe(false);
   });
 });

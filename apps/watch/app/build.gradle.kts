@@ -14,11 +14,11 @@ val secrets = Properties().apply {
 fun secret(name: String): String = (secrets.getProperty(name) ?: System.getenv(name) ?: "").trim()
 
 android {
-    namespace = "com.vida.watch"
+    namespace = "com.kovahealth.watch"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.vida.health"
+        applicationId = "com.kovahealth.app"
         minSdk = 30 // Wear OS 3+
         targetSdk = 36
         versionCode = 1

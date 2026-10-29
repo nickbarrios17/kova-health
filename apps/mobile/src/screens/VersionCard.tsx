@@ -31,12 +31,12 @@ export function VersionCard() {
   return (
     <Card>
       <Row><Info size={18} color={c.a300} /><T size={16} w="medium" style={{ flex: 1 }}>Versión de la app</T></Row>
-      <T size={13} color={c.n400}>VIDA {installedVersionName()} · compilación {installedVersionCode()}</T>
+      <T size={13} color={c.n400}>Kova Health {installedVersionName()} · compilación {installedVersionCode()}</T>
       <T size={12} color={c.n500}>{ota.label}</T>
       <Button variant="secondary" label="Buscar actualizaciones" icon={ArrowsClockwise} busy={busy} onPress={check} />
       {msg ? <Notice text={msg} /> : null}
       {apk ? <UpdatePrompt release={apk} onLater={() => setApk(null)} /> : null}
-      <Confirm visible={otaReady} title="Mejora lista" message="Se descargó una actualización de VIDA. ¿Reiniciar la app ahora para usarla?"
+      <Confirm visible={otaReady} title="Mejora lista" message="Se descargó una actualización de Kova Health. ¿Reiniciar la app ahora para usarla?"
         confirmLabel="Reiniciar" cancelLabel="Después" onConfirm={() => reloadApp()} onCancel={() => setOtaReady(false)} />
     </Card>
   );

@@ -1,5 +1,5 @@
 'use client';
-import { VidaError } from '@vida/domain';
+import { KovaError } from '@kova/domain';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface AsyncState<T> {
@@ -9,7 +9,7 @@ export interface AsyncState<T> {
   reload: () => void;
 }
 
-/** Runs `fn` when `deps` change. Errors become the safe Spanish message from VidaError. */
+/** Runs `fn` when `deps` change. Errors become the safe Spanish message from KovaError. */
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]): AsyncState<T> {
   const [data, setData] = useState<T>();
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]): AsyncState<T
       })
       .catch((e: unknown) => {
         if (!alive) return;
-        setError(e instanceof VidaError ? e.message : 'Algo salió mal.');
+        setError(e instanceof KovaError ? e.message : 'Algo salió mal.');
       })
       .finally(() => alive && setLoading(false));
     return () => {

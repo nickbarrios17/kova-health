@@ -1,5 +1,5 @@
 /**
- * Health Connect (Android) → VIDA. Reads the last days of steps, sleep, weight, resting heart rate
+ * Health Connect (Android) → Kova Health. Reads the last days of steps, sleep, weight, resting heart rate
  * and HRV and sends them through the idempotent import RPCs: every row carries the Health Connect
  * record id as external_id and the source app, so re-syncing never duplicates data (docs/sync.md).
  * Values are copied as recorded; nothing is estimated or filled in.
@@ -7,8 +7,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { getGrantedPermissions, getSdkStatus, initialize, openHealthConnectSettings, readRecords, requestPermission, SdkAvailabilityStatus } from 'react-native-health-connect';
-import { BodyMeasurementSchema, HealthObservationSchema, newId } from '@vida/domain';
-import { vida } from './client';
+import { BodyMeasurementSchema, HealthObservationSchema, newId } from '@kova/domain';
+import { kova } from './client';
 
 export type HcStatus = 'unsupported' | 'not_installed' | 'needs_update' | 'available';
 
@@ -22,19 +22,19 @@ const PERMISSIONS = [
   { accessType: 'read', recordType: 'BodyFat' },
 ] as const;
 
-/** How many data types VIDA asks for (shown as "n de N tipos de datos"). */
+/** How many data types Kova Health asks for (shown as "n de N tipos de datos"). */
 export const PERMISSION_COUNT = PERMISSIONS.length;
 
 const WANTED = new Set<string>(PERMISSIONS.map((p) => p.recordType));
 
 /**
- * How many of VIDA's 5 data types are granted. Health Connect can return other read grants
+ * How many of Kova Health's 5 data types are granted. Health Connect can return other read grants
  * (e.g. background read) and repeats, so count distinct wanted record types only.
  */
 const countWanted = (perms: ReadonlyArray<{ accessType: string; recordType: string }>) =>
   new Set(perms.filter((p) => p.accessType === 'read' && WANTED.has(p.recordType)).map((p) => p.recordType)).size;
 
-const LAST_SYNC_KEY = 'vida:hc-last-sync';
+const LAST_SYNC_KEY = 'kova:hc-last-sync';
 // Health Connect sleep stage codes counted as asleep: SLEEPING, LIGHT, DEEP, REM.
 const ASLEEP = new Set([2, 4, 5, 6]);
 const STAGE_NAME: Record<number, string> = { 1: 'awake', 2: 'sleeping', 3: 'out_of_bed', 4: 'light', 5: 'deep', 6: 'rem', 7: 'awake' };
@@ -51,7 +51,7 @@ export async function status(): Promise<HcStatus> {
   }
 }
 
-/** Opens the system permission sheet. Returns how many of VIDA's data types were granted. */
+/** Opens the system permission sheet. Returns how many of Kova Health's data types were granted. */
 export async function connect(): Promise<number> {
   await initialize();
   return countWanted(await requestPermission([...PERMISSIONS]));
@@ -156,8 +156,8 @@ export async function sync(timeZone: string, deviceId: string | null, days = 7):
     .flatMap((r) => (r.success ? [r.data] : []));
 
   let stored = 0;
-  for (const c of chunks(obs, 500)) stored += await vida.health.record(c);
-  for (const c of chunks(meas, 500)) stored += await vida.body.record(c);
+  for (const c of chunks(obs, 500)) stored += await kova.health.record(c);
+  for (const c of chunks(meas, 500)) stored += await kova.body.record(c);
   await AsyncStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
   return stored;
 }

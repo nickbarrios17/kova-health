@@ -4,7 +4,7 @@
  *   app opens and applied on the next start. Nothing to do here except show the status.
  * - Native changes need a new APK. CI publishes it to Supabase Storage with `latest.json`; when its
  *   versionCode is higher than the installed one the app offers "Actualizar app", downloads it and
- *   opens Android's installer (one tap). Android itself rejects an APK not signed with VIDA's key.
+ *   opens Android's installer (one tap). Android itself rejects an APK not signed with Kova Health's key.
  */
 import * as Application from 'expo-application';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -48,7 +48,7 @@ export const isMandatory = (rel: ApkRelease) => rel.minVersionCode != null && in
 
 /** Downloads the APK to the cache and hands it to Android's package installer. */
 export async function downloadAndInstall(rel: ApkRelease, onProgress: (fraction: number) => void): Promise<void> {
-  const target = FileSystem.cacheDirectory + 'vida-' + rel.versionCode + '.apk';
+  const target = FileSystem.cacheDirectory + 'kova-health-' + rel.versionCode + '.apk';
   const task = FileSystem.createDownloadResumable(rel.url, target, {}, (p) => {
     if (p.totalBytesExpectedToWrite > 0) onProgress(p.totalBytesWritten / p.totalBytesExpectedToWrite);
   });
