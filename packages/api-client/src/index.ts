@@ -7,6 +7,7 @@ import {
   DeviceRegisterSchema,
   ExerciseCreateSchema,
   ExerciseSearchSchema,
+  goalHasPace,
   OnboardingSchema,
   PreferencesUpdateSchema,
   ProfileUpdateSchema,
@@ -140,7 +141,7 @@ export function createVidaClient(opts: VidaClientOptions) {
       return idempotent(() =>
         rpc<Tables<'profiles'>>('complete_onboarding', {
           p_display_name: v.displayName ?? null, p_birth_year: v.birthYear, p_height_cm: v.heightCm, p_sex: v.sex,
-          p_activity_level: v.activity, p_weight_goal: v.goal, p_goal_pace: v.goal === 'maintain' ? null : v.pace,
+          p_activity_level: v.activity, p_weight_goal: v.goal, p_goal_pace: goalHasPace(v.goal) ? v.pace : null,
           p_weight_kg: v.weightKg, p_measurement_id: v.measurementId, p_kcal: v.kcal, p_protein_g: v.proteinG,
           p_carbs_g: v.carbsG, p_fat_g: v.fatG, p_is_estimated: v.isEstimated, p_time_zone: v.timeZone ?? null,
         }),

@@ -27,6 +27,9 @@ interface SessionValue {
   setUnit: (u: WeightUnit) => Promise<void>;
   /** Reloads preferences and profile (after onboarding). */
   reload: () => Promise<void>;
+  /** Set when the profile could not be loaded after retrying (shown with a Retry button). */
+  loadError: string | null;
+  retryLoad: () => void;
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -35,6 +38,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>('loading');
   const [recovery, setRecovery] = useState(false);
   const [prefs, setPrefs] = useState<Prefs | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadTick, setLoadTick] = useState(0);
 
   const loadPrefs = useCallback(async () => {
     const c = vida();
@@ -70,16 +75,45 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (status === 'signedIn') loadPrefs().catch(() => setPrefs(null));
-    else setPrefs(null);
-  }, [status, loadPrefs]);
+    if (status !== 'signedIn') {
+      setPrefs(null);
+      setLoadError(null);
+      return;
+    }
+    // A request can fail right after opening the page while supabase-js renews an expired session,
+    // so retry a few times before showing an error (never leave the app on "Cargando…").
+    let alive = true;
+    setLoadError(null);
+    (async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          await loadPrefs();
+          return;
+        } catch (e) {
+          if (attempt === 2) {
+            if (alive) setLoadError(e instanceof Error ? e.message : 'No pudimos cargar tu cuenta.');
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+          if (!alive) return;
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [status, loadPrefs, loadTick]);
 
   const setUnit = useCallback(async (u: WeightUnit) => {
     setPrefs((p) => (p ? { ...p, weight_unit: u } : p));
     await vida().profile.updatePreferences({ weight_unit: u });
   }, []);
 
-  const value = useMemo(() => ({ status, recovery, prefs, setUnit, reload: loadPrefs }), [status, recovery, prefs, setUnit, loadPrefs]);
+  const retryLoad = useCallback(() => setLoadTick((t) => t + 1), []);
+  const value = useMemo(
+    () => ({ status, recovery, prefs, setUnit, reload: loadPrefs, loadError, retryLoad }),
+    [status, recovery, prefs, setUnit, loadPrefs, loadError, retryLoad],
+  );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

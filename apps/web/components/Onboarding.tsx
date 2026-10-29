@@ -4,7 +4,7 @@
  * estimated daily target (energyTarget in @vida/domain), accepted as is or typed by hand.
  */
 import {
-  ACTIVITY_LABEL, ageFromBirthYear, energyTarget, fromDisplayWeight, GOAL_LABEL, localDate, newId, PACE_ADJUST, PACE_LABEL,
+  ACTIVITY_LABEL, ageFromBirthYear, energyTarget, fromDisplayWeight, GOAL_HINT, GOAL_LABEL, goalHasPace, localDate, newId, PACE_ADJUST, PACE_LABEL,
   resolveBodyFat, RMR_METHOD_LABEL, SEX_LABEL, toDisplayWeight, VidaError, type ActivityLevel, type GoalPace, type Sex, type WeightGoal,
 } from '@vida/domain';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
@@ -86,7 +86,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
     if (!sex) return 'Elige tu sexo: la fórmula de energía cambia según el sexo.';
     if (!activity) return 'Elige tu nivel de actividad.';
     if (!goal) return 'Elige tu objetivo.';
-    if (goal !== 'maintain' && !pace) return 'Elige un ritmo para tu objetivo.';
+    if (goalHasPace(goal) && !pace) return 'Elige un ritmo para tu objetivo.';
     if (fatPct.trim() && !(num(fatPct)! >= 3 && num(fatPct)! <= 60)) return 'El % de grasa va de 3 a 60.';
     return null;
   })();
@@ -94,7 +94,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
   const target = useMemo(() => {
     if (step2Error) return null;
     return energyTarget({
-      sex: sex!, age: age!, heightCm: h!, weightKg: weightKg!, activity: activity!, goal: goal!, pace: goal === 'maintain' ? null : pace,
+      sex: sex!, age: age!, heightCm: h!, weightKg: weightKg!, activity: activity!, goal: goal!, pace: goalHasPace(goal) ? pace : null,
       bodyFatPct: bodyFat?.pct ?? null,
     });
   }, [step2Error, sex, age, h, weightKg, activity, goal, pace, bodyFat?.pct]);
@@ -130,7 +130,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
       }
       await vida().profile.completeOnboarding({
         displayName: name.trim() || null, birthYear: by!, heightCm: h!, weightKg: Math.round(weightKg! * 10) / 10, sex: sex!,
-        activity: activity!, goal: goal!, pace: goal === 'maintain' ? null : pace, measurementId,
+        activity: activity!, goal: goal!, pace: goalHasPace(goal) ? pace : null, measurementId,
         kcal: Math.round(vals.kcal), proteinG: Math.round(vals.proteinG!), carbsG: Math.round(vals.carbsG!), fatG: Math.round(vals.fatG!),
         isEstimated: !manual, timeZone: p.time_zone,
       });
@@ -186,9 +186,9 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
             <Choice name="activity" label="Actividad diaria" value={activity} onChange={setActivity}
               options={(Object.keys(ACTIVITY_LABEL) as ActivityLevel[]).map((k) => [k, ACTIVITY_LABEL[k][0], ACTIVITY_LABEL[k][1]])} />
             <Choice name="goal" label="Objetivo" value={goal}
-              onChange={(g) => { setGoal(g); if (g === 'maintain') setPace(null); else if (!pace) setPace('moderate'); }}
-              options={[['lose', GOAL_LABEL.lose], ['maintain', GOAL_LABEL.maintain], ['gain', GOAL_LABEL.gain]]} />
-            {goal && goal !== 'maintain' ? (
+              onChange={(g) => { setGoal(g); if (!goalHasPace(g)) setPace(null); else if (!pace) setPace('moderate'); }}
+              options={(['lose', 'maintain', 'gain', 'recomp'] as WeightGoal[]).map((k) => [k, GOAL_LABEL[k], GOAL_HINT[k]])} />
+            {goalHasPace(goal) ? (
               <Choice name="pace" label="Ritmo" value={pace} onChange={setPace}
                 options={(['light', 'moderate', 'aggressive'] as GoalPace[]).map((k) => [k, PACE_LABEL[k] + ' · ' + paceHint(goal, k)])} />
             ) : null}
