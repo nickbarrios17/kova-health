@@ -9,7 +9,7 @@ export interface TrainingData {
   }>;
   names: Map<string, string>;
   /** Every visible exercise (system catalog + own), for the exercise detail's catalog match. */
-  catalog: Array<{ id: string; name: string; short_name: string | null; owner_id: string | null }>;
+  catalog: Array<{ id: string; name: string; short_name: string | null; owner_id: string | null; media: unknown }>;
   lastKg: Map<string, number>;
   bestKg: Map<string, number>;
 }

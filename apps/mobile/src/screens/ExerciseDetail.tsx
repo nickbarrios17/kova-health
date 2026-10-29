@@ -5,9 +5,9 @@
  */
 import { EQUIPMENT_LABEL, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
 import { X } from 'phosphor-react-native';
-import { useEffect, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { kova } from '../client';
+import { ExerciseFrames } from '../ExerciseFrames';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Card, ErrorNote, Loading, Row, T } from '../ui';
@@ -21,23 +21,6 @@ interface ExerciseRow {
   media: unknown;
   exercise_muscles: Array<{ muscle_code: string; role: 'primary' | 'secondary' }>;
   exercise_equipment: Array<{ equipment_code: string }>;
-}
-
-function Frames({ urls }: { urls: string[] }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    if (urls.length < 2) return;
-    const iv = setInterval(() => setI((x) => (x + 1) % urls.length), 1100);
-    return () => clearInterval(iv);
-  }, [urls.length]);
-  return (
-    <View style={{ height: 240, borderRadius: r.lg, backgroundColor: '#fff', overflow: 'hidden' }}>
-      {urls.map((u, n) => (
-        <Image key={u} source={{ uri: u }} resizeMode="contain" accessibilityIgnoresInvertColors
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: n === i ? 1 : 0 }} />
-      ))}
-    </View>
-  );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -82,7 +65,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
           <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>
         ) : ex ? (
           <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
-            {urls.length ? <Frames urls={urls} /> : null}
+            <ExerciseFrames urls={urls} />
             {q.data?.borrowed ? <T size={12} color={c.n400}>Instrucciones de «{ex.name}», el ejercicio del catálogo más parecido.</T> : null}
             {primary.length || equipment.length ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>

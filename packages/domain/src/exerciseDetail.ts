@@ -143,3 +143,20 @@ export function findCatalogMatch<T extends { name: string; short_name?: string |
   const syn = SYNONYMS.find(([re]) => re.test(n));
   return (syn && byName.get(normalize(syn[1]))) || null;
 }
+
+/**
+ * Images to show for an exercise: its own, else those of the catalog entry its name matches
+ * (a user's "Press plano" shows the bench press photos).
+ */
+export function imagesFor(
+  exerciseId: string,
+  catalog: Array<{ id: string; name: string; short_name?: string | null; owner_id: string | null; media: unknown }>,
+  supabaseUrl: string,
+): string[] {
+  const ex = catalog.find((e) => e.id === exerciseId);
+  if (!ex) return [];
+  const own = exerciseImages(ex.media, supabaseUrl);
+  if (own.length || ex.owner_id == null) return own;
+  const match = findCatalogMatch(ex.name, catalog.filter((e) => e.owner_id == null));
+  return match ? exerciseImages(match.media, supabaseUrl) : [];
+}
