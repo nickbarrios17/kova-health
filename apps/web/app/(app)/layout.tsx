@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { KovaMark } from '@/components/KovaMark';
 import { Onboarding } from '@/components/Onboarding';
+import { ReportDialog } from '@/components/ReportDialog';
 import { kova } from '@/lib/client';
 import { ago, greeting, headerDate, seg } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -18,7 +19,7 @@ const NAV: Array<[href: string, label: string, icon: string]> = [
   ['/entrenamiento', 'Entrenamiento', 'ph-barbell'],
   ['/coach', 'Coach', 'ph-lightbulb-filament'],
 ];
-const TITLES: Record<string, string> = { '/importar': 'Importar rutinas', '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/coach': 'Coach' };
+const TITLES: Record<string, string> = { '/importar': 'Importar rutinas', '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/coach': 'Coach', '/reportes': 'Reportes recibidos' };
 const DEVICE_ICON: Record<string, string> = { watch: 'ph ph-watch', mobile: 'ph ph-device-mobile', web: 'ph ph-desktop' };
 const DEVICE_KEY = 'kova:web-device-id';
 
@@ -41,6 +42,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { status, prefs, setUnit, loadError, retryLoad } = useSession();
   const [now, setNow] = useState(() => new Date());
   const [recalc, setRecalc] = useState(false);
+  const [report, setReport] = useState(false);
 
   useEffect(() => {
     if (status === 'signedOut') router.replace(path === '/' ? '/login' : '/login?next=' + encodeURIComponent(path));
@@ -49,6 +51,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     const iv = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(iv);
   }, []);
+
+  const admin = useAsync(async () => (status === 'signedIn' ? kova().feedback.isAdmin().catch(() => false) : false), [status]);
 
   const devices = useAsync(async () => {
     if (status !== 'signedIn') return [];
@@ -112,7 +116,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }} />
             </div>
           ))}
-          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13, marginTop: 4 }} onClick={() => setRecalc(true)}>
+          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13, marginTop: 4 }} onClick={() => setReport(true)}>
+            <i className="ph ph-flag" />Reportar un problema
+          </button>
+          {admin.data && (
+            <Link href="/reportes" className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}>
+              <i className="ph ph-tray" />Reportes recibidos
+            </Link>
+          )}
+          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }} onClick={() => setRecalc(true)}>
             <i className="ph ph-target" />Recalcular meta
           </button>
           <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}
@@ -121,6 +133,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
       </aside>
+      {report && <ReportDialog onClose={() => setReport(false)} />}
+      {/* ⚠️ on every page: opens the report with this page's quick options. */}
+      <button type="button" onClick={() => setReport(true)} aria-label="Reportar un problema en esta página" title="Reportar un problema"
+        style={{ position: 'fixed', right: 18, bottom: 18, width: 44, height: 44, borderRadius: '50%', border: '1px solid var(--color-divider, rgba(233,233,237,.16))',
+          background: 'var(--color-surface)', color: 'var(--kova-warn, #EFC173)', cursor: 'pointer', display: 'grid', placeItems: 'center', zIndex: 20, boxShadow: 'var(--shadow-md)' }}>
+        <i className="ph ph-warning" style={{ fontSize: 20 }} />
+      </button>
 
       <main style={{ flex: '9999 1 640px', minWidth: 0, padding: '28px clamp(16px,3vw,40px) 48px', boxSizing: 'border-box' }}>
         <div style={{ maxWidth: 1360, display: 'flex', flexDirection: 'column', gap: 22 }}>

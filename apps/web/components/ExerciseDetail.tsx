@@ -7,6 +7,7 @@
 import { EQUIPMENT_LABEL, exerciseAnimation, exerciseImages, findCatalogMatch, hasHowTo, MUSCLE_LABEL, type ExerciseInstructions } from '@kova/domain';
 import { useEffect, useState } from 'react';
 import { kova } from '@/lib/client';
+import { ReportDialog } from './ReportDialog';
 import { useAsync } from '@/lib/useAsync';
 
 interface ExerciseFull {
@@ -62,6 +63,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
   }, [exerciseId]);
 
   useMannequinScript();
+  const [report, setReport] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -79,6 +81,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
       <div className="dialog" style={{ width: 'min(560px, 100%)', maxHeight: '88vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <span className="dialog-title" style={{ flex: 1 }}>{name}</span>
+          <button className="btn btn-icon btn-secondary" aria-label="Reportar un problema en este ejercicio" title="Reportar un problema" style={{ border: 0, color: 'var(--kova-warn, #EFC173)' }} onClick={() => setReport(true)}><i className="ph ph-warning" /></button>
           <button className="btn btn-icon btn-secondary" aria-label="Cerrar" style={{ border: 0 }} onClick={onClose}><i className="ph ph-x" /></button>
         </div>
         {q.loading && !q.data ? <span style={muted}>Cargando…</span> : q.error ? (
@@ -104,10 +107,14 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
             {ins.cues?.length ? (<><span style={h}>Claves</span>{ins.cues.map((c) => <div key={c.title} style={{ display: 'grid', gap: 2 }}><span style={{ fontSize: 14, fontWeight: 500 }}>{c.title}</span><span style={muted}>{c.body}</span></div>)}</>) : null}
             {ins.errors?.length ? (<><span style={h}>Errores comunes</span>{ins.errors.map((e) => <div key={e.title} style={{ display: 'grid', gap: 2 }}><span style={{ fontSize: 14, fontWeight: 500, color: 'var(--kova-warn, #EFC173)' }}>{e.title}</span><span style={muted}>{e.fix}</span></div>)}</>) : null}
             {ins.breath?.length || ins.tempo ? (<><span style={h}>Respiración y ritmo</span>{ins.tempo && <span style={muted}>Ritmo: {ins.tempo}</span>}{ins.breath?.map((b) => <span key={b} style={muted}>• {b}</span>)}</>) : null}
+            <button type="button" className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }} onClick={() => setReport(true)}>
+              <i className="ph ph-flag" />Reportar un error en este ejercicio o su modelo 3D
+            </button>
             {urls.length > 0 && !anim && <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>Imágenes: free-exercise-db (dominio público).</span>}
           </>
         ) : null}
       </div>
+      {report && <ReportDialog onClose={() => setReport(false)} screen="exercise" context={{ exercise_id: ex?.id, exercise_name: ex?.name ?? name }} />}
     </div>
   );
 }
