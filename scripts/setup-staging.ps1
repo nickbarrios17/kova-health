@@ -29,7 +29,7 @@ npx --yes vercel@latest link --yes --project kova-health --cwd apps/web 2>&1 | O
 if ($LASTEXITCODE -ne 0) { throw 'No pude vincular el proyecto de Vercel (¿entraste a Vercel en el navegador?).' }
 foreach ($pair in @(@('NEXT_PUBLIC_SUPABASE_URL', $stagingUrl), @('NEXT_PUBLIC_SUPABASE_ANON_KEY', $anon))) {
   npx --yes vercel@latest env rm $pair[0] preview develop --yes --cwd apps/web 2>&1 | Out-Null
-  $pair[1] | npx --yes vercel@latest env add $pair[0] preview develop --cwd apps/web 2>&1 | Out-Null
+  $pair[1] | npx --yes vercel@latest env add $pair[0] --environment preview --git-branch develop --no-sensitive --force --yes --cwd apps/web 2>&1 | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "No pude guardar $($pair[0]) en Vercel." }
   Write-Host "  $($pair[0]) (Preview, rama develop) listo"
 }
