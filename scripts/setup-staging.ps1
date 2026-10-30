@@ -22,10 +22,15 @@ Write-Host '  STAGING_SUPABASE_URL, STAGING_SUPABASE_ANON_KEY y STAGING_SUPABASE
 
 Write-Host '3/3 Vercel: la web de prueba (rama develop) apunta a la base de prueba...'
 Write-Host '  Si es la primera vez, el navegador te pide entrar a Vercel.'
-npx --yes vercel@latest link --yes --project kova-health --cwd apps/web | Out-Null
+# npm writes notices to stderr, which Windows PowerShell 5.1 turns into errors: let them through and
+# check the exit code instead.
+$ErrorActionPreference = 'Continue'
+npx --yes vercel@latest link --yes --project kova-health --cwd apps/web 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'No pude vincular el proyecto de Vercel (¿entraste a Vercel en el navegador?).' }
 foreach ($pair in @(@('NEXT_PUBLIC_SUPABASE_URL', $stagingUrl), @('NEXT_PUBLIC_SUPABASE_ANON_KEY', $anon))) {
-  npx --yes vercel@latest env rm $pair[0] preview develop --yes --cwd apps/web 2>$null | Out-Null
-  $pair[1] | npx --yes vercel@latest env add $pair[0] preview develop --cwd apps/web | Out-Null
+  npx --yes vercel@latest env rm $pair[0] preview develop --yes --cwd apps/web 2>&1 | Out-Null
+  $pair[1] | npx --yes vercel@latest env add $pair[0] preview develop --cwd apps/web 2>&1 | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "No pude guardar $($pair[0]) en Vercel." }
   Write-Host "  $($pair[0]) (Preview, rama develop) listo"
 }
 
