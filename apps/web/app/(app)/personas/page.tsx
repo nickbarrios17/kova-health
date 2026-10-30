@@ -6,6 +6,7 @@
  */
 import { inviteCode } from '@kova/api-client';
 import { linkLabel, KovaError, type LinkKind, type PersonLink } from '@kova/domain';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { EmptyState, ErrorNotice } from '@/components/EmptyState';
 import { kova } from '@/lib/client';
@@ -161,7 +162,7 @@ export default function PersonasPage() {
                 <tbody>
                   {students.map((l) => (
                     <tr key={l.id}>
-                      <td>{l.person_name}</td>
+                      <td><Link href={'/personas/' + l.person_id}>{l.person_name}</Link></td>
                       <td>{l.sessions_7d ? l.sessions_7d + (l.sessions_7d === 1 ? ' entrenamiento' : ' entrenamientos') : 'Sin entrenar'}</td>
                       <td style={{ textAlign: 'right' }}><button className="btn btn-ghost" onClick={() => end(l)}>Cortar</button></td>
                     </tr>

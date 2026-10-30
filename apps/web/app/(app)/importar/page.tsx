@@ -8,7 +8,7 @@ import {
   slugify, type CatalogExercise, type DraftRoutine, type ImportField, type Sheet, type SheetPlan,
 } from '@kova/domain';
 import Link from 'next/link';
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { EmptyState } from '@/components/EmptyState';
 import { kova } from '@/lib/client';
 import { useAsync } from '@/lib/useAsync';
@@ -46,10 +46,18 @@ export default function ImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<number | null>(null);
+  // As a coach: import into a student's account (docs/coach.md). '' = my own account.
+  const [target, setTarget] = useState('');
+  useEffect(() => { setTarget(new URLSearchParams(window.location.search).get('para') ?? ''); }, []);
+  const students = useAsync(async () => (await kova().people.links()).filter((l) => l.kind === 'coach' && l.role === 'viewer'), []);
+  const targetName = students.data?.find((l) => l.person_id === target)?.person_name ?? null;
 
+  // Matching uses what the target account can use: the catalog plus that account's own exercises.
   const catalog = useAsync(async () => {
-    return (await kova().exercises.catalog()).map((e): CatalogExercise => ({ id: e.id, name: e.name }));
-  }, []);
+    const all = await kova().exercises.catalog();
+    const own = target ? await kova().people.exercises(target) : [];
+    return [...all.filter((e) => (target ? e.owner_id == null : true)), ...own].map((e): CatalogExercise => ({ id: e.id, name: e.name }));
+  }, [target]);
 
   const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -121,11 +129,13 @@ export default function ImportPage() {
       const created = new Map<string, string>();
       for (const name of newNames) {
         const id = newId();
-        await c.exercises.create({ id, name: name.slice(0, 120), slug: (slugify(name) + '-' + id.slice(0, 6)).slice(0, 80) });
+        const ex = { id, name: name.slice(0, 120), slug: (slugify(name) + '-' + id.slice(0, 6)).slice(0, 80) };
+        await (target ? c.people.createExercise(target, ex) : c.exercises.create(ex));
         created.set(normalize(name), id);
       }
       for (const r of chosen) {
-        await c.routines.save({
+        const save = (input: Parameters<typeof c.routines.save>[0]) => (target ? c.people.saveRoutine(target, input) : c.routines.save(input));
+        await save({
           id: newId(),
           name: r.name.trim().slice(0, 80),
           schedule_days: r.days,
@@ -155,9 +165,9 @@ export default function ImportPage() {
     return (
       <div className="card" style={{ maxWidth: 560, gap: 12 }}>
         <span style={{ fontSize: 17, fontWeight: 500 }}><i className="ph ph-check-circle" style={{ color: 'var(--kova-ok)' }} /> {done === 1 ? '1 rutina importada' : done + ' rutinas importadas'}</span>
-        <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Ya están en Entrenamiento, en el teléfono y en el reloj.</span>
+        <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>{targetName ? 'Ya están en la cuenta de ' + targetName + ', en su teléfono y su reloj.' : 'Ya están en Entrenamiento, en el teléfono y en el reloj.'}</span>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Link className="btn btn-primary" href="/entrenamiento">Ver rutinas</Link>
+          <Link className="btn btn-primary" href={target ? '/personas/' + target : '/entrenamiento'}>Ver rutinas</Link>
           <button className="btn btn-ghost" onClick={() => { setDone(null); setFileName(null); setSheets([]); setPlans([]); setJsonDraft(null); }}>Importar otro archivo</button>
         </div>
       </div>
@@ -166,6 +176,18 @@ export default function ImportPage() {
 
   return (
     <div data-screen-label="Importar rutinas" style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 980 }}>
+      {(students.data?.length ?? 0) > 0 && (
+        <div className="card" style={{ gap: 8 }}>
+          <div className="field">
+            <label htmlFor="import-target">Importar a</label>
+            <select id="import-target" className="input" value={target} onChange={(e) => setTarget(e.target.value)} disabled={sheets.length > 0 || jsonDraft != null}>
+              <option value="">Mi cuenta</option>
+              {students.data!.map((l) => <option key={l.person_id} value={l.person_id}>{l.person_name} (tu alumno)</option>)}
+            </select>
+          </div>
+          <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Elígelo antes del archivo: los ejercicios se buscan entre los que puede usar esa cuenta.</span>
+        </div>
+      )}
       <div className="card" style={{ gap: 12 }}>
         <span style={{ fontSize: 15, fontWeight: 500 }}>Elige un archivo</span>
         <span style={{ fontSize: 13, color: 'var(--color-neutral-400)', lineHeight: 1.5 }}>
@@ -297,7 +319,7 @@ export default function ImportPage() {
               {busy ? <><i className="ph ph-circle-notch kova-spin" />Importando…</> : <><i className="ph ph-download-simple" />Importar {chosen.length === 1 ? '1 rutina' : chosen.length + ' rutinas'}</>}
             </button>
             <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
-              {newNames.length ? 'Se crearán ' + newNames.length + (newNames.length === 1 ? ' ejercicio nuevo' : ' ejercicios nuevos') + ' en tu cuenta. ' : ''}
+              {newNames.length ? 'Se crearán ' + newNames.length + (newNames.length === 1 ? ' ejercicio nuevo' : ' ejercicios nuevos') + (targetName ? ' en la cuenta de ' + targetName + '. ' : ' en tu cuenta. ') : ''}
               Nada se guarda hasta que pulses Importar.
             </span>
           </div>
