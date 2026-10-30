@@ -27,6 +27,7 @@ import { c } from './theme';
 import type { TrainingData } from './training';
 import { Button, T } from './ui';
 import { loadLive, startFromRoutine, type LiveSession, type Summary } from './workout';
+import { ReportProvider, useReportButtonOffset } from './report';
 
 type Tab = 'hoy' | 'entrenar' | 'comida' | 'progreso';
 const TABS: Array<[Tab, string, Icon]> = [
@@ -88,6 +89,10 @@ function Shell() {
   useBack(!!summary, () => { setSummary(null); setTab('entrenar'); });
   useBack(!summary && !!live && showLive, () => setShowLive(false));
   useBack(!summary && !(live && showLive) && tab !== 'hoy', () => setTab('hoy'));
+
+  // ⚠️ button: hidden until signed in and onboarded; above the tab bar on the tabbed screens.
+  const tabbed = status === 'signedIn' && !!prefs?.onboarded && !summary && !(live && showLive) && !invite;
+  useReportButtonOffset(status !== 'signedIn' || !prefs?.onboarded ? -1 : tabbed ? (live ? 136 : 80) : 24);
 
   if (status === 'signedIn' && !prefs && bootError) {
     return (
@@ -169,7 +174,7 @@ export default function App() {
             <T size={16}>Falta configurar EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY (ver apps/mobile/.env.example).</T>
           </View>
         ) : (
-          <SessionProvider><Shell /></SessionProvider>
+          <SessionProvider><ReportProvider><Shell /></ReportProvider></SessionProvider>
         )}
       </SafeAreaView>
     </SafeAreaProvider>

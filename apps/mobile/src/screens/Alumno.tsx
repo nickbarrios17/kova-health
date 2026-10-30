@@ -8,6 +8,7 @@ import { ArrowLeft, Barbell, PencilSimple, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useBack } from '../back';
+import { useReportTarget } from '../report';
 import { kova } from '../client';
 import { useSession } from '../session';
 import { c } from '../theme';
@@ -21,6 +22,7 @@ export function Alumno({ link, onClose }: { link: PersonLink; onClose: () => voi
   const owner = link.person_id;
   const [editing, setEditing] = useState<RoutineDraft | null>(null);
   useBack(editing == null, onClose);
+  useReportTarget('personas');
 
   const q = useAsync(async () => {
     const [routines, own, catalog] = await Promise.all([kova.people.routines(owner), kova.people.exercises(owner), kova.exercises.catalog()]);

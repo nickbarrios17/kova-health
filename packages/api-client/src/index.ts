@@ -35,6 +35,7 @@ import type { z } from 'zod';
 import { toKovaError, unwrap, type SupabaseResult } from './errors.js';
 import { Outbox, type OutboxOp, type OutboxStorage } from './outbox.js';
 import { withRetry, type RetryOptions } from './retry.js';
+import { createFeedback } from './feedback.js';
 import { createPeople } from './people.js';
 import { createTracking } from './tracking.js';
 export type { EnergyToday } from './tracking.js';
@@ -345,6 +346,7 @@ export function createKovaClient(opts: KovaClientOptions) {
   };
 
   const tracking = createTracking({ sb, call, rpc, idempotent, parse, uid });
+  const feedback = createFeedback({ sb, rpc, call });
   const people = createPeople({ rpc });
 
   const sendOp = (op: OutboxOp): Promise<unknown> => {
@@ -386,6 +388,7 @@ export function createKovaClient(opts: KovaClientOptions) {
     routines,
     workouts,
     ...tracking,
+    feedback,
     people,
     sync,
     account,

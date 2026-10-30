@@ -8,6 +8,7 @@ import { ArrowLeft, CaretRight, Copy, ShareNetwork, UserPlus, UsersThree } from 
 import { useState } from 'react';
 import { Keyboard, Pressable, ScrollView, Share, Switch, View } from 'react-native';
 import { useBack } from '../back';
+import { useReportTarget } from '../report';
 import { kova } from '../client';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
@@ -43,6 +44,7 @@ function ShareRow({ link, onChanged }: { link: PersonLink; onChanged: () => void
 export function Personas({ initialCode, onClose }: { initialCode?: string | null; onClose: () => void }) {
   const [student, setStudent] = useState<PersonLink | null>(null);
   useBack(student == null, onClose);
+  useReportTarget('personas');
   const q = useAsync(() => kova.people.links(), []);
   const [code, setCode] = useState(initialCode ?? '');
   const [preview, setPreview] = useState<{ code: string; kind: LinkKind; inviter_name: string } | null>(null);

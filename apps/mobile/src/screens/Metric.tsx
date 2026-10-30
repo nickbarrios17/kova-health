@@ -19,6 +19,7 @@ import { useSession } from '../session';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
+import { useReportTarget } from '../report';
 
 export const METRIC: Record<MetricKey, { title: string; icon: Icon; empty: string }> = {
   steps: { title: 'Pasos', icon: SneakerMove, empty: 'Los pasos llegan del reloj o de Health Connect.' },
@@ -68,6 +69,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
   const [weight, setWeight] = useState('');
   const [habitName, setHabitName] = useState('');
   useBack(true, onClose);
+  useReportTarget('metric', { metric });
 
   // 92 days (the daily_summaries limit) cover 7 and 30 days plus their previous period.
   const q = useAsync(async () => {
