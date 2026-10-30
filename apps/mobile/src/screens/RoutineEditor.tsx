@@ -9,6 +9,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'rea
 import { kova } from '../client';
 import { c, r } from '../theme';
 import { Button, Card, Confirm, ErrorNote, Field, Row, T } from '../ui';
+import { useReportTarget } from '../report';
 
 const WEEK: Array<[number, string, string]> = [
   [1, 'L', 'Lunes'], [2, 'M', 'Martes'], [3, 'X', 'Miércoles'], [4, 'J', 'Jueves'], [5, 'V', 'Viernes'], [6, 'S', 'Sábado'], [7, 'D', 'Domingo'],
@@ -86,6 +87,7 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isNew = initial.version == null;
+  useReportTarget('routine');
   // Messages refer to the draft as it was saved; any edit makes them stale.
   useEffect(() => setErrors([]), [d]);
 

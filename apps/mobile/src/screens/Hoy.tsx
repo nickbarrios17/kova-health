@@ -12,6 +12,7 @@ import type { LiveSession } from '../workout';
 import { Button, Empty, ErrorNote, Loading, Row, Seg, T } from '../ui';
 import { Ajustes } from './Ajustes';
 import { Metric } from './Metric';
+import { useReportTarget } from '../report';
 
 const num = (v: unknown) => (v == null ? null : Number(v));
 
@@ -27,6 +28,7 @@ export function Hoy({ live, onOpenLive, onStart }: {
   const units = prefs!.weight_unit;
   const today = localDate(new Date(), tz);
   const [open, setOpen] = useState<MetricKey | null>(null);
+  useReportTarget('hoy');
   const [settings, setSettings] = useState(false);
 
   const q = useAsync(async () => {

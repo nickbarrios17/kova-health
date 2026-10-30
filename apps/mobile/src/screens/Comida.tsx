@@ -10,6 +10,7 @@ import { useSession } from '../session';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
+import { useReportTarget } from '../report';
 
 type Slot = (typeof MEAL_SLOTS)[number][0];
 interface Food { id: string; name: string; brand: string | null; ref_amount: number; ref_unit: 'g' | 'ml' | 'serving'; serving_label: string | null; default_quantity: number | null; kcal: number; protein_g: number; carbs_g: number; fat_g: number; data_source: NutritionSource }
@@ -23,6 +24,7 @@ export function Comida() {
   const today = localDate(new Date(), prefs!.time_zone);
   const [day, setDay] = useState(today);
   const [adding, setAdding] = useState<Slot | null>(null);
+  useReportTarget('comida');
 
   const q = useAsync(async () => {
     const [meals, sum, energy] = await Promise.all([

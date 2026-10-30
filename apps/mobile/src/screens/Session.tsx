@@ -11,6 +11,7 @@ import { MannequinView } from '../MannequinView';
 import { useAsync } from '../useAsync';
 import { ExerciseDetail } from './ExerciseDetail';
 import { addSet, elapsedS, fillForward, saveLive, summarize, toggleSet, transition, type LiveSession, type Summary } from '../workout';
+import { useReportTarget } from '../report';
 
 const parseNum = (s: string) => {
   const v = Number(s.replace(',', '.'));
@@ -29,6 +30,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [howTo, setHowTo] = useState(false);
+  useReportTarget('session', { exercise_id: live.exercises[live.cur]?.exercise_id, exercise_name: live.exercises[live.cur]?.name });
   // Names + media of every exercise, to show the 3D model of the current one (also for own exercises).
   const catalog = useAsync(() => kova.exercises.catalog(), []);
   useEffect(() => {

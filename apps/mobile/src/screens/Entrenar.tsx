@@ -12,6 +12,7 @@ import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Loading, Row, T } from '../ui';
 import { ExerciseDetail } from './ExerciseDetail';
 import { RoutineEditor } from './RoutineEditor';
+import { useReportTarget } from '../report';
 
 export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (routineId: string, data: TrainingData) => void }) {
   const { prefs } = useSession();
@@ -22,6 +23,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
   }, []);
   const [editing, setEditing] = useState<RoutineDraft | null>(null);
   const [copying, setCopying] = useState<string | null>(null);
+  useReportTarget('entrenar');
   const [howTo, setHowTo] = useState<{ id: string; name: string } | null>(null);
 
   // Back closes the routine editor without saving, like «Cancelar».
