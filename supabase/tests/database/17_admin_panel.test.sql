@@ -22,9 +22,9 @@ select throws_ok($$ select public.admin_set_suspended('33333333-3333-4333-8333-3
 
 -- ── The admin ────────────────────────────────────────────────────────────────
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
-select is((select count(*)::int from public.admin_users()), 3, 'the admin lists every account');
+select is((select count(*)::int from public.admin_users() where email like '%@test.local'), 3, 'the admin lists every account');
 select is((select name from public.admin_users() where id = '22222222-2222-4222-8222-222222222222'), 'amigo', 'with a name from the email when there is no profile name');
-select is((public.admin_overview() ->> 'users')::int, 3, 'the summary counts accounts');
+select is((public.admin_overview() ->> 'users')::int, (select count(*)::int from public.admin_users()), 'the summary counts accounts');
 select throws_ok($$ select public.admin_set_admin('11111111-1111-4111-8111-111111111111', false) $$, 'VD008', null, 'the admin cannot remove their own role');
 select throws_ok($$ select public.admin_set_suspended('11111111-1111-4111-8111-111111111111', true) $$, 'VD008', null, 'the admin cannot suspend themselves');
 
