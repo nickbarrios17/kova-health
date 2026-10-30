@@ -36,11 +36,13 @@ import { toKovaError, unwrap, type SupabaseResult } from './errors.js';
 import { Outbox, type OutboxOp, type OutboxStorage } from './outbox.js';
 import { withRetry, type RetryOptions } from './retry.js';
 import { createFeedback } from './feedback.js';
+import { createPeople } from './people.js';
 import { createTracking } from './tracking.js';
 export type { EnergyToday } from './tracking.js';
 
 export { toKovaError } from './errors.js';
 export { withRetry } from './retry.js';
+export { inviteCode, type CoachRoutine } from './people.js';
 export * from './outbox.js';
 
 export interface KovaClientOptions {
@@ -345,6 +347,7 @@ export function createKovaClient(opts: KovaClientOptions) {
 
   const tracking = createTracking({ sb, call, rpc, idempotent, parse, uid });
   const feedback = createFeedback({ sb, rpc, call });
+  const people = createPeople({ rpc });
 
   const sendOp = (op: OutboxOp): Promise<unknown> => {
     switch (op.kind) {
@@ -386,6 +389,7 @@ export function createKovaClient(opts: KovaClientOptions) {
     workouts,
     ...tracking,
     feedback,
+    people,
     sync,
     account,
     entitlements: { has: (code: string) => rpc<boolean>('has_entitlement', { p_code: code }) },

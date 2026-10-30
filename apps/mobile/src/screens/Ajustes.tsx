@@ -1,6 +1,6 @@
 /** Ajustes: Health Connect, app version and account (moved out of Progreso, which is only progress). */
 import { KovaError } from '@kova/domain';
-import { ArrowLeft, Bug, SignOut, Target, Trash } from 'phosphor-react-native';
+import { ArrowLeft, Bug, CaretRight, SignOut, Target, Trash, UsersThree } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { useBack } from '../back';
@@ -11,6 +11,7 @@ import { c } from '../theme';
 import { Button, Card, Notice, Row, Seg, T } from '../ui';
 import { HealthCard } from './HealthCard';
 import { Onboarding } from './Onboarding';
+import { Personas } from './Personas';
 import { VersionCard } from './VersionCard';
 import { useReportTarget } from '../report';
 
@@ -19,8 +20,9 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
   const [recalc, setRecalc] = useState(false);
   const [report, setReport] = useState(false);
   useReportTarget('ajustes');
+  const [people, setPeople] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  useBack(!recalc, onClose);
+  useBack(!recalc && !people, onClose);
   useBack(recalc, () => setRecalc(false));
 
   const deleteAccount = () =>
@@ -33,6 +35,7 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
     ]);
 
   if (recalc) return <Onboarding onCancel={() => setRecalc(false)} />;
+  if (people) return <Personas onClose={() => setPeople(false)} />;
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}>
       <Row style={{ gap: 4 }}>
@@ -54,6 +57,15 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
         <Button variant="secondary" label="Reportar un problema" icon={Bug} onPress={() => setReport(true)} />
       </Card>
       <ReportSheet visible={report} onClose={() => setReport(false)} screen="ajustes" />
+      <Pressable onPress={() => setPeople(true)} accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 14, backgroundColor: c.surface }}>
+        <UsersThree size={20} color={c.a300} />
+        <View style={{ flex: 1 }}>
+          <T size={15} w="medium">Coach y amigos</T>
+          <T size={12} color={c.n400}>Invita a tu coach, a tus alumnos o a tus amigos</T>
+        </View>
+        <CaretRight size={16} color={c.n500} />
+      </Pressable>
       <HealthCard onSynced={() => undefined} />
       <VersionCard />
       <Card>

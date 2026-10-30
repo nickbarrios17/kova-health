@@ -6,6 +6,7 @@ import {
 import { ArrowDown, ArrowUp, Check, Plus, Trash } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { useBack } from '../back';
 import { kova } from '../client';
 import { c, r } from '../theme';
 import { Button, Card, Confirm, ErrorNote, Field, Row, T } from '../ui';
@@ -74,11 +75,14 @@ function ItemRow({ item, index, count, units, onChange, onMove, onRemove }: {
   );
 }
 
-export function RoutineEditor({ initial, exercises, units, onClose }: {
+export function RoutineEditor({ initial, exercises, units, onClose, ownerId, title }: {
   initial: RoutineDraft;
   exercises: Array<{ id: string; name: string }>;
   units: WeightUnit;
   onClose: (changed: boolean) => void;
+  /** As a coach: the student whose routine this is (saved through kova.people, checked against the link). */
+  ownerId?: string;
+  title?: string;
 }) {
   const [d, setD] = useState<RoutineDraft>(initial);
   const [query, setQuery] = useState('');
@@ -88,6 +92,7 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isNew = initial.version == null;
   useReportTarget('routine');
+  useBack(true, () => onClose(false));
   // Messages refer to the draft as it was saved; any edit makes them stale.
   useEffect(() => setErrors([]), [d]);
 
@@ -117,9 +122,10 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
     try {
       for (const it of d.items) {
         const name = pendingNew[it.exerciseId];
-        if (name) await kova.exercises.create({ id: it.exerciseId, name, slug: (slugify(name) + '-' + it.exerciseId.slice(0, 6)).slice(0, 80) });
+        const slug = (slugify(name ?? '') + '-' + it.exerciseId.slice(0, 6)).slice(0, 80);
+        if (name) await (ownerId ? kova.people.createExercise(ownerId, { id: it.exerciseId, name, slug }) : kova.exercises.create({ id: it.exerciseId, name, slug }));
       }
-      await kova.routines.save(draftToSaveInput(d));
+      await (ownerId ? kova.people.saveRoutine(ownerId, draftToSaveInput(d)) : kova.routines.save(draftToSaveInput(d)));
       onClose(true);
     } catch (e) {
       const code = e instanceof KovaError ? e.code : '';
@@ -135,7 +141,7 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
     setConfirmDelete(false);
     setBusy(true);
     try {
-      await kova.routines.remove(d.id);
+      await (ownerId ? kova.people.deleteRoutine(ownerId, d.id) : kova.routines.remove(d.id));
       onClose(true);
     } catch (e) {
       setErrors([e instanceof KovaError ? e.message : 'No se pudo borrar.']);
@@ -147,7 +153,7 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
         <Row style={{ justifyContent: 'space-between' }}>
-          <T size={22} w="medium">{isNew ? 'Nueva rutina' : 'Editar rutina'}</T>
+          <T size={22} w="medium" style={{ flex: 1 }}>{title ?? (isNew ? 'Nueva rutina' : 'Editar rutina')}</T>
           <Button variant="ghost" label="Cancelar" onPress={() => onClose(false)} />
         </Row>
 

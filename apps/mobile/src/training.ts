@@ -5,6 +5,8 @@ export interface TrainingData {
   routines: Array<RoutineForStart & {
     schedule_days: number[];
     version: number;
+    /** Set when a coach wrote it (docs/coach.md). */
+    assigned_by?: string | null;
     routine_exercises: Array<RoutineForStart['routine_exercises'][number] & { notes: string | null }>;
   }>;
   names: Map<string, string>;
