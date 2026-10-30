@@ -1,10 +1,11 @@
 /** Ajustes: Health Connect, app version and account (moved out of Progreso, which is only progress). */
 import { KovaError } from '@kova/domain';
-import { ArrowLeft, Bug, CaretRight, SignOut, Target, Trash, UsersThree } from 'phosphor-react-native';
+import { ArrowLeft, Bug, CaretRight, SignOut, Sparkle, Target, Trash, UsersThree } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { useBack } from '../back';
 import { kova } from '../client';
+import { NewsSheet, newsDays } from '../NewsSheet';
 import { ReportSheet } from '../ReportSheet';
 import { useSession } from '../session';
 import { c } from '../theme';
@@ -21,6 +22,7 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
   const [report, setReport] = useState(false);
   useReportTarget('ajustes');
   const [people, setPeople] = useState(false);
+  const [news, setNews] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useBack(!recalc && !people, onClose);
   useBack(recalc, () => setRecalc(false));
@@ -66,6 +68,16 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
         </View>
         <CaretRight size={16} color={c.n500} />
       </Pressable>
+      <Pressable onPress={() => setNews(true)} accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 14, backgroundColor: c.surface }}>
+        <Sparkle size={20} color={c.a300} />
+        <View style={{ flex: 1 }}>
+          <T size={15} w="medium">Novedades</T>
+          <T size={12} color={c.n400}>Lo nuevo de cada actualización</T>
+        </View>
+        <CaretRight size={16} color={c.n500} />
+      </Pressable>
+      <NewsSheet visible={news} days={newsDays()} onClose={() => setNews(false)} />
       <HealthCard onSynced={() => undefined} />
       <VersionCard />
       <Card>
