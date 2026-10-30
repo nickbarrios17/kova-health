@@ -20,7 +20,7 @@ const NAV: Array<[href: string, label: string, icon: string]> = [
   ['/coach', 'Coach', 'ph-lightbulb-filament'],
   ['/personas', 'Coach y amigos', 'ph-users-three'],
 ];
-const TITLES: Record<string, string> = { '/importar': 'Importar rutinas', '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/coach': 'Coach', '/personas': 'Coach y amigos', '/reportes': 'Reportes recibidos' };
+const TITLES: Record<string, string> = { '/importar': 'Importar rutinas', '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/coach': 'Coach', '/personas': 'Coach y amigos', '/reportes': 'Reportes recibidos', '/admin': 'Administración' };
 const DEVICE_ICON: Record<string, string> = { watch: 'ph ph-watch', mobile: 'ph ph-device-mobile', web: 'ph ph-desktop' };
 const DEVICE_KEY = 'kova:web-device-id';
 
@@ -121,9 +121,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <i className="ph ph-flag" />Reportar un problema
           </button>
           {admin.data && (
-            <Link href="/reportes" className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}>
-              <i className="ph ph-tray" />Reportes recibidos
-            </Link>
+            <>
+              <Link href="/admin" className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}>
+                <i className="ph ph-shield-check" />Administración
+              </Link>
+              <Link href="/reportes" className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}>
+                <i className="ph ph-tray" />Reportes recibidos
+              </Link>
+            </>
           )}
           <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }} onClick={() => setRecalc(true)}>
             <i className="ph ph-target" />Recalcular meta
