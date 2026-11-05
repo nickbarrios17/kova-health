@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { KovaMark } from '@/components/KovaMark';
+import { NewsDialog, NewsOnOpen, newsDays } from '@/components/NewsDialog';
 import { Onboarding } from '@/components/Onboarding';
 import { ReportDialog } from '@/components/ReportDialog';
 import { kova } from '@/lib/client';
@@ -44,6 +45,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [now, setNow] = useState(() => new Date());
   const [recalc, setRecalc] = useState(false);
   const [report, setReport] = useState(false);
+  const [news, setNews] = useState(false);
 
   useEffect(() => {
     if (status === 'signedOut') router.replace(path === '/' ? '/login' : '/login?next=' + encodeURIComponent(path));
@@ -117,7 +119,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }} />
             </div>
           ))}
-          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13, marginTop: 4 }} onClick={() => setReport(true)}>
+          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13, marginTop: 4 }} onClick={() => setNews(true)}>
+            <i className="ph ph-sparkle" />Novedades
+          </button>
+          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }} onClick={() => setReport(true)}>
             <i className="ph ph-flag" />Reportar un problema
           </button>
           {admin.data && (
@@ -140,6 +145,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
       {report && <ReportDialog onClose={() => setReport(false)} />}
+      {news && <NewsDialog days={newsDays()} onClose={() => setNews(false)} />}
+      <NewsOnOpen ready />
       {/* ⚠️ on every page: opens the report with this page's quick options. */}
       <button type="button" onClick={() => setReport(true)} aria-label="Reportar un problema en esta página" title="Reportar un problema"
         style={{ position: 'fixed', right: 18, bottom: 18, width: 44, height: 44, borderRadius: '50%', border: '1px solid var(--color-divider, rgba(233,233,237,.16))',

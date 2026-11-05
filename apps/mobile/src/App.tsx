@@ -28,6 +28,7 @@ import type { TrainingData } from './training';
 import { Button, T } from './ui';
 import { loadLive, startFromRoutine, type LiveSession, type Summary } from './workout';
 import { ReportProvider, useReportButtonOffset } from './report';
+import { NewsOnOpen } from './NewsSheet';
 
 type Tab = 'hoy' | 'entrenar' | 'comida' | 'progreso';
 const TABS: Array<[Tab, string, Icon]> = [
@@ -132,6 +133,7 @@ function Shell() {
   return (
     <View style={{ flex: 1 }}>
       {prompt}
+      <NewsOnOpen ready={!prompt} />
       <View style={{ flex: 1 }}>
         {tab === 'hoy' ? <Hoy live={live} onOpenLive={() => setShowLive(true)} onStart={start} />
           : tab === 'entrenar' ? <Entrenar hasLive={!!live} onStart={start} />
