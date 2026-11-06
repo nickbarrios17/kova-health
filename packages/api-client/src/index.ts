@@ -32,6 +32,7 @@ import {
   type TransitionSessionInput,
 } from '@kova/domain';
 import type { z } from 'zod';
+import { claimDevice } from './devices.js';
 import { toKovaError, unwrap, type SupabaseResult } from './errors.js';
 import { Outbox, type OutboxOp, type OutboxStorage } from './outbox.js';
 import { withRetry, type RetryOptions } from './retry.js';
@@ -159,6 +160,8 @@ export function createKovaClient(opts: KovaClientOptions) {
         call(sb.from('devices').upsert({ ...d, last_seen_at: new Date().toISOString() }, { onConflict: 'id' }).select().single()),
       );
     },
+    /** register, but returns the id to use: a fresh one if this id belongs to another account. */
+    claim: (input: DeviceRegister) => claimDevice(devices.register, input),
   };
 
   const exercises = {
