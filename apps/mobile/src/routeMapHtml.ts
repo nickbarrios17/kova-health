@@ -7,16 +7,56 @@
  *
  * No user data leaves the device except the map area being looked at (to load tiles).
  */
-export const WAY_COLORS = { bicisenda: '#5fd39a', calle: '#9184d9', avenida: '#f2994a', sendero: '#56c8f2', otro: '#8b8ca3' } as const;
+export const WAY_COLORS = { bicisenda: '#22b573', calle: '#7b68d9', avenida: '#f2853a', sendero: '#2fa8e0', otro: '#8b8ca3' } as const;
 
 const MAPLIBRE = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl';
+const PMTILES = 'https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js';
+// Overture Maps buildings: OpenStreetMap plus Microsoft/Google footprints, so every block is filled.
+// If this release ever goes away, the map falls back to the OpenStreetMap buildings.
+const OVERTURE_BUILDINGS = 'https://overturemaps-extras-us-west-2.s3.amazonaws.com/tiles/2026-10-21.0/buildings.pmtiles';
+
+/** The page behind the map, for the containers so nothing flashes dark while it loads. */
+export const MAP_BG = '#f3f2ef';
+
+// A light "scale model" look: white extruded buildings, pale streets, green parks, few labels.
+// OpenFreeMap vector tiles (OpenMapTiles schema), no key.
+const ROAD_W = (minor: number, major: number) => [
+  'interpolate', ['exponential', 1.5], ['zoom'],
+  10, ['match', ['get', 'class'], ['motorway', 'trunk', 'primary'], major * 0.25, minor * 0.1],
+  18, ['match', ['get', 'class'], ['motorway', 'trunk', 'primary'], major * 4, ['secondary', 'tertiary'], major * 3, minor * 3],
+];
+const EXTRUDE = { 'fill-extrusion-color': '#fbfaf8', 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true };
+const STYLE = {
+  version: 8,
+  glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+  sources: {
+    omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet', attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
+    ov: { type: 'vector', url: 'pmtiles://' + OVERTURE_BUILDINGS, attribution: '<a href="https://overturemaps.org">Overture Maps</a>' },
+  },
+  light: { anchor: 'map', color: '#ffffff', intensity: 0.6, position: [1.3, 210, 40] },
+  layers: [
+    { id: 'bg', type: 'background', paint: { 'background-color': MAP_BG } },
+    { id: 'green', type: 'fill', source: 'omt', 'source-layer': 'landcover', filter: ['in', ['get', 'class'], ['literal', ['grass', 'wood']]], paint: { 'fill-color': '#dcebd0' } },
+    { id: 'parks-base', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-color': '#dcebd0' } },
+    { id: 'pitch', type: 'fill', source: 'omt', 'source-layer': 'landuse', filter: ['in', ['get', 'class'], ['literal', ['pitch', 'cemetery', 'stadium']]], paint: { 'fill-color': '#e3eddb' } },
+    { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': '#cddfea' } },
+    { id: 'paths', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 14, filter: ['in', ['get', 'class'], ['literal', ['path', 'track']]], paint: { 'line-color': '#d6d6d2', 'line-width': 1.2, 'line-dasharray': [2, 1.5] } },
+    { id: 'rail', type: 'line', source: 'omt', 'source-layer': 'transportation', filter: ['==', ['get', 'class'], 'rail'], paint: { 'line-color': '#d2d1cd', 'line-width': 1.5 } },
+    { id: 'roads', type: 'line', source: 'omt', 'source-layer': 'transportation', filter: ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service']]], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['match', ['get', 'class'], ['motorway', 'trunk', 'primary'], '#d3d7e0', '#dfe1e6'], 'line-width': ROAD_W(3, 5) } },
+    { id: 'buildings', type: 'fill-extrusion', source: 'ov', 'source-layer': 'building', minzoom: 13, filter: ['!=', ['get', 'is_underground'], true], paint: { ...EXTRUDE, 'fill-extrusion-height': ['case', ['has', 'height'], ['get', 'height'], ['has', 'num_floors'], ['*', ['get', 'num_floors'], 3.2], 7], 'fill-extrusion-base': ['coalesce', ['get', 'min_height'], 0] } },
+    { id: 'buildings-osm', type: 'fill-extrusion', source: 'omt', 'source-layer': 'building', minzoom: 13, layout: { visibility: 'none' }, filter: ['!=', ['get', 'hide_3d'], true], paint: { ...EXTRUDE, 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0] } },
+    { id: 'road-names', type: 'symbol', source: 'omt', 'source-layer': 'transportation_name', minzoom: 14, layout: { 'symbol-placement': 'line', 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': 11 }, paint: { 'text-color': '#8d8e96', 'text-halo-color': '#ffffff', 'text-halo-width': 1.4 } },
+    { id: 'places', type: 'symbol', source: 'omt', 'source-layer': 'place', maxzoom: 14, filter: ['in', ['get', 'class'], ['literal', ['city', 'town', 'suburb', 'neighbourhood']]], layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Regular'], 'text-size': ['match', ['get', 'class'], 'city', 14, 12] }, paint: { 'text-color': '#6e6f78', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 } },
+  ],
+};
 
 export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <link rel="stylesheet" href="${MAPLIBRE}.css">
-<style>html,body,#m{margin:0;height:100%;background:#0f1019}.maplibregl-ctrl-attrib{font-size:10px}</style>
+<style>html,body,#m{margin:0;height:100%;background:${MAP_BG}}.maplibregl-ctrl-attrib{font-size:10px}</style>
 </head><body><div id="m"></div>
 <script src="${MAPLIBRE}.js"></script>
+<script src="${PMTILES}"></script>
 <script>
 (function(){
   var COLORS = ${JSON.stringify(WAY_COLORS)};
@@ -25,8 +65,9 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(s);
     else if (window.parent !== window) window.parent.postMessage({ kovaMap: s }, '*');
   }
+  if (window.pmtiles) maplibregl.addProtocol('pmtiles', new pmtiles.Protocol().tile);
   var map = new maplibregl.Map({
-    container: 'm', style: 'https://tiles.openfreemap.org/styles/liberty',
+    container: 'm', style: ${JSON.stringify(STYLE)},
     center: [-58.4370, -34.6070], zoom: 11.5, attributionControl: { compact: true }, maxPitch: 75
   });
   var ready = false, pending = null, flying = null, last = null;
@@ -37,15 +78,24 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     map.addSource('others', { type: 'geojson', data: empty });
     map.addSource('route', { type: 'geojson', data: empty });
     map.addSource('marks', { type: 'geojson', data: empty });
-    map.addLayer({ id: 'parks', type: 'fill', source: 'parks', paint: { 'fill-color': '#5fd39a', 'fill-opacity': 0.18 } });
-    map.addLayer({ id: 'others', type: 'line', source: 'others', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#6b6c80', 'line-width': 4, 'line-opacity': 0.7, 'line-dasharray': [2, 1.5] } });
-    map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#0f1019', 'line-width': 9 } });
-    map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': 5.5 } });
-    map.addLayer({ id: 'marks', type: 'circle', source: 'marks', paint: { 'circle-radius': 8, 'circle-color': ['match', ['get', 'kind'], 'start', '#5fd39a', 'end', '#f25f5c', 'me', '#4aa3ff', '#e9e9ed'], 'circle-stroke-width': 3, 'circle-stroke-color': '#0f1019' } });
+    map.addLayer({ id: 'parks', type: 'fill', source: 'parks', paint: { 'fill-color': '#9fd8a8', 'fill-opacity': 0.35 } });
+    map.addLayer({ id: 'others', type: 'line', source: 'others', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#7b7d92', 'line-width': 4, 'line-opacity': 0.75, 'line-dasharray': [2, 1.5] } });
+    map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 10 } });
+    map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': 6 } });
+    map.addLayer({ id: 'marks', type: 'circle', source: 'marks', paint: { 'circle-radius': 8, 'circle-color': ['match', ['get', 'kind'], 'start', '#5fd39a', 'end', '#f25f5c', 'me', '#4aa3ff', '#e9e9ed'], 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
     ready = true;
     if (pending) apply(pending);
     send({ type: 'ready' });
   });
+  // Overture buildings unavailable (offline release, blocked script): use the OpenStreetMap ones.
+  var fellBack = false;
+  map.on('error', function(e){
+    if (fellBack || !e || e.sourceId !== 'ov' || !map.getLayer('buildings-osm')) return;
+    fellBack = true;
+    map.setLayoutProperty('buildings', 'visibility', 'none');
+    map.setLayoutProperty('buildings-osm', 'visibility', 'visible');
+  });
+  if (!window.pmtiles) map.once('styledata', function(){ map.fire('error', { sourceId: 'ov' }); });
   map.on('click', function(e){
     if (map.queryRenderedFeatures(e.point, { layers: ['others'] }).length) {
       var f = map.queryRenderedFeatures(e.point, { layers: ['others'] })[0];

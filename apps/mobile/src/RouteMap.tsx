@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { ROUTE_MAP_HTML } from './routeMapHtml';
+import { MAP_BG, ROUTE_MAP_HTML } from './routeMapHtml';
 import { r } from './theme';
 
 export interface MapData {
@@ -30,7 +30,7 @@ export function RouteMap({ data, height, ...events }: { data: MapData; height: n
     if (ready) ref.current?.injectJavaScript(`window.kovaMap(${JSON.stringify(data)});true;`);
   }, [ready, data]);
   return (
-    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: '#0f1019' }}>
+    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: MAP_BG }}>
       <WebView ref={ref} source={SOURCE} originWhitelist={['*']} javaScriptEnabled domStorageEnabled
         allowFileAccess={false} setSupportMultipleWindows={false} overScrollMode="never" bounces={false}
         // The map loads tiles and its library, but never navigates away.
@@ -44,7 +44,7 @@ export function RouteMap({ data, height, ...events }: { data: MapData; height: n
             else if (m.type === 'flyEnd') ev.current.onFlyEnd?.();
           } catch { /* ignore */ }
         }}
-        style={{ backgroundColor: '#0f1019' }} accessibilityLabel="Mapa de la ruta" />
+        style={{ backgroundColor: MAP_BG }} accessibilityLabel="Mapa de la ruta" />
     </View>
   );
 }

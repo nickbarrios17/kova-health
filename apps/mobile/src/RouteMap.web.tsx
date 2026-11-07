@@ -1,7 +1,7 @@
 /** The cycling map in the browser (docs/web-celular.md): the same page as the phone, in an iframe. */
 import { createElement, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { ROUTE_MAP_HTML } from './routeMapHtml';
+import { MAP_BG, ROUTE_MAP_HTML } from './routeMapHtml';
 import { r } from './theme';
 import type { MapData, MapEvents } from './RouteMap';
 
@@ -30,7 +30,7 @@ export function RouteMap({ data, height, ...events }: { data: MapData; height: n
     if (ready) ref.current?.contentWindow?.postMessage({ kovaMapIn: JSON.stringify(data) }, '*');
   }, [ready, data]);
   return (
-    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: '#0f1019' }}>
+    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: MAP_BG }}>
       {createElement('iframe', {
         ref, srcDoc: ROUTE_MAP_HTML, title: 'Mapa de la ruta', sandbox: 'allow-scripts',
         style: { border: 0, width: '100%', height: '100%', display: 'block' },
