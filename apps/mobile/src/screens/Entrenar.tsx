@@ -1,16 +1,17 @@
 /** Routines + history (prototype "Rutinas"), with the routine editor (new, edit, duplicate, delete). */
 import { dayMonth, draftFromRoutine, dur, emptyDraft, isoDays, newId, nf, toDisplayWeight, type RoutineDraft } from '@kova/domain';
-import { Barbell, CaretRight, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
+import { Barbell, Bicycle, CaretRight, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { kova } from '../client';
 import { useSession } from '../session';
-import { c } from '../theme';
+import { c, r } from '../theme';
 import { loadTraining, scheme, type TrainingData } from '../training';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Loading, Row, T } from '../ui';
 import { ExerciseDetail } from './ExerciseDetail';
 import { RoutineEditor } from './RoutineEditor';
+import { Ciclismo } from './Ciclismo';
 import { useReportTarget } from '../report';
 
 export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (routineId: string, data: TrainingData) => void }) {
@@ -24,9 +25,11 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
   const [copying, setCopying] = useState<string | null>(null);
   useReportTarget('entrenar');
   const [howTo, setHowTo] = useState<{ id: string; name: string } | null>(null);
+  const [bike, setBike] = useState(false);
 
   // Back closes the routine editor without saving, like «Cancelar».
 
+  if (bike) return <Ciclismo onClose={() => setBike(false)} />;
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>;
   const { training, done } = q.data!;
@@ -41,6 +44,15 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
         <T size={22} w="medium">Rutinas</T>
         <Button variant="secondary" label="Nueva rutina" icon={Plus} onPress={() => setEditing(emptyDraft())} />
       </Row>
+      <Pressable onPress={() => setBike(true)} accessibilityRole="button" accessibilityLabel="Ciclismo: planificar una ruta"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: r.lg, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
+        <Bicycle size={24} color={c.accent} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <T size={15} w="medium">Ciclismo</T>
+          <T size={12} color={c.n400}>Planificá una ruta o pedí recorridos de 1 hora</T>
+        </View>
+        <CaretRight size={18} color={c.n500} />
+      </Pressable>
       {training.routines.length === 0 ? (
         <Empty icon={Barbell} title="Aún no tienes rutinas">Crea una con «Nueva rutina» o importa tu planilla desde la web. Aparecerán aquí y en el reloj.</Empty>
       ) : (
