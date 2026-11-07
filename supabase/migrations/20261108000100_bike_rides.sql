@@ -5,7 +5,8 @@
 insert into public.exercises (owner_id, slug, name, short_name, category, measurement_type, level, instructions, media)
 select null, 'ciclismo', 'Ciclismo', 'Bici', 'cardio', 'distance_duration', 'beginner',
   $j${"steps": ["Salida en bici registrada con el modo navegación de Kova.", "Distancia y tiempo en movimiento según el GPS del celular."]}$j$::jsonb,
-  '[]'::jsonb
+  -- Same pictures and 3D animation as the stationary bike, like every catalog exercise has.
+  coalesce((select media from public.exercises where owner_id is null and slug = 'bicicleta-fija'), '[]'::jsonb)
 where not exists (select 1 from public.exercises where owner_id is null and slug = 'ciclismo');
 
 insert into public.exercise_muscles (exercise_id, muscle_code, role)
