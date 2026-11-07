@@ -12,7 +12,7 @@ Para cada ruta se ve:
 - los parques por los que pasa;
 - avisos: kilómetros por avenidas, adoquines o tierra, y subidas fuertes.
 
-El mapa cambia entre 2D y 3D (edificios y relieve), y **Recorrer en 3D** hace un vuelo de cámara a lo largo de la ruta.
+El mapa es claro, tipo maqueta, y cambia entre 2D y 3D (edificios blancos y relieve), y **Recorrer en 3D** hace un vuelo de cámara a lo largo de la ruta.
 
 ## Cómo funciona
 
@@ -21,7 +21,7 @@ El mapa cambia entre 2D y 3D (edificios y relieve), y **Recorrer en 3D** hace un
 | Rutas y búsqueda de lugares | [OpenRouteService](https://openrouteservice.org), perfil bici, a través de la Edge Function `bike-route`. La clave está solo en el servidor. |
 | Parques | OpenStreetMap (Overpass), consultado por la misma función alrededor de la ruta. |
 | Análisis (bicisenda, calles, avenidas, parques, tiempo) | `packages/domain/src/cycling.ts`, con tests. |
-| Mapa | MapLibre GL con mosaicos de OpenFreeMap y relieve de AWS Terrain Tiles, en un WebView (`RouteMap.tsx`) o un iframe (`RouteMap.web.tsx`). No necesita claves. |
+| Mapa | MapLibre GL con un estilo propio claro, tipo maqueta (`routeMapHtml.ts`): calles y edificios de OpenFreeMap, edificios en 3D de [Overture Maps](https://docs.overturemaps.org/examples/overture-tiles) (que suma huellas de Microsoft y Google, así se llenan todas las manzanas) y relieve de AWS Terrain Tiles. Va en un WebView (`RouteMap.tsx`) o un iframe (`RouteMap.web.tsx`). No necesita claves. |
 | Rutas guardadas | Tabla `bike_routes`: cada persona ve solo las suyas. |
 | Tu ubicación | `expo-location`, solo mientras usás la pantalla y solo para marcar la salida. No se guarda. |
 
@@ -46,3 +46,7 @@ El tiempo estimado es la distancia a tu ritmo, más un 8 % por semáforos y esqu
 - **Zonas inseguras:** avisar o descartar rutas que pasan por zonas con más delitos. En CABA, con el mapa del delito de Buenos Aires Data. En el conurbano, con estadísticas por partido, que son menos precisas, y zonas marcadas por los usuarios.
 - **En vivo:** seguir la ruta con el GPS mientras andás, con el tiempo que falta.
 - La versión de escritorio de la web.
+
+## Edificios de Overture
+
+El archivo de edificios es de una versión con fecha (`OVERTURE_BUILDINGS` en `routeMapHtml.ts`, hoy `2026-10-21.0`). Overture publica una nueva cada mes y puede borrar las viejas. Si la que usamos deja de estar, el mapa usa solo los edificios de OpenStreetMap, que en Buenos Aires son bastantes menos. Para actualizar, cambiá la fecha por la de la última versión de su [calendario](https://docs.overturemaps.org/release-calendar/).
