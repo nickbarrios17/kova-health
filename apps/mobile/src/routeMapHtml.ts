@@ -294,7 +294,8 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     ride.bearing += (((target - ride.bearing + 540) % 360) - 180) * Math.min(1, dt * 3);
     if (bike) {
       bike.at = { lngLat: here, bearing: ride.bearing };
-      bike.pedal(ride.crank);
+      // Pedals turn forward: the foot on top moves toward the front wheel, like the wheels roll.
+      bike.pedal(-ride.crank);
       bike.rear.rotation.z = bike.front.rotation.z = -ride.crank * 1.8;
       map.triggerRepaint();
     }
