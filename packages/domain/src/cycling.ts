@@ -18,7 +18,12 @@ export interface RawRoute {
   waytype: Stretch[];
   /** OpenRouteService `surface` extra: 5 cobblestone, 2/8–12/15–17 unpaved… */
   surface: Stretch[];
+  /** Turn-by-turn maneuvers (navigation.ts). Missing on routes saved before navigation existed. */
+  steps?: RouteStep[];
 }
+
+/** One maneuver: it starts at `coords[at]`. `type` is the OpenRouteService step type (0 left … 13 keep right). */
+export interface RouteStep { at: number; type: number; name: string; exit?: number }
 
 export interface Park {
   name: string | null;

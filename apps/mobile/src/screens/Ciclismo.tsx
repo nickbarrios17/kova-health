@@ -8,13 +8,14 @@
 import { KovaError, SPEEDS_KMH, analyzeRoute, formatKm, newId, routeScore, type Coord, type Park, type RawRoute, type RouteAnalysis } from '@kova/domain';
 import type { Place, SavedRoute } from '@kova/api-client';
 import * as Location from 'expo-location';
-import { ArrowLeft, Bicycle, Crosshair, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, Pause, Play, Stop, Trash, Warning } from 'phosphor-react-native';
+import { ArrowLeft, Bicycle, Crosshair, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, NavigationArrow, Pause, Play, Stop, Trash, Warning } from 'phosphor-react-native';
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useBack } from '../back';
 import { kova } from '../client';
 import { RouteMap, type MapData, type Ride } from '../RouteMap';
 import { WAY_COLORS } from '../routeMapHtml';
+import { Navegar } from './Navegar';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Confirm, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
@@ -98,6 +99,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   const [riding, setRiding] = useState<{ paused: boolean } | null>(null);
   const [rideX, setRideX] = useState(15);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [navigating, setNavigating] = useState(false);
   const [fit, setFit] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +179,13 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
 
   const selected = plan ? { a: analyses[sel]!, rt: plan.routes[sel]! } : null;
   const mapH = Math.max(260, Math.min(420, Math.round(screenH * 0.42)));
+
+  if (navigating && selected && plan) {
+    return (
+      <Navegar route={selected.rt} kind={plan.kind} speedKmh={speed} onClose={() => setNavigating(false)}
+        name={plan.savedName ?? (plan.kind === 'loop' ? 'Vuelta en bici' : 'A ' + (end?.label ?? 'destino'))} />
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
@@ -283,6 +292,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
           ))}
           {selected ? (
             <View style={{ gap: 10 }}>
+              <Button label="Navegar" icon={NavigationArrow} onPress={() => { stopRide(); setNavigating(true); }} />
               <View style={{ gap: 8 }}>
                 <T size={13} color={c.n300}>{riding ? (progress ? formatKm(progress.done) + ' de ' + formatKm(progress.total) : 'Preparando la bici…') : 'Velocidad del recorrido en 3D'}</T>
                 <Row style={{ flexWrap: 'wrap', gap: 8 }}>{RIDE_SPEEDS.map((o) => (

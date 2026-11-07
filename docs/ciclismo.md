@@ -5,6 +5,7 @@
 - **Por tiempo:** elegís cuánto querés andar (30 min a 2 h) y tu ritmo. Kova arma hasta 3 vueltas que salen y vuelven al mismo punto, y ordena primero la que tiene más bicisendas y parques.
 - **A → B:** buscás un lugar, o tocás el mapa, y te da la ruta en bici.
 - **Guardadas:** las rutas que guardaste, con su nombre.
+- **Navegar:** te guía por la ruta elegida con el GPS, como un navegador de auto pero para la bici (ver abajo).
 
 Para cada ruta se ve:
 - el tiempo estimado a tu ritmo, la distancia y la subida;
@@ -13,6 +14,19 @@ Para cada ruta se ve:
 - avisos: kilómetros por avenidas, adoquines o tierra, y subidas fuertes.
 
 El mapa es claro, tipo maqueta, y cambia entre 2D y 3D (edificios blancos y relieve), y **Recorrer en 3D** muestra una bici con su ciclista en 3D que pedalea a lo largo de la ruta, con la cámara siguiéndola desde atrás. La velocidad se elige (lenta, media o rápida: 5, 15 o 40 veces tu ritmo, y cada opción dice cuánto dura), se puede cambiar en el medio, pausar y detener. three.js se descarga recién la primera vez que alguien la usa.
+
+## Navegar
+
+- Arriba, la próxima maniobra con su flecha y la distancia: «150 m · Doblá a la derecha por Av. Gaona».
+- Una voz la anuncia dos veces: unos 200 m antes y cuando llegás a la esquina. Se puede silenciar.
+- El mapa te sigue en 3D con la bici en tu posición, mirando hacia donde vas.
+- Abajo: lo que falta, el tiempo, la hora de llegada y tu velocidad.
+- Si te salís de la ruta (más de 40 m, en tres lecturas seguidas del GPS), avisa y recalcula desde donde estés. En una vuelta, te devuelve a la vuelta un poco más adelante, así sigue siendo una vuelta.
+- La pantalla queda encendida mientras navegás.
+- Al llegar, o con **Terminar**: distancia, tiempo en movimiento y velocidad promedio, medidos con el GPS. Se puede **guardar como entrenamiento**: queda en el historial como una sesión con el ejercicio «Ciclismo» (`log_bike_ride`).
+- Funciona con la app abierta. Con la pantalla bloqueada no sigue, porque eso necesita el permiso de ubicación «todo el tiempo».
+
+Las indicaciones vienen de OpenRouteService (tipo de maniobra y calle), y la app las arma en castellano rioplatense (`packages/domain/src/navigation.ts`, con tests). Las rutas guardadas antes de esta versión no tienen indicaciones: se navegan siguiendo la línea.
 
 ## Cómo funciona
 
@@ -44,7 +58,6 @@ El tiempo estimado es la distancia a tu ritmo, más un 8 % por semáforos y esqu
 ## Lo que viene
 
 - **Zonas inseguras:** avisar o descartar rutas que pasan por zonas con más delitos. En CABA, con el mapa del delito de Buenos Aires Data. En el conurbano, con estadísticas por partido, que son menos precisas, y zonas marcadas por los usuarios.
-- **En vivo:** seguir la ruta con el GPS mientras andás, con el tiempo que falta.
 - La versión de escritorio de la web.
 
 ## Edificios de Overture
