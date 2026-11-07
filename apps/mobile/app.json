@@ -45,6 +45,13 @@
       "expo-font",
       "react-native-health-connect",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Kova usa tu ubicación para empezar las rutas en bici desde donde estás.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {

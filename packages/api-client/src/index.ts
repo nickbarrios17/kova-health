@@ -38,6 +38,7 @@ import { Outbox, type OutboxOp, type OutboxStorage } from './outbox.js';
 import { withRetry, type RetryOptions } from './retry.js';
 import { createAdmin } from './admin.js';
 import { createFeedback } from './feedback.js';
+import { createCycling } from './cycling.js';
 import { createPeople } from './people.js';
 import { createTracking } from './tracking.js';
 export type { EnergyToday } from './tracking.js';
@@ -46,6 +47,7 @@ export { toKovaError } from './errors.js';
 export { withRetry } from './retry.js';
 export { inviteCode, type CoachRoutine } from './people.js';
 export * from './outbox.js';
+export type { Place, PlannedRoutes, SavedRoute } from './cycling.js';
 
 export interface KovaClientOptions {
   url: string;
@@ -351,6 +353,7 @@ export function createKovaClient(opts: KovaClientOptions) {
 
   const tracking = createTracking({ sb, call, rpc, idempotent, parse, uid });
   const feedback = createFeedback({ sb, rpc, call });
+  const cycling = createCycling({ sb, call, toKovaError });
   const admin = createAdmin({ rpc });
   const people = createPeople({ rpc });
 
@@ -394,6 +397,7 @@ export function createKovaClient(opts: KovaClientOptions) {
     workouts,
     ...tracking,
     feedback,
+    cycling,
     admin,
     people,
     sync,
