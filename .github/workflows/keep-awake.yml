@@ -1,0 +1,33 @@
+# Keeps the Supabase projects from being paused for inactivity on the free plan (docs/cloud.md): a real
+# read of the database every two days, on production and on the test project. A failed run (for
+# example a project that is already paused) makes GitHub email the repository owner.
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: '17 9 */2 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: production
+            url_var: EXPO_PUBLIC_SUPABASE_URL
+            key_secret: SUPABASE_SERVICE_ROLE_KEY
+          - project: test
+            url_var: STAGING_SUPABASE_URL
+            key_secret: STAGING_SUPABASE_SERVICE_ROLE_KEY
+    steps:
+      - name: Read from the ${{ matrix.project }} database
+        env:
+          URL: ${{ vars[matrix.url_var] }}
+          KEY: ${{ secrets[matrix.key_secret] }}
+        run: |
+          curl --fail --silent --show-error --output /dev/null --max-time 30 --retry 3 --retry-delay 20 \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            "$URL/rest/v1/muscle_groups?select=*&limit=1"

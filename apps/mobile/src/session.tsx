@@ -103,7 +103,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (!alive) return;
       setDeviceId(id);
       // Non-blocking: registering the device must never keep the app from opening.
-      withTimeout(kova.devices.register({ id, kind: 'mobile', platform: Platform.OS, label: 'Teléfono' }), 15_000, 'Registrar dispositivo')
+      withTimeout(kova.devices.claim({ id, kind: 'mobile', platform: Platform.OS, label: 'Teléfono' }), 15_000, 'Registrar dispositivo')
+        .then(async (claimed) => {
+          if (claimed === id) return;
+          await AsyncStorage.setItem(DEVICE_KEY, claimed);
+          if (alive) setDeviceId(claimed);
+        })
         .catch(() => undefined);
       try {
         await withTimeout(reloadPrefs(), 20_000, 'Cargar tu perfil');
