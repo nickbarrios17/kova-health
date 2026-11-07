@@ -1,15 +1,16 @@
 /** Ajustes: Health Connect, app version and account (moved out of Progreso, which is only progress). */
 import { KovaError } from '@kova/domain';
-import { ArrowLeft, Bug, CaretRight, SignOut, Sparkle, Target, Trash, UsersThree } from 'phosphor-react-native';
+import { ArrowLeft, Bug, CaretRight, Desktop, SignOut, Sparkle, Target, Trash, UsersThree } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { useBack } from '../back';
 import { kova } from '../client';
 import { NewsSheet, newsDays } from '../NewsSheet';
 import { ReportSheet } from '../ReportSheet';
 import { useSession } from '../session';
 import { c } from '../theme';
-import { Button, Card, Notice, Row, Seg, T } from '../ui';
+import { Button, Card, Confirm, Notice, Row, Seg, T } from '../ui';
+import { openDesktop } from '../webLayout';
 import { HealthCard } from './HealthCard';
 import { Onboarding } from './Onboarding';
 import { Personas } from './Personas';
@@ -27,14 +28,11 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
   useBack(!recalc && !people, onClose);
   useBack(recalc, () => setRecalc(false));
 
-  const deleteAccount = () =>
-    Alert.alert('Borrar cuenta', 'Se borrarán para siempre tu cuenta y todos tus datos (entrenamientos, comidas, hábitos, medidas). No se puede deshacer.', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Borrar todo', style: 'destructive',
-        onPress: () => { kova.account.delete().catch((e) => setError(e instanceof KovaError ? e.message : 'No se pudo borrar la cuenta.')); },
-      },
-    ]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteAccount = () => {
+    setConfirmDelete(false);
+    kova.account.delete().catch((e) => setError(e instanceof KovaError ? e.message : 'No se pudo borrar la cuenta.'));
+  };
 
   if (recalc) return <Onboarding onCancel={() => setRecalc(false)} />;
   if (people) return <Personas onClose={() => setPeople(false)} />;
@@ -78,14 +76,19 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
         <CaretRight size={16} color={c.n500} />
       </Pressable>
       <NewsSheet visible={news} days={newsDays()} onClose={() => setNews(false)} />
-      <HealthCard onSynced={() => undefined} />
-      <VersionCard />
+      {/* A browser can't read Health Connect or Apple Health, and the web is always the latest version. */}
+      {Platform.OS === 'web' ? null : <HealthCard onSynced={() => undefined} />}
+      {Platform.OS === 'web' ? null : <VersionCard />}
       <Card>
         <T size={16} w="medium">Cuenta</T>
         <Button variant="secondary" label="Recalcular mi meta diaria" icon={Target} onPress={() => setRecalc(true)} />
         <Button variant="secondary" label="Cerrar sesión" icon={SignOut} onPress={() => kova.auth.signOut()} />
-        <View style={{ alignSelf: 'flex-start' }}><Button variant="ghost" label="Borrar mi cuenta y mis datos" icon={Trash} onPress={deleteAccount} /></View>
+        {Platform.OS === 'web' ? <Button variant="secondary" label="Ver la versión de escritorio" icon={Desktop} onPress={openDesktop} /> : null}
+        <View style={{ alignSelf: 'flex-start' }}><Button variant="ghost" label="Borrar mi cuenta y mis datos" icon={Trash} onPress={() => setConfirmDelete(true)} /></View>
       </Card>
+      <Confirm visible={confirmDelete} title="Borrar cuenta" destructive confirmLabel="Borrar todo"
+        message="Se borrarán para siempre tu cuenta y todos tus datos (entrenamientos, comidas, hábitos, medidas). No se puede deshacer."
+        onConfirm={deleteAccount} onCancel={() => setConfirmDelete(false)} />
     </ScrollView>
   );
 }

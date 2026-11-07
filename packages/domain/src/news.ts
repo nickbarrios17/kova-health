@@ -20,6 +20,12 @@ export interface NewsDay {
 
 export const NEWS: NewsDay[] = [
   {
+    date: '2026-11-07',
+    items: [
+      { title: 'Kova en iPhone', body: 'Abrí la web de Kova desde el celular y vas a ver la app, igual que en Android. En iPhone, desde Safari: Compartir → Agregar a la pantalla de inicio. Los pasos y el sueño no llegan en el navegador.', preview: true },
+    ],
+  },
+  {
     date: '2026-10-30',
     items: [
       { title: 'Novedades', body: 'Cuando la app se actualiza, te contamos acá qué hay de nuevo. Las anteriores quedan en Ajustes → Novedades.' },
