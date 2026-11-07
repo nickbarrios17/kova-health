@@ -13,6 +13,8 @@ export interface RoutineRow {
   /** Bumped on every save; the editor sends it back so stale edits are rejected. */
   version: number;
   schedule_days: number[];
+  /** Set when a coach wrote it (docs/coach.md). */
+  assigned_by?: string | null;
   routine_exercises: Array<{
     id: string;
     exercise_id: string;

@@ -12,6 +12,9 @@ export const ERROR_CODES = [
   'EMAIL_NOT_CONFIRMED',
   'NETWORK',
   'RATE_LIMITED',
+  'INVITE_INVALID',
+  'ALREADY_HAS_COACH',
+  'ADMIN_SELF',
   'INTERNAL',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -22,7 +25,11 @@ const SQLSTATE: Record<string, ErrorCode> = {
   VD003: 'SESSION_CLOSED',
   VD004: 'INVALID_TRANSITION',
   VD005: 'INVALID_INPUT',
+  VD006: 'INVITE_INVALID',
+  VD007: 'ALREADY_HAS_COACH',
+  VD008: 'ADMIN_SELF',
   VD404: 'NOT_FOUND',
+  VD429: 'RATE_LIMITED',
   '23505': 'CONFLICT', // unique_violation
   '23503': 'NOT_FOUND', // foreign_key_violation: referenced row missing or not yours
   '23514': 'INVALID_INPUT', // check_violation
@@ -70,6 +77,9 @@ const SAFE_MESSAGES: Record<ErrorCode, string> = {
   EMAIL_NOT_CONFIRMED: 'Confirma tu correo: abre el enlace que te enviamos al crear la cuenta.',
   NETWORK: 'Sin conexión. Lo intentaremos de nuevo.',
   RATE_LIMITED: 'Demasiados intentos. Espera un momento.',
+  INVITE_INVALID: 'El código no es válido o ya venció. Pide uno nuevo.',
+  ALREADY_HAS_COACH: 'Ya tienes un coach. Corta ese vínculo antes de aceptar otro.',
+  ADMIN_SELF: 'Eso no se puede hacer con tu propia cuenta ni con otro administrador.',
   INTERNAL: 'Algo salió mal.',
 };
 

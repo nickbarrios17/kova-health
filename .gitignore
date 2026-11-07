@@ -20,3 +20,5 @@ apps/watch/build/
 apps/watch/app/build/
 dist/
 .vercel/
+# Phone app built for the browser (scripts/build-mobile-web.mjs)
+apps/web/public/m/

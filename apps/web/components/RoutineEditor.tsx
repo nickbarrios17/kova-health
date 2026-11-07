@@ -67,11 +67,13 @@ function ItemRow({ item, index, count, units, onChange, onMove, onRemove }: {
   );
 }
 
-export function RoutineEditor({ initial, exercises, units, onClose }: {
+export function RoutineEditor({ initial, exercises, units, onClose, ownerId }: {
   initial: RoutineDraft;
   exercises: Array<{ id: string; name: string }>;
   units: WeightUnit;
   onClose: (changed: boolean) => void;
+  /** As a coach: the student whose routine this is (saved through kova.people, checked against the link). */
+  ownerId?: string;
 }) {
   const [d, setD] = useState<RoutineDraft>(initial);
   const [query, setQuery] = useState('');
@@ -112,9 +114,10 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
       const c = kova();
       for (const it of d.items) {
         const name = pendingNew[it.exerciseId];
-        if (name) await c.exercises.create({ id: it.exerciseId, name, slug: (slugify(name) + '-' + it.exerciseId.slice(0, 6)).slice(0, 80) });
+        const slug = (slugify(name ?? '') + '-' + it.exerciseId.slice(0, 6)).slice(0, 80);
+        if (name) await (ownerId ? c.people.createExercise(ownerId, { id: it.exerciseId, name, slug }) : c.exercises.create({ id: it.exerciseId, name, slug }));
       }
-      await c.routines.save(draftToSaveInput(d));
+      await (ownerId ? c.people.saveRoutine(ownerId, draftToSaveInput(d)) : c.routines.save(draftToSaveInput(d)));
       onClose(true);
     } catch (e) {
       const code = e instanceof KovaError ? e.code : '';
@@ -129,7 +132,7 @@ export function RoutineEditor({ initial, exercises, units, onClose }: {
   const remove = async () => {
     setBusy(true);
     try {
-      await kova().routines.remove(d.id);
+      await (ownerId ? kova().people.deleteRoutine(ownerId, d.id) : kova().routines.remove(d.id));
       onClose(true);
     } catch (e) {
       setErrors([e instanceof KovaError ? e.message : 'No se pudo borrar.']);

@@ -6,10 +6,11 @@ import { KovaError } from '@kova/domain';
 import { StatusBar } from 'expo-status-bar';
 import { Barbell, ChartLineUp, ForkKnife, House, type Icon } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Linking, Platform, Pressable, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { checkApkUpdate, type ApkRelease } from './appUpdate';
 import { useBack } from './back';
+import { inviteCode } from '@kova/api-client';
 import { configured, outbox, kova } from './client';
 import * as hc from './health';
 import { Comida } from './screens/Comida';
@@ -17,6 +18,7 @@ import { Entrenar } from './screens/Entrenar';
 import { Hoy } from './screens/Hoy';
 import { Login } from './screens/Login';
 import { Onboarding } from './screens/Onboarding';
+import { Personas } from './screens/Personas';
 import { Progreso } from './screens/Progreso';
 import { Session, SessionSummary } from './screens/Session';
 import { UpdatePrompt } from './screens/UpdatePrompt';
@@ -27,6 +29,9 @@ import { Button, T } from './ui';
 import { loadLive, startFromRoutine, type LiveSession, type Summary } from './workout';
 import { ReportProvider, useReportButtonOffset } from './report';
 import { NewsOnOpen } from './NewsSheet';
+import { sendWideScreensToDesktop } from './webLayout';
+
+sendWideScreensToDesktop();
 
 type Tab = 'hoy' | 'entrenar' | 'comida' | 'progreso';
 const TABS: Array<[Tab, string, Icon]> = [
@@ -44,6 +49,14 @@ function Shell() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [apkUpdate, setApkUpdate] = useState<ApkRelease | null>(null);
   const [laterVersion, setLaterVersion] = useState<number | null>(null);
+  // An invite link (kovahealth://invitar/K7MQ2X) opens «Coach y amigos» with the code filled in.
+  const [invite, setInvite] = useState<string | null>(null);
+  useEffect(() => {
+    const take = (url: string | null | undefined) => { if (url && /invitar/i.test(url)) setInvite(inviteCode(url)); };
+    Linking.getInitialURL().then(take).catch(() => undefined);
+    const sub = Linking.addEventListener('url', (e) => take(e.url));
+    return () => sub.remove();
+  }, []);
 
   // A new APK (native changes) is offered when the app opens and when it comes back to the
   // foreground, at most every 6 hours. Code-only updates arrive silently via expo-updates.
@@ -82,7 +95,7 @@ function Shell() {
   useBack(!summary && !(live && showLive) && tab !== 'hoy', () => setTab('hoy'));
 
   // ⚠️ button: hidden until signed in and onboarded; above the tab bar on the tabbed screens.
-  const tabbed = status === 'signedIn' && !!prefs?.onboarded && !summary && !(live && showLive);
+  const tabbed = status === 'signedIn' && !!prefs?.onboarded && !summary && !(live && showLive) && !invite;
   useReportButtonOffset(status !== 'signedIn' || !prefs?.onboarded ? -1 : tabbed ? (live ? 136 : 80) : 24);
 
   if (status === 'signedIn' && !prefs && bootError) {
@@ -110,10 +123,14 @@ function Shell() {
       setLive(s);
       setShowLive(true);
     } catch (e) {
-      Alert.alert('No se pudo empezar', e instanceof KovaError ? e.message : 'Algo salió mal.');
+      const msg = e instanceof KovaError ? e.message : 'Algo salió mal.';
+      // react-native-web has no Alert.
+      if (Platform.OS === 'web') window.alert('No se pudo empezar: ' + msg);
+      else Alert.alert('No se pudo empezar', msg);
     }
   };
 
+  if (invite) return <Personas initialCode={invite} onClose={() => setInvite(null)} />;
   if (summary) return <SessionSummary summary={summary} onDone={() => { setSummary(null); setTab('entrenar'); }} />;
   if (live && showLive) {
     return <Session live={live} setLive={setLive} onClose={() => setShowLive(false)} onFinished={(s) => { setShowLive(false); setSummary(s); }} />;
@@ -158,7 +175,8 @@ export default function App() {
   const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top', 'bottom']}>
+      {/* On the web (docs/web-celular.md) the app keeps a phone's width on tablets and wide windows. */}
+      <SafeAreaView style={[{ flex: 1, backgroundColor: c.bg }, Platform.OS === 'web' && { width: '100%', maxWidth: 560, alignSelf: 'center' }]} edges={['top', 'bottom']}>
         <StatusBar style="light" />
         {!fontsLoaded ? null : !configured ? (
           <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
