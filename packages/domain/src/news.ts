@@ -22,7 +22,8 @@ export const NEWS: NewsDay[] = [
   {
     date: '2026-11-07',
     items: [
-      { title: 'Kova en iPhone', body: 'Abrí la web de Kova desde el celular y vas a ver la app, igual que en Android. En iPhone, desde Safari: Compartir → Agregar a la pantalla de inicio. Los pasos y el sueño no llegan en el navegador.', preview: true },
+      { title: 'Kova en iPhone', body: 'Abrí la web de Kova desde el celular y vas a ver la app, igual que en Android. En iPhone, desde Safari: Compartir → Agregar a la pantalla de inicio. Los pasos y el sueño no llegan en el navegador.' },
+      { title: 'Coach y amigos', body: 'Invitá a tu coach, a tus alumnos o a tus amigos con un código. Tu coach puede armarte rutinas y ver tus entrenamientos; vos elegís qué más compartir.' },
     ],
   },
   {
@@ -30,7 +31,6 @@ export const NEWS: NewsDay[] = [
     items: [
       { title: 'Novedades', body: 'Cuando la app se actualiza, te contamos acá qué hay de nuevo. Las anteriores quedan en Ajustes → Novedades.' },
       { title: 'Reportar un problema', body: 'Tocá el ⚠️ que está en cada pantalla para contarnos si algo falla, se ve mal o se te ocurre una idea. Te da opciones según dónde estés y podés agregar un comentario.' },
-      { title: 'Coach y amigos', body: 'Invitá a tu coach, a tus alumnos o a tus amigos con un código. Tu coach puede armarte rutinas y ver tus entrenamientos; vos elegís qué más compartir.', preview: true },
     ],
   },
   {
