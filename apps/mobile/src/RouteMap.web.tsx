@@ -3,11 +3,11 @@ import { createElement, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { MAP_BG, ROUTE_MAP_HTML } from './routeMapHtml';
 import { r } from './theme';
-import type { MapData, MapEvents } from './RouteMap';
+import type { MapData, MapEvents, Ride } from './RouteMap';
 
-export type { MapData, MapEvents } from './RouteMap';
+export type { MapData, MapEvents, Ride } from './RouteMap';
 
-export function RouteMap({ data, height, ...events }: { data: MapData; height: number } & MapEvents) {
+export function RouteMap({ data, ride = null, height, ...events }: { data: MapData; ride?: Ride | null; height: number } & MapEvents) {
   const ref = useRef<HTMLIFrameElement | null>(null);
   const [ready, setReady] = useState(false);
   const ev = useRef(events);
@@ -21,6 +21,7 @@ export function RouteMap({ data, height, ...events }: { data: MapData; height: n
         else if (m.type === 'tap') ev.current.onTap?.(m.coord);
         else if (m.type === 'pick') ev.current.onPick?.(m.index);
         else if (m.type === 'flyEnd') ev.current.onFlyEnd?.();
+        else if (m.type === 'rideProgress') ev.current.onRideProgress?.(m.done_m, m.total_m);
       } catch { /* ignore */ }
     };
     window.addEventListener('message', on);
@@ -29,6 +30,9 @@ export function RouteMap({ data, height, ...events }: { data: MapData; height: n
   useEffect(() => {
     if (ready) ref.current?.contentWindow?.postMessage({ kovaMapIn: JSON.stringify(data) }, '*');
   }, [ready, data]);
+  useEffect(() => {
+    if (ready) ref.current?.contentWindow?.postMessage({ kovaRideIn: JSON.stringify(ride) }, '*');
+  }, [ready, ride]);
   return (
     <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: MAP_BG }}>
       {createElement('iframe', {

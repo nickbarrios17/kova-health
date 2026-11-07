@@ -12,7 +12,7 @@ Para cada ruta se ve:
 - los parques por los que pasa;
 - avisos: kilómetros por avenidas, adoquines o tierra, y subidas fuertes.
 
-El mapa es claro, tipo maqueta, y cambia entre 2D y 3D (edificios blancos y relieve), y **Recorrer en 3D** hace un vuelo de cámara a lo largo de la ruta.
+El mapa es claro, tipo maqueta, y cambia entre 2D y 3D (edificios blancos y relieve), y **Recorrer en 3D** muestra una bici con su ciclista en 3D que pedalea a lo largo de la ruta, con la cámara siguiéndola desde atrás. La velocidad se elige (lenta, media o rápida: 5, 15 o 40 veces tu ritmo, y cada opción dice cuánto dura), se puede cambiar en el medio, pausar y detener. three.js se descarga recién la primera vez que alguien la usa.
 
 ## Cómo funciona
 

@@ -3,17 +3,17 @@
  * - Por tiempo: «quiero andar 1 hora» → up to 3 loops from where you are, best first.
  * - A → B: to a place you search or tap on the map.
  * Each route says how much is bike lane, neighbourhood streets or avenues, which parks it crosses,
- * the estimated time at your speed, and what to watch out for. 2D/3D map and a 3D flyover.
+ * the estimated time at your speed, and what to watch out for. 2D/3D map and a 3D ride: a bike follows the route at the speed you pick.
  */
 import { KovaError, SPEEDS_KMH, analyzeRoute, formatKm, newId, routeScore, type Coord, type Park, type RawRoute, type RouteAnalysis } from '@kova/domain';
 import type { Place, SavedRoute } from '@kova/api-client';
 import * as Location from 'expo-location';
-import { ArrowLeft, Bicycle, Crosshair, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, Play, Trash, Warning } from 'phosphor-react-native';
+import { ArrowLeft, Bicycle, Crosshair, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, Pause, Play, Stop, Trash, Warning } from 'phosphor-react-native';
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useBack } from '../back';
 import { kova } from '../client';
-import { RouteMap, type MapData } from '../RouteMap';
+import { RouteMap, type MapData, type Ride } from '../RouteMap';
 import { WAY_COLORS } from '../routeMapHtml';
 import { c, r } from '../theme';
 import { useAsync } from '../useAsync';
@@ -22,6 +22,8 @@ import { Button, Card, Confirm, Empty, ErrorNote, Field, Loading, Notice, Row, S
 type Mode = 'tiempo' | 'ab' | 'guardadas';
 type Plan = { kind: 'ab' | 'loop'; routes: RawRoute[]; parks: Park[]; savedName?: string; savedId?: string };
 const MINUTES = [30, 45, 60, 90, 120];
+// «Recorrer en 3D»: how many times faster than your pace the bike goes on the map.
+const RIDE_SPEEDS = [{ label: 'Lenta', x: 5 }, { label: 'Media', x: 15 }, { label: 'Rápida', x: 40 }];
 
 export const fmtDuration = (s: number) => {
   const m = Math.max(1, Math.round(s / 60));
@@ -93,7 +95,9 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [sel, setSel] = useState(0);
   const [view3d, setView3d] = useState(false);
-  const [fly, setFly] = useState(false);
+  const [riding, setRiding] = useState<{ paused: boolean } | null>(null);
+  const [rideX, setRideX] = useState(15);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [fit, setFit] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,9 +119,13 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
     return {
       routes: plan ? plan.routes.map((rt, i) => ({ coords: rt.coords, segments: analyses[i]?.segments ?? [], selected: i === sel })) : [],
       parks: plan?.parks ?? [],
-      markers, fit: fit > 0, view3d: view3d || fly, fly,
+      markers, fit: fit > 0, view3d,
     };
-  }, [plan, analyses, sel, me, from, end, mode, view3d, fly, fit]);
+  }, [plan, analyses, sel, me, from, end, mode, view3d, fit]);
+  const ride = useMemo<Ride | null>(() => (riding ? { kmh: speed * rideX, paused: riding.paused } : null), [riding, speed, rideX]);
+  const stopRide = () => { setRiding(null); setProgress(null); };
+  // Back to the whole route when a ride ends or is stopped.
+  const endRide = () => { stopRide(); setFit((n) => n + 1); };
 
   const run = async (label: string, fn: () => Promise<void>) => {
     setError(null); setNotice(null); setBusy(label);
@@ -133,7 +141,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
     setFit((n) => n + 1);
   });
 
-  const showPlan = (p: Plan) => { setPlan(p); setSel(0); setFly(false); setFit((n) => n + 1); setName(p.savedName ?? ''); };
+  const showPlan = (p: Plan) => { setPlan(p); setSel(0); stopRide(); setFit((n) => n + 1); setName(p.savedName ?? ''); };
 
   const findLoops = () => run('plan', async () => {
     if (!from) throw new KovaError('INVALID_INPUT', 'Primero marcá desde dónde salís: tu ubicación o un punto en el mapa.');
@@ -181,13 +189,14 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
       </Row>
 
       <Seg options={[['tiempo', 'Por tiempo'], ['ab', 'A → B'], ['guardadas', 'Guardadas']]} value={mode}
-        onChange={(m) => { setMode(m); setPlan(null); setError(null); setNotice(null); setFly(false); }} />
+        onChange={(m) => { setMode(m); setPlan(null); setError(null); setNotice(null); stopRide(); }} />
 
       <View>
         <RouteMap data={mapData} height={mapH} onTap={onTap}
-          onPick={(i) => { setSel(i); setFly(false); }} onFlyEnd={() => setFly(false)} />
+          onPick={(i) => { setSel(i); stopRide(); }} onFlyEnd={endRide} ride={ride}
+          onRideProgress={(done, total) => setProgress({ done, total })} />
         <View style={{ position: 'absolute', right: 8, top: 8, gap: 8 }}>
-          <Pressable onPress={() => { setView3d((v) => !v); setFly(false); }} accessibilityRole="button" accessibilityLabel={view3d ? 'Ver en 2D' : 'Ver en 3D'}
+          <Pressable onPress={() => { setView3d((v) => !v); stopRide(); }} accessibilityRole="button" accessibilityLabel={view3d ? 'Ver en 2D' : 'Ver en 3D'}
             style={{ minWidth: 44, height: 40, paddingHorizontal: 10, borderRadius: 20, backgroundColor: 'rgba(22,24,38,0.88)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             {view3d ? <MapTrifold size={18} color={c.text} /> : <CubeFocus size={18} color={c.text} />}
             <T size={12}>{view3d ? '2D' : '3D'}</T>
@@ -269,12 +278,27 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
         <View style={{ gap: 10 }}>
           {plan.kind === 'loop' ? <T size={13} color={c.n400}>{order.length === 1 ? 'Encontramos un recorrido.' : 'Encontramos ' + order.length + ' recorridos; el primero es el que más bicisendas y parques tiene. Tocá uno para verlo.'}</T> : null}
           {order.map(({ a, i }, k) => (
-            <RouteCard key={i} a={a} selected={i === sel} onPress={() => { setSel(i); setFly(false); }}
+            <RouteCard key={i} a={a} selected={i === sel} onPress={() => { setSel(i); stopRide(); }}
               title={plan.savedName ?? (plan.kind === 'loop' ? 'Opción ' + (k + 1) : 'Ruta en bici')} />
           ))}
           {selected ? (
             <View style={{ gap: 10 }}>
-              <Button variant="secondary" label={fly ? 'Detener recorrido 3D' : 'Recorrer en 3D'} icon={Play} onPress={() => setFly((f) => !f)} />
+              <View style={{ gap: 8 }}>
+                <T size={13} color={c.n300}>{riding ? (progress ? formatKm(progress.done) + ' de ' + formatKm(progress.total) : 'Preparando la bici…') : 'Velocidad del recorrido en 3D'}</T>
+                <Row style={{ flexWrap: 'wrap', gap: 8 }}>{RIDE_SPEEDS.map((o) => (
+                  <Chip key={o.x} on={rideX === o.x} onPress={() => setRideX(o.x)}
+                    label={o.label + ' · ' + fmtDuration(selected.a.distance_m / ((speed * o.x) / 3.6))} />
+                ))}</Row>
+                {riding ? (
+                  <Row style={{ gap: 8 }}>
+                    <Button variant="secondary" label={riding.paused ? 'Seguir' : 'Pausar'} icon={riding.paused ? Play : Pause}
+                      onPress={() => setRiding({ paused: !riding.paused })} style={{ flex: 1 }} />
+                    <Button variant="ghost" label="Detener" icon={Stop} onPress={endRide} style={{ flex: 1 }} />
+                  </Row>
+                ) : (
+                  <Button variant="secondary" label="Recorrer en 3D" icon={Play} onPress={() => { setProgress(null); setRiding({ paused: false }); }} />
+                )}
+              </View>
               {!plan.savedId ? (
                 <Row style={{ gap: 8, alignItems: 'flex-end' }}>
                   <View style={{ flex: 1 }}><Field label="Nombre" value={name} onChangeText={setName} placeholder={plan.kind === 'loop' ? 'Vuelta de ' + fmtDuration(selected.a.duration_s) : 'Mi ruta'} maxLength={80} /></View>
