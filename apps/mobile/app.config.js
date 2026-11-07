@@ -3,7 +3,9 @@
 // - prueba (APP_VARIANT=prueba): «Kova Health Prueba», com.kovahealth.app.prueba, channel "prueba",
 //   amber icon. It installs beside the real app and talks to the test Supabase project (the
 //   EXPO_PUBLIC_* values are set by the workflow when building or publishing it).
+// The web build (docs/web-celular.md) is served under /m/ of the web app: EXPO_WEB_BASE_URL=/m.
 module.exports = ({ config }) => {
+  if (process.env.EXPO_WEB_BASE_URL) config = { ...config, experiments: { ...config.experiments, baseUrl: process.env.EXPO_WEB_BASE_URL } };
   if (process.env.APP_VARIANT !== 'prueba') return config;
   return {
     ...config,

@@ -6,7 +6,7 @@ import { KovaError } from '@kova/domain';
 import { StatusBar } from 'expo-status-bar';
 import { Barbell, ChartLineUp, ForkKnife, House, type Icon } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Linking, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Linking, Platform, Pressable, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { checkApkUpdate, type ApkRelease } from './appUpdate';
 import { useBack } from './back';
@@ -29,6 +29,9 @@ import { Button, T } from './ui';
 import { loadLive, startFromRoutine, type LiveSession, type Summary } from './workout';
 import { ReportProvider, useReportButtonOffset } from './report';
 import { NewsOnOpen } from './NewsSheet';
+import { sendWideScreensToDesktop } from './webLayout';
+
+sendWideScreensToDesktop();
 
 type Tab = 'hoy' | 'entrenar' | 'comida' | 'progreso';
 const TABS: Array<[Tab, string, Icon]> = [
@@ -120,7 +123,10 @@ function Shell() {
       setLive(s);
       setShowLive(true);
     } catch (e) {
-      Alert.alert('No se pudo empezar', e instanceof KovaError ? e.message : 'Algo salió mal.');
+      const msg = e instanceof KovaError ? e.message : 'Algo salió mal.';
+      // react-native-web has no Alert.
+      if (Platform.OS === 'web') window.alert('No se pudo empezar: ' + msg);
+      else Alert.alert('No se pudo empezar', msg);
     }
   };
 
@@ -169,7 +175,8 @@ export default function App() {
   const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top', 'bottom']}>
+      {/* On the web (docs/web-celular.md) the app keeps a phone's width on tablets and wide windows. */}
+      <SafeAreaView style={[{ flex: 1, backgroundColor: c.bg }, Platform.OS === 'web' && { width: '100%', maxWidth: 560, alignSelf: 'center' }]} edges={['top', 'bottom']}>
         <StatusBar style="light" />
         {!fontsLoaded ? null : !configured ? (
           <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>

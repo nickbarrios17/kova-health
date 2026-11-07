@@ -122,6 +122,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13, marginTop: 4 }} onClick={() => setNews(true)}>
             <i className="ph ph-sparkle" />Novedades
           </button>
+          <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}
+            onClick={() => { try { localStorage.removeItem('kova:prefer-desktop'); } catch { /* not remembered */ } window.location.assign('/m?celular'); }}>
+            <i className="ph ph-device-mobile" />Versión para celular
+          </button>
           <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }} onClick={() => setReport(true)}>
             <i className="ph ph-flag" />Reportar un problema
           </button>
