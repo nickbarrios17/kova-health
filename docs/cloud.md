@@ -50,6 +50,14 @@ supabase test db --linked
 - **Cuidado con `supabase config push`:** aplica el cambio sin pedir confirmación y sube *todo* `supabase/config.toml`, que tiene valores de desarrollo local (confirmación de correo desactivada, URLs `127.0.0.1`). No lo ejecutes con el config del repo. Para cambiar un ajuste de la nube, usa el panel, o copia el config a una carpeta aparte, iguala todos los valores a los de la nube y cambia solo el que quieras (`supabase config push --workdir <carpeta>`). Comprueba después que `GET <SUPABASE_URL>/auth/v1/settings` devuelve `"mailer_autoconfirm": false`.
 - Recomendado: activar **Leaked password protection** y revisar el **Security Advisor**.
 
+### Pausa por inactividad
+
+En el plan gratis, Supabase pausa un proyecto sin actividad durante unos días y la app deja de funcionar hasta restaurarlo (panel del proyecto → **Restore project**).
+
+Para evitarlo, `.github/workflows/keep-awake.yml` lee la base de producción y la de prueba cada dos días. Si falla, GitHub le manda un correo al dueño del repositorio: lo primero es mirar si el proyecto está pausado. Se puede correr a mano desde la pestaña Actions.
+
+GitHub desactiva las tareas programadas de un repositorio público después de 60 días sin actividad. Si el repositorio queda quieto tanto tiempo, hay que reactivarla desde Actions.
+
 ## Vercel (web)
 
 La web (`apps/web`) es una app de Next.js con todas sus páginas estáticas: se puede publicar en Vercel con el plan gratuito.
