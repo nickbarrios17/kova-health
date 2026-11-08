@@ -16,15 +16,19 @@ export const sp = (arr: Array<number | null | undefined>, mn: number, mx: number
     bg: v == null ? 'var(--color-neutral-800)' : i === arr.length - 1 ? 'var(--color-accent)' : 'var(--color-neutral-700)',
   }));
 
+/** Segmented option (HANDOFF §3): the active option is raised, with a border and 600. */
 export const seg = (on: boolean): CSSProperties => ({
-  background: on ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent',
-  color: on ? 'var(--color-accent-200)' : 'var(--color-neutral-400)',
+  background: on ? 'var(--kova-surface-raised)' : 'transparent',
+  color: on ? 'var(--color-text)' : 'var(--kova-text-2)',
+  fontWeight: on ? 600 : 400,
+  boxShadow: on ? 'inset 0 0 0 1px var(--color-divider)' : 'none',
 });
 
+/** Chip / filter: selected is accent-soft with #D2CEFD text (callers add «✓»). */
 export const chip = (on: boolean): CSSProperties => ({
-  background: on ? 'color-mix(in srgb, var(--color-accent) 14%, transparent)' : 'transparent',
-  color: on ? 'var(--color-accent-200)' : 'var(--color-neutral-300)',
-  borderColor: on ? 'var(--color-accent)' : 'var(--color-divider)',
+  background: on ? 'var(--kova-accent-soft)' : 'transparent',
+  color: on ? 'var(--color-accent-300)' : 'var(--color-text)',
+  borderColor: on ? 'transparent' : 'var(--color-divider)',
 });
 
 export const warnFg = (bad: boolean) => (bad ? 'var(--kova-warn)' : 'var(--color-text)');
