@@ -85,7 +85,7 @@ export const toggleDay = (days: number[], d: number) => (days.includes(d) ? days
 /** Problems that block saving, in Spanish, one per line; empty means it can be saved. */
 export function validateDraft(d: RoutineDraft): string[] {
   const errors: string[] = [];
-  if (!d.name.trim()) errors.push('Ponle un nombre a la rutina.');
+  if (!d.name.trim()) errors.push('Ponele un nombre a la rutina.');
   if (d.name.trim().length > 80) errors.push('El nombre puede tener hasta 80 caracteres.');
   if (d.items.length === 0) errors.push('Agregá al menos un ejercicio.');
   if (d.items.length > 50) errors.push('Una rutina puede tener hasta 50 ejercicios.');
