@@ -14,6 +14,8 @@ export interface MapData {
 }
 /** «Recorrer en 3D» on the selected route: map speed in km/h, and whether it is paused. */
 export interface Ride { kmh: number; paused: boolean }
+/** Navigation mode: your GPS position, heading and speed, once per fix. */
+export interface NavPos { pos: [number, number]; bearing: number; kmh: number }
 export interface MapEvents {
   onTap?: (coord: [number, number]) => void;
   onPick?: (index: number) => void;
@@ -23,7 +25,7 @@ export interface MapEvents {
 
 const SOURCE = { html: ROUTE_MAP_HTML, baseUrl: 'https://kova-health.vercel.app/' };
 
-export function RouteMap({ data, ride = null, height, ...events }: { data: MapData; ride?: Ride | null; height: number } & MapEvents) {
+export function RouteMap({ data, ride = null, nav = null, height, ...events }: { data: MapData; ride?: Ride | null; nav?: NavPos | null; height: number } & MapEvents) {
   const ref = useRef<ComponentRef<typeof WebView>>(null);
   const [ready, setReady] = useState(false);
   const ev = useRef(events);
@@ -34,6 +36,9 @@ export function RouteMap({ data, ride = null, height, ...events }: { data: MapDa
   useEffect(() => {
     if (ready) ref.current?.injectJavaScript(`window.kovaRide(${JSON.stringify(ride)});true;`);
   }, [ready, ride]);
+  useEffect(() => {
+    if (ready) ref.current?.injectJavaScript(`window.kovaNav(${JSON.stringify(nav)});true;`);
+  }, [ready, nav]);
   return (
     <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: MAP_BG }}>
       <WebView ref={ref} source={SOURCE} originWhitelist={['*']} javaScriptEnabled domStorageEnabled

@@ -62,5 +62,13 @@ export function createCycling({ sb, call, toKovaError }: CyclingDeps) {
       }, { onConflict: 'id', ignoreDuplicates: true }));
     },
     remove: (id: string) => call(sb.from('bike_routes').update({ deleted_at: new Date().toISOString() }).eq('id', id).select('id')),
+    /** A navigated ride, saved as a completed workout (Ciclismo). Idempotent on `id`. */
+    logRide: async (r: { id: string; name: string; startedAt: Date; endedAt: Date; movingS: number; distanceM: number; timeZone?: string }) => {
+      await call(sb.rpc('log_bike_ride', {
+        p_id: r.id, p_name: r.name.trim().slice(0, 120) || 'Salida en bici',
+        p_started_at: r.startedAt.toISOString(), p_ended_at: r.endedAt.toISOString(),
+        p_moving_s: Math.round(r.movingS), p_distance_m: Math.round(r.distanceM * 10) / 10, p_time_zone: r.timeZone ?? null,
+      }));
+    },
   };
 }

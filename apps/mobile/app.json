@@ -47,7 +47,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Kova usa tu ubicación para empezar las rutas en bici desde donde estás.",
+          "locationWhenInUsePermission": "Kova usa tu ubicación para empezar las rutas en bici desde donde estás y para guiarte mientras andás, solo con la app abierta.",
           "isAndroidBackgroundLocationEnabled": false
         }
       ],

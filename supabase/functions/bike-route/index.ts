@@ -46,12 +46,19 @@ function toRaw(feature: any) {
     descent_m: p.descent ?? 0,
     waytype: p.extras?.waytype?.values ?? [],
     surface: p.extras?.surface?.values ?? [],
+    // Turn-by-turn for the navigation mode: where each maneuver starts (index into coords), its kind
+    // (ORS step type), the street, and roundabout exit. The app words them itself, in voseo.
+    // deno-lint-ignore no-explicit-any
+    steps: (p.segments ?? []).flatMap((sg: any) => (sg.steps ?? []).map((st: any) => ({
+      at: st.way_points?.[0] ?? 0, type: st.type ?? 6, name: st.name && st.name !== '-' ? String(st.name).slice(0, 80) : '',
+      ...(st.exit_number ? { exit: st.exit_number } : {}),
+    }))),
   };
 }
 
 async function directions(coordinates: LngLat[], roundTrip?: { length: number; seed: number }) {
   const body: Record<string, unknown> = {
-    coordinates, elevation: true, instructions: false, extra_info: ['waytype', 'surface'],
+    coordinates, elevation: true, instructions: true, language: 'es', extra_info: ['waytype', 'surface'],
     preference: 'recommended', units: 'm',
   };
   if (roundTrip) body.options = { round_trip: { length: roundTrip.length, points: 5, seed: roundTrip.seed } };

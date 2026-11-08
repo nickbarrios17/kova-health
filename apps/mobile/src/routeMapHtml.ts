@@ -4,6 +4,7 @@
  *
  *   map:  { routes: [{ coords, segments, selected }], parks, markers: [{ coord, kind }], fit?: boolean, view3d?: boolean }
  *   ride: { kmh, paused } to start or change «Recorrer en 3D» on the selected route, null to stop it
+ *   nav:  { pos: [lng, lat], bearing, kmh } for each GPS fix while navigating, null to stop
  *   out:  { type: 'ready' } | { type: 'tap', coord: [lng, lat] } | { type: 'pick', index }
  *         | { type: 'rideProgress', done_m, total_m } | { type: 'flyEnd' }
  *
@@ -128,8 +129,8 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     map.getSource('route').setData({ type: 'FeatureCollection', features: parts });
     map.getSource('marks').setData({ type: 'FeatureCollection', features: marks });
 
-    set3d(!!d.view3d || !!ride);
-    if (d.fit && !ride) {
+    set3d(!!d.view3d || !!ride || !!nav);
+    if (d.fit && !ride && !nav) {
       var pts = [];
       (d.routes || []).forEach(function(r){ r.coords.forEach(function(c){ pts.push(c); }); });
       (d.markers || []).forEach(function(m){ pts.push(m.coord); });
@@ -155,7 +156,7 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
   // Speed is in km/h of map distance; it can change or pause mid-ride without restarting.
   var ride = null, selCoords = null, bike = null, threeLoading = false, pendingRide = null;
   // Bigger than life so it reads on a phone screen.
-  var BIKE_SCALE = 7;
+  var BIKE_SCALE = 7, bikeScale = BIKE_SCALE;
   function meters(a, b){
     var R = 6371000, la1 = a[1] * Math.PI / 180, la2 = b[1] * Math.PI / 180;
     var dla = la2 - la1, dlo = (b[0] - a[0]) * Math.PI / 180;
@@ -245,7 +246,7 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
         if (!bike.group.visible || !bike.at) return;
         var elev = (map.queryTerrainElevation && map.queryTerrainElevation(bike.at.lngLat)) || 0;
         var mc = maplibregl.MercatorCoordinate.fromLngLat(bike.at.lngLat, elev);
-        var sc = mc.meterInMercatorCoordinateUnits() * BIKE_SCALE;
+        var sc = mc.meterInMercatorCoordinateUnits() * bikeScale;
         var model = new T.Matrix4().makeTranslation(mc.x, mc.y, mc.z)
           .scale(new T.Vector3(sc, -sc, sc))
           .multiply(new T.Matrix4().makeRotationX(Math.PI / 2))
@@ -264,6 +265,7 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     var coords = selCoords.map(function(c){ return [c[0], c[1]]; });
     var dist = [0];
     for (var i = 1; i < coords.length; i++) dist.push(dist[i-1] + meters(coords[i-1], coords[i]));
+    bikeScale = BIKE_SCALE;
     ride = { coords: coords, dist: dist, total: dist[dist.length - 1] || 1, done: 0, kmh: r.kmh, paused: !!r.paused, last: null, raf: 0, crank: 0, bearing: null, sent: 0 };
     if (!map.getTerrain()) map.setTerrain({ source: 'dem', exaggeration: 1.6 });
     loadThree(function(){
@@ -305,16 +307,66 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     if (ride.done >= ride.total) { send({ type: 'rideProgress', done_m: Math.round(ride.total), total_m: Math.round(ride.total) }); stopRide(); send({ type: 'flyEnd' }); return; }
     ride.raf = requestAnimationFrame(step);
   }
+  // Navigation mode: the bike sits on your GPS position and the camera follows from behind.
+  // Fixes come about once a second; between them the bike glides toward the newest one.
+  var nav = null;
+  function stopNav(){
+    if (nav && nav.raf) cancelAnimationFrame(nav.raf);
+    nav = null;
+    map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
+    if (bike) { bike.group.visible = false; map.triggerRepaint(); }
+  }
+  function navStep(ts){
+    if (!nav) return;
+    var dt = nav.last === null ? 0 : Math.min(0.1, (ts - nav.last) / 1000);
+    nav.last = ts;
+    if (!nav.cur) { nav.cur = nav.target.slice(); nav.brg = nav.targetBrg; }
+    var k = Math.min(1, dt * 2.5);
+    nav.cur[0] += (nav.target[0] - nav.cur[0]) * k;
+    nav.cur[1] += (nav.target[1] - nav.cur[1]) * k;
+    nav.brg += (((nav.targetBrg - nav.brg + 540) % 360) - 180) * Math.min(1, dt * 2);
+    if (nav.kmh > 2) nav.crank += dt * Math.PI * 2 * Math.min(1.6, nav.kmh / 12);
+    if (bike) {
+      bike.at = { lngLat: nav.cur, bearing: nav.brg };
+      bike.pedal(-nav.crank);
+      bike.rear.rotation.z = bike.front.rotation.z = -nav.crank * 1.8;
+      map.triggerRepaint();
+    }
+    // The bike low on the screen, so most of it shows the streets ahead.
+    if (nav.follow) map.jumpTo({ center: nav.cur, bearing: nav.brg, pitch: 58, zoom: 17.8, padding: { top: Math.round(map.getContainer().clientHeight * 0.45), bottom: 0, left: 0, right: 0 } });
+    nav.raf = requestAnimationFrame(navStep);
+  }
+  // in: null to stop, or { pos: [lng, lat], bearing, kmh }.
+  window.kovaNav = function(n){
+    if (!n) return stopNav();
+    if (!ready) return;
+    if (!nav) {
+      stopRide();
+      bikeScale = 11;
+      nav = { cur: null, target: n.pos, targetBrg: n.bearing || 0, brg: 0, kmh: n.kmh || 0, crank: 0, last: null, raf: 0, follow: true };
+      if (!map.getTerrain()) map.setTerrain({ source: 'dem', exaggeration: 1.6 });
+      loadThree(function(){
+        if (!nav) return;
+        if (window.THREE && !map.getLayer('bike')) { try { addBikeLayer(); } catch (_) { bike = null; } }
+        if (bike) bike.group.visible = true;
+        nav.raf = requestAnimationFrame(navStep);
+      });
+      return;
+    }
+    nav.target = n.pos; nav.targetBrg = n.bearing || nav.targetBrg; nav.kmh = n.kmh || 0;
+  };
   // in: null to stop, or { kmh, paused }. A ride already going keeps its place.
   window.kovaRide = function(r){
     if (!r) { pendingRide = null; return stopRide(); }
     if (ride) { ride.kmh = r.kmh; ride.paused = !!r.paused; return; }
+    if (nav) return;
     if (ready) startRide(r); else pendingRide = r;
   };
   window.kovaMap = function(d){ if (ready) apply(d); else pending = d; };
   window.addEventListener('message', function(e){
     if (e.data && e.data.kovaMapIn) window.kovaMap(JSON.parse(e.data.kovaMapIn));
     if (e.data && typeof e.data.kovaRideIn === 'string') window.kovaRide(JSON.parse(e.data.kovaRideIn));
+    if (e.data && typeof e.data.kovaNavIn === 'string') window.kovaNav(JSON.parse(e.data.kovaNavIn));
   });
   document.addEventListener('message', function(e){ try { window.kovaMap(JSON.parse(e.data)); } catch (_) {} });
 })();
