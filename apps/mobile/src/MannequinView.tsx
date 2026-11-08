@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { MANNEQUIN_JS } from './mannequinSource';
-import { r } from './theme';
+import { rad } from './theme';
 
 // Attribute values come from exerciseAnimation(), already limited to [a-z0-9-].
 const html = (a: MannequinSpec) => `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -18,7 +18,7 @@ const html = (a: MannequinSpec) => `<!doctype html><html><head><meta name="viewp
 export function MannequinView({ spec, height = 260 }: { spec: MannequinSpec; height?: number }) {
   const source = useMemo(() => ({ html: html(spec) }), [spec.slug, spec.muscle, spec.equipment, spec.category]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: '#0f1019' }}>
+    <View style={{ height, borderRadius: rad.card, overflow: 'hidden', backgroundColor: '#0f1019' }}>
       <WebView source={source} originWhitelist={['about:blank']} scrollEnabled={false} bounces={false} overScrollMode="never"
         javaScriptEnabled domStorageEnabled={false} allowFileAccess={false} setSupportMultipleWindows={false}
         onShouldStartLoadWithRequest={(req) => req.url === 'about:blank'} style={{ backgroundColor: '#0f1019' }}

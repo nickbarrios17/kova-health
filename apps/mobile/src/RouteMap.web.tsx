@@ -2,7 +2,7 @@
 import { createElement, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { MAP_BG, ROUTE_MAP_HTML } from './routeMapHtml';
-import { r } from './theme';
+import { rad } from './theme';
 import type { MapData, MapEvents, NavPos, Ride } from './RouteMap';
 
 export type { MapData, MapEvents, NavPos, Ride } from './RouteMap';
@@ -37,7 +37,7 @@ export function RouteMap({ data, ride = null, nav = null, height, ...events }: {
     if (ready) ref.current?.contentWindow?.postMessage({ kovaNavIn: JSON.stringify(nav) }, '*');
   }, [ready, nav]);
   return (
-    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: MAP_BG }}>
+    <View style={{ height, borderRadius: rad.card, overflow: 'hidden', backgroundColor: MAP_BG }}>
       {createElement('iframe', {
         ref, srcDoc: ROUTE_MAP_HTML, title: 'Mapa de la ruta', sandbox: 'allow-scripts',
         style: { border: 0, width: '100%', height: '100%', display: 'block' },

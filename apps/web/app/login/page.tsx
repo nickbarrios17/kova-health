@@ -94,7 +94,7 @@ export default function LoginPage() {
               value={password} onChange={(e) => setPassword(e.target.value)}
             />
             {mode === 'signup' && (
-              <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Mínimo 8 caracteres, con letras y números.</span>
+              <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Mínimo 8 caracteres, con letras y números.</span>
             )}
           </div>
         )}

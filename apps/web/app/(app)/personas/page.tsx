@@ -12,8 +12,8 @@ import { EmptyState, ErrorNotice } from '@/components/EmptyState';
 import { kova } from '@/lib/client';
 import { useAsync } from '@/lib/useAsync';
 
-const card = { padding: 18, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 } as const;
-const muted = { fontSize: 13, color: 'var(--color-neutral-400)' } as const;
+const card = { padding: 18, borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 } as const;
+const muted = { fontSize: 13, color: 'var(--kova-text-2)' } as const;
 const SHARES: Array<['share_body' | 'share_nutrition' | 'share_health', 'body' | 'nutrition' | 'health', string]> = [
   ['share_body', 'body', 'Peso y medidas'], ['share_nutrition', 'nutrition', 'Comida'], ['share_health', 'health', 'Sueño, pasos y corazón'],
 ];
@@ -94,7 +94,7 @@ export default function PersonasPage() {
   return (
     <div style={{ display: 'grid', gap: 16, maxWidth: 760 }}>
       {error && <div className="kova-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)' }} /><span>{error}</span></div>}
-      {notice && <div role="status" style={{ ...muted, color: 'var(--color-accent-200)' }}>{notice}</div>}
+      {notice && <div role="status" style={{ ...muted, color: 'var(--color-accent-300)' }}>{notice}</div>}
 
       <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
         <section style={card}>

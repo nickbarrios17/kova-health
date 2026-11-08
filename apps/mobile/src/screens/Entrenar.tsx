@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { kova } from '../client';
 import { useSession } from '../session';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { loadTraining, scheme, type TrainingData } from '../training';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Loading, Row, T } from '../ui';
@@ -45,7 +45,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
         <Button variant="secondary" label="Nueva rutina" icon={Plus} onPress={() => setEditing(emptyDraft())} />
       </Row>
       <Pressable onPress={() => setBike(true)} accessibilityRole="button" accessibilityLabel="Ciclismo: planificar una ruta"
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: r.lg, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: rad.card, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
         <Bicycle size={24} color={c.accent} />
         <View style={{ flex: 1, gap: 2 }}>
           <T size={15} w="medium">Ciclismo</T>
@@ -97,7 +97,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
           {done.map((s, i) => {
             const vol = Number(s.volume_kg);
             return (
-              <Row key={String(s.session_id)} style={{ paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: 'rgba(233,233,237,0.06)' }}>
+              <Row key={String(s.session_id)} style={{ paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.borderSubtle }}>
                 <View style={{ flex: 1 }}>
                   <T size={14}>{String(s.name)}</T>
                   <T size={12} color={c.n400}>{dayMonth(String(s.local_date))} · {dur(Number(s.active_duration_s))}</T>

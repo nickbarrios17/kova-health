@@ -14,8 +14,8 @@ import { kova } from '@/lib/client';
 import { useSession } from '@/lib/session';
 import { useAsync } from '@/lib/useAsync';
 
-const card = { padding: 16, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 10 } as const;
-const muted = { fontSize: 13, color: 'var(--color-neutral-400)' } as const;
+const card = { padding: 16, borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 10 } as const;
+const muted = { fontSize: 13, color: 'var(--kova-text-2)' } as const;
 
 function scheme(it: { target_sets: number; target_reps_min: number | null; target_reps_max: number | null }) {
   const reps = it.target_reps_min == null ? null
@@ -73,13 +73,13 @@ export default function AlumnoPage() {
             <section key={r.id} style={card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
                 <span style={{ fontSize: 16, fontWeight: 500 }}>{r.name}</span>
-                <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{isoDays(r.schedule_days)}</span>
+                <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{isoDays(r.schedule_days)}</span>
               </div>
-              {r.assigned_by == null && <span style={{ fontSize: 12, color: 'var(--color-neutral-500)' }}>Creada por {link.person_name}</span>}
+              {r.assigned_by == null && <span style={{ fontSize: 12, color: 'var(--kova-text-3)' }}>Creada por {link.person_name}</span>}
               {r.routine_exercises.map((it) => (
                 <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                   <span style={{ color: 'var(--color-neutral-300)' }}>{it.exercise_name}</span>
-                  <span style={{ color: 'var(--color-neutral-400)' }}>{scheme(it)}</span>
+                  <span style={{ color: 'var(--kova-text-2)' }}>{scheme(it)}</span>
                 </div>
               ))}
               <button className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }}

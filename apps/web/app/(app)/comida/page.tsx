@@ -37,8 +37,8 @@ export default function ComidaPage() {
   const { meals, s, dynamic } = q.data!;
   const macro = (label: string, k: string, g: string) => (
     <div key={k} style={{ flex: '1 1 120px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{label}</span>
-      <span style={{ fontSize: 17, fontWeight: 500 }}>{Math.round(n(s[k] ?? 0))}{s[g] != null ? <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}> de {n(s[g])} g</span> : ' g'}</span>
+      <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{label}</span>
+      <span style={{ fontSize: 17, fontWeight: 500 }}>{Math.round(n(s[k] ?? 0))}{s[g] != null ? <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}> de {n(s[g])} g</span> : ' g'}</span>
       {s[g] != null && (
         <span style={{ height: 4, borderRadius: 2, background: 'var(--color-neutral-800)', overflow: 'hidden' }}>
           <span style={{ display: 'block', height: '100%', width: Math.min(100, (n(s[k] ?? 0) / n(s[g])) * 100) + '%', background: 'var(--color-accent)' }} />
@@ -49,17 +49,17 @@ export default function ComidaPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-md)', overflow: 'hidden', alignSelf: 'flex-start' }}>
+      <div style={{ display: 'flex', border: '1px solid var(--color-divider)', borderRadius: 'var(--kova-radius-control)', overflow: 'hidden', alignSelf: 'flex-start' }}>
         {[[addDays(today, -1), 'Ayer'], [today, 'Hoy']].map(([d, l]) => (
           <button key={d} onClick={() => setDay(d!)} aria-pressed={day === d} style={{ border: 0, fontSize: 13, padding: '7px 14px', cursor: 'pointer', ...seg(day === d) }}>{l}</button>
         ))}
       </div>
-      <div style={{ padding: '18px 20px', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(160deg, var(--color-accent-900), var(--color-surface) 70%)', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-end' }}>
+      <div style={{ padding: '18px 20px', borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
           <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-neutral-300)' }}>Calorías</span>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <span style={{ fontSize: 32, fontWeight: 500 }}>{s.kcal != null ? nf(Math.round(n(s.kcal)), 0) : '0'}</span>
-            <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>{s.kcal_goal != null ? 'de ' + nf(n(s.kcal_goal), 0) + ' kcal' : 'kcal'}</span>
+            <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>{s.kcal_goal != null ? 'de ' + nf(n(s.kcal_goal), 0) + ' kcal' : 'kcal'}</span>
           </span>
         </div>
         {macro('Proteína', 'protein_g', 'protein_goal_g')}
@@ -72,22 +72,22 @@ export default function ComidaPage() {
         </span>
       ) : null}
       {Boolean(s.nutrition_has_unverified) && (
-        <span style={{ fontSize: 12, color: 'var(--color-neutral-400)', display: 'flex', gap: 6, alignItems: 'center' }}><i className="ph ph-info" />Incluye valores introducidos por ti o estimados.</span>
+        <span style={{ fontSize: 12, color: 'var(--kova-text-2)', display: 'flex', gap: 6, alignItems: 'center' }}><i className="ph ph-info" />Incluye valores introducidos por ti o estimados.</span>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 12 }}>
         {MEAL_SLOTS.map(([slot, label]) => {
           const items = meals.find((m) => m.slot === slot)?.meal_items ?? [];
           return (
-            <div key={slot} style={{ padding: 16, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div key={slot} style={{ padding: 16, borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 16, fontWeight: 500 }}>{label}</span>
-                <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>{items.length ? nf(Math.round(items.reduce((a, i) => a + n(i.kcal), 0)), 0) + ' kcal' : ''}</span>
+                <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>{items.length ? nf(Math.round(items.reduce((a, i) => a + n(i.kcal), 0)), 0) + ' kcal' : ''}</span>
               </div>
               {items.map((i) => (
                 <div key={i.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: 14 }}>{i.name}</span>
-                    <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
+                    <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>
                       {nf(n(i.quantity), 1)} {i.unit === 'serving' ? '×' : i.unit} · {nf(Math.round(n(i.kcal)), 0)} kcal · {nf(n(i.protein_g), 0)} g prot · {nutritionSourceLabel(i.data_source)}
                     </span>
                   </span>
@@ -143,7 +143,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
         {picked ? (
           <>
             <span style={{ fontSize: 16, fontWeight: 500 }}>{picked.name}</span>
-            <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{nf(n(picked.kcal), 0)} kcal por {nf(n(picked.ref_amount), 1)} {picked.ref_unit === 'serving' ? picked.serving_label ?? 'porción' : picked.ref_unit} · {nutritionSourceLabel(picked.data_source)}</span>
+            <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{nf(n(picked.kcal), 0)} kcal por {nf(n(picked.ref_amount), 1)} {picked.ref_unit === 'serving' ? picked.serving_label ?? 'porción' : picked.ref_unit} · {nutritionSourceLabel(picked.data_source)}</span>
             {field('Cantidad (' + (picked.ref_unit === 'serving' ? 'porciones' : picked.ref_unit) + ')', qty, setQty)}
             {preview && <span style={{ fontSize: 13, color: 'var(--color-neutral-300)' }}>{nf(preview.kcal, 0)} kcal · {nf(preview.protein_g, 1)} g proteína · {nf(preview.carbs_g, 1)} g carbos · {nf(preview.fat_g, 1)} g grasa</span>}
             <div className="dialog-actions">
@@ -156,9 +156,9 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
           </>
         ) : manual ? (
           <>
-            <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Copia los valores de la etiqueta. Se guardan como introducidos por ti.</span>
+            <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>Copia los valores de la etiqueta. Se guardan como introducidos por ti.</span>
             {field('Nombre', mf.name, (v) => setMf({ ...mf, name: v }), 'text')}
-            <div style={{ display: 'flex', border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-md)', overflow: 'hidden', alignSelf: 'flex-start' }}>
+            <div style={{ display: 'flex', border: '1px solid var(--color-divider)', borderRadius: 'var(--kova-radius-control)', overflow: 'hidden', alignSelf: 'flex-start' }}>
               {([['g', 'Por gramos'], ['serving', 'Por porción']] as const).map(([u, l]) => (
                 <button key={u} onClick={() => setMf({ ...mf, unit: u })} aria-pressed={mf.unit === u} style={{ border: 0, fontSize: 12, padding: '7px 12px', cursor: 'pointer', ...seg(mf.unit === u) }}>{l}</button>
               ))}
@@ -188,7 +188,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
                 onClick={() => { setPicked(f); setQty(String(f.default_quantity ?? f.ref_amount)); }}>
                 <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', fontWeight: 400 }}>
                   <span>{f.name}{f.brand ? ' · ' + f.brand : ''}</span>
-                  <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{nf(n(f.kcal), 0)} kcal / {nf(n(f.ref_amount), 1)} {f.ref_unit === 'serving' ? f.serving_label ?? 'porción' : f.ref_unit} · {nutritionSourceLabel(f.data_source)}</span>
+                  <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{nf(n(f.kcal), 0)} kcal / {nf(n(f.ref_amount), 1)} {f.ref_unit === 'serving' ? f.serving_label ?? 'porción' : f.ref_unit} · {nutritionSourceLabel(f.data_source)}</span>
                 </span>
               </button>
             ))}

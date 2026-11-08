@@ -16,7 +16,7 @@ import { useBack } from '../back';
 import { Chart } from '../charts';
 import { kova, outbox } from '../client';
 import { useSession } from '../session';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
 import { useReportTarget } from '../report';
@@ -51,7 +51,7 @@ export function metricFormat(key: MetricKey, units: WeightUnit): (v: number) => 
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <View style={{ flex: 1, minWidth: '45%', padding: 12, borderRadius: r.md, backgroundColor: c.bg, gap: 2 }}>
+    <View style={{ flex: 1, minWidth: '45%', padding: 12, borderRadius: rad.control, backgroundColor: c.bg, gap: 2 }}>
       <T size={12} color={c.n400}>{label}</T>
       <T size={18} w="medium">{value}</T>
       {hint ? <T size={11} color={c.n500}>{hint}</T> : null}
@@ -241,7 +241,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
               <Row key={h.id}>
                 <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={h.name} disabled={t ? !t.scheduled && !done : false}
                   onPress={() => toggleHabit(h.id, done)}
-                  style={{ width: 44, height: 44, borderRadius: r.md, borderWidth: 1, borderColor: done ? c.accent : c.divider, backgroundColor: done ? c.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: 44, height: 44, borderRadius: rad.control, borderWidth: 1, borderColor: done ? c.accent : c.divider, backgroundColor: done ? c.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                   <Check size={18} weight="bold" color={done ? c.bg : c.n400} />
                 </Pressable>
                 <View style={{ flex: 1 }}>
@@ -299,7 +299,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
           {sessions.length === 0 ? <T size={13} color={c.n400} style={{ paddingBottom: 10 }}>Todavía no completaste ninguna.</T> : sessions.map((s, i) => {
             const vol = Number(s.volume_kg ?? 0);
             return (
-              <Row key={String(s.session_id)} style={{ paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: 'rgba(233,233,237,0.06)' }}>
+              <Row key={String(s.session_id)} style={{ paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.borderSubtle }}>
                 <View style={{ flex: 1 }}>
                   <T size={14}>{String(s.name)}</T>
                   <T size={12} color={c.n400}>{dayMonth(String(s.local_date))} · {dur(Number(s.active_duration_s))} · {Number(s.working_sets ?? 0)} series</T>
@@ -313,7 +313,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
         <Card style={{ gap: 0, paddingVertical: 4 }}>
           <T size={14} w="medium" style={{ paddingVertical: 10 }}>Día por día</T>
           {listDays.map((p, i) => (
-            <Row key={p.date} style={{ paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderTopColor: 'rgba(233,233,237,0.06)', justifyContent: 'space-between' }}>
+            <Row key={p.date} style={{ paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderTopColor: c.borderSubtle, justifyContent: 'space-between' }}>
               <T size={13} color={c.n300}>{p.date === today ? 'Hoy' : dayMonth(p.date)}</T>
               <T size={13}>{fmt(p.value!)}</T>
             </Row>

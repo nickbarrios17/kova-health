@@ -105,7 +105,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             const on = path === href;
             return (
               <Link key={href} href={href} className="kova-side-item" aria-current={on ? 'page' : undefined} aria-label={label} data-tip={label}>
-                <i className={(on ? 'ph-fill ' : 'ph ') + icon} aria-hidden style={{ fontSize: 20, color: on ? 'var(--color-accent)' : undefined }} />
+                <i className={(on ? 'ph-fill ' : 'ph ') + icon} aria-hidden style={{ fontSize: 20, color: on ? 'var(--kova-accent-text)' : undefined }} />
                 <span className="kova-side-label" style={{ flex: 1 }}>{label}</span>
               </Link>
             );

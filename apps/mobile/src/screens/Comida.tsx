@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Modal, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { outbox, kova } from '../client';
 import { useSession } from '../session';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
 import { useReportTarget } from '../report';
@@ -194,7 +194,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
               {results.loading && query.trim().length >= 2 ? <Loading /> : null}
               {(results.data ?? []).map((f) => (
                 <Pressable key={f.id} onPress={() => { setPicked(f); setQty(String(f.default_quantity ?? f.ref_amount)); }}
-                  style={{ padding: 12, borderRadius: r.md, backgroundColor: c.surface, gap: 2 }}>
+                  style={{ padding: 12, borderRadius: rad.control, backgroundColor: c.surface, gap: 2 }}>
                   <T size={14}>{f.name}{f.brand ? ' · ' + f.brand : ''}</T>
                   <T size={12} color={c.n400}>{nf(Number(f.kcal), 0)} kcal / {nf(Number(f.ref_amount), 1)} {unitLabel(f)} · {nutritionSourceLabel(f.data_source)}</T>
                 </Pressable>

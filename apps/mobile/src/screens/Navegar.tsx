@@ -22,7 +22,7 @@ import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useBack } from '../back';
 import { kova } from '../client';
 import { RouteMap, type MapData, type NavPos } from '../RouteMap';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { Button, Card, ErrorNote, Field, Notice, Row, T } from '../ui';
 import { fmtDuration } from './Ciclismo';
 
@@ -233,9 +233,9 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null
   return (
     <View style={{ flex: 1, padding: 12, gap: 10 }}>
       {gpsError ? <ErrorNote message={gpsError} /> : (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: r.lg, backgroundColor: off || rerouting ? 'rgba(242,153,74,0.16)' : c.accentSoft }}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: rad.card, backgroundColor: off || rerouting ? 'rgba(242,153,74,0.16)' : c.accentSoft }}
           accessibilityLiveRegion="polite">
-          <Icon size={40} color={off || rerouting ? c.warn : c.a200} weight="bold" />
+          <Icon size={40} color={off || rerouting ? c.warn : c.a300} weight="bold" />
           <View style={{ flex: 1, gap: 2 }}>
             {next && !off && !rerouting ? <T size={26} w="medium">{shortDistance(next.in_m)}</T> : null}
             <T size={next && !off ? 15 : 17} w="medium" color={off || rerouting ? c.warn : c.text}>{banner}</T>
@@ -258,7 +258,7 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null
       </Row>
       <Row style={{ gap: 8 }}>
         <Pressable onPress={() => { setMuted((m) => !m); if (!muted) Speech.stop(); }} accessibilityRole="button" accessibilityLabel={muted ? 'Activar la voz' : 'Silenciar la voz'}
-          style={{ width: 52, height: 48, borderRadius: r.md, borderWidth: 1, borderColor: c.divider, alignItems: 'center', justifyContent: 'center' }}>
+          style={{ width: 52, height: 48, borderRadius: rad.control, borderWidth: 1, borderColor: c.divider, alignItems: 'center', justifyContent: 'center' }}>
           {muted ? <SpeakerSlash size={22} color={c.n400} /> : <SpeakerHigh size={22} color={c.text} />}
         </Pressable>
         <Button variant="secondary" label="Terminar" icon={Stop} onPress={() => finish(false)} style={{ flex: 1 }} />

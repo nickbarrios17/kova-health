@@ -24,7 +24,7 @@ export default function ReportesPage() {
   };
 
   if (q.error) return <ErrorNotice message={q.error} onRetry={q.reload} />;
-  if (q.loading && !q.data) return <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Cargando…</span>;
+  if (q.loading && !q.data) return <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>Cargando…</span>;
   if (q.data === null) return <EmptyState icon="ph ph-lock" title="Solo para administradores">Esta página muestra los reportes de todos los usuarios.</EmptyState>;
   const rows = q.data ?? [];
 
@@ -48,8 +48,8 @@ export default function ReportesPage() {
                 <td>{r.reporter_name}</td>
                 <td>
                   {REPORT_CATEGORY_LABEL[r.category]}
-                  {r.context.exercise_name && <div style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{r.context.exercise_name}</div>}
-                  <div style={{ fontSize: 11, color: 'var(--color-neutral-500)' }}>{[r.context.platform, r.context.screen, r.context.app_version].filter(Boolean).join(' · ')}</div>
+                  {r.context.exercise_name && <div style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{r.context.exercise_name}</div>}
+                  <div style={{ fontSize: 11, color: 'var(--kova-text-3)' }}>{[r.context.platform, r.context.screen, r.context.app_version].filter(Boolean).join(' · ')}</div>
                 </td>
                 <td style={{ whiteSpace: 'pre-wrap', maxWidth: 420 }}>{r.message}</td>
                 <td>

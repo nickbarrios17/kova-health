@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { SafetyZones } from '@kova/domain';
 import { MAP_BG, ROUTE_MAP_HTML } from './routeMapHtml';
-import { r } from './theme';
+import { rad } from './theme';
 
 export interface MapData {
   routes: Array<{ coords: Array<number[]>; segments: Array<{ from: number; to: number; kind: string }>; selected: boolean }>;
@@ -46,7 +46,7 @@ export function RouteMap({ data, ride = null, nav = null, height, ...events }: {
     if (ready) ref.current?.injectJavaScript(`window.kovaNav(${JSON.stringify(nav)});true;`);
   }, [ready, nav]);
   return (
-    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: MAP_BG }}
+    <View style={{ height, borderRadius: rad.card, overflow: 'hidden', backgroundColor: MAP_BG }}
       onTouchStart={() => ev.current.onTouching?.(true)}
       onTouchEnd={() => ev.current.onTouching?.(false)}
       onTouchCancel={() => ev.current.onTouching?.(false)}>

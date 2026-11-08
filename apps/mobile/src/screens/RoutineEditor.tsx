@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useBack } from '../back';
 import { kova } from '../client';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { Button, Card, Confirm, ErrorNote, Field, Row, T } from '../ui';
 import { useReportTarget } from '../report';
 
@@ -40,7 +40,7 @@ function ItemRow({ item, index, count, units, onChange, onMove, onRemove }: {
   const [load, setLoad] = useState(item.loadKg == null ? '' : String(Math.round(toDisplayWeight(item.loadKg, units) * 100) / 100).replace('.', ','));
   const [repsBad, setRepsBad] = useState(false);
   return (
-    <View style={{ padding: 12, borderRadius: r.md, backgroundColor: c.bg, gap: 8 }}>
+    <View style={{ padding: 12, borderRadius: rad.control, backgroundColor: c.bg, gap: 8 }}>
       <Row>
         <T size={14} w="medium" style={{ flex: 1 }}>{index + 1}. {item.exerciseName}</T>
         <IconButton icon={ArrowUp} label={'Subir ' + item.exerciseName} disabled={index === 0} onPress={() => onMove(-1)} />
@@ -167,7 +167,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId, tit
               return (
                 <Pressable key={n} onPress={() => setD({ ...d, days: toggleDay(d.days, n) })} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={full}
                   style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: on ? c.accent : c.divider, backgroundColor: on ? c.accentSoft : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                  <T size={13} color={on ? c.a200 : c.n400}>{l}</T>
+                  <T size={13} color={on ? c.a300 : c.n400}>{l}</T>
                 </Pressable>
               );
             })}
@@ -195,7 +195,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId, tit
           {query.trim() && !exact ? (
             <Pressable onPress={addNew} accessibilityRole="button" style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Plus size={16} color={c.accent} />
-              <T size={14} color={c.accent}>Crear «{query.trim().slice(0, 40)}»</T>
+              <T size={14} color={c.a400}>Crear «{query.trim().slice(0, 40)}»</T>
             </Pressable>
           ) : null}
         </Card>

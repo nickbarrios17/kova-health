@@ -28,7 +28,7 @@ function ItemRow({ item, index, count, units, onChange, onMove, onRemove }: {
   const [repsBad, setRepsBad] = useState(false);
   const label = (index + 1) + '. ' + item.exerciseName;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--color-bg)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, borderRadius: 'var(--kova-radius-control)', background: 'var(--color-bg)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{label}</span>
         <button type="button" className="btn btn-ghost btn-icon" aria-label={'Subir ' + item.exerciseName} disabled={index === 0} onClick={() => onMove(-1)}><i className="ph ph-arrow-up" /></button>
@@ -159,7 +159,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId }: {
             const on = d.days.includes(n);
             return (
               <button key={n} type="button" aria-pressed={on} aria-label={full} onClick={() => setD({ ...d, days: toggleDay(d.days, n) })}
-                style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'), background: on ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent', color: on ? 'var(--color-accent-200)' : 'var(--color-neutral-400)', fontSize: 13, cursor: 'pointer' }}>{l}</button>
+                style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'), background: on ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent', color: on ? 'var(--color-accent-300)' : 'var(--color-neutral-400)', fontSize: 13, cursor: 'pointer' }}>{l}</button>
             );
           })}
         </div>
@@ -172,7 +172,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId }: {
             onMove={(dir) => setD((x) => ({ ...x, items: moveItem(x.items, i, dir) }))}
             onRemove={() => setD((x) => ({ ...x, items: x.items.filter((y) => y.key !== it.key) }))} />
         ))}
-        {d.items.length === 0 ? <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Todavía no hay ejercicios. Búscalos abajo.</span> : null}
+        {d.items.length === 0 ? <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>Todavía no hay ejercicios. Búscalos abajo.</span> : null}
       </div>
 
       <div className="field" style={{ position: 'relative' }}>
@@ -181,7 +181,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId }: {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (matches[0] && exact) add(matches[0].id, matches[0].name); else addNew(); } }} />
         {query.trim() ? (
-          <div role="listbox" aria-label="Ejercicios" style={{ display: 'flex', flexDirection: 'column', marginTop: 4, border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+          <div role="listbox" aria-label="Ejercicios" style={{ display: 'flex', flexDirection: 'column', marginTop: 4, border: '1px solid var(--color-divider)', borderRadius: 'var(--kova-radius-control)', overflow: 'hidden' }}>
             {matches.map((e) => (
               <button key={e.id} type="button" role="option" aria-selected={false} className="kova-nav" onClick={() => add(e.id, e.name)}
                 style={{ textAlign: 'left', padding: '9px 12px', border: 0, background: 'transparent', color: 'var(--color-text)', fontSize: 14, cursor: 'pointer' }}>{e.name}</button>

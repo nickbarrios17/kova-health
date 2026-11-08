@@ -43,7 +43,7 @@ export function InsightCard({ insight, compact, onFeedback }: {
             )}
             {onFeedback && (
               sent ? (
-                <span style={{ fontSize: 12, color: 'var(--color-neutral-400)', display: 'flex', gap: 5, alignItems: 'center' }}><i className="ph ph-check" />Gracias, lo tendremos en cuenta.</span>
+                <span style={{ fontSize: 12, color: 'var(--kova-text-2)', display: 'flex', gap: 5, alignItems: 'center' }}><i className="ph ph-check" />Gracias, lo tendremos en cuenta.</span>
               ) : (
                 <span style={{ display: 'flex', gap: 8 }}>
                   <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => { setSent('useful'); onFeedback('useful'); }}><i className="ph ph-thumbs-up" />Útil</button>

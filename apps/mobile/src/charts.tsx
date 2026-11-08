@@ -43,25 +43,25 @@ export function Chart({ points, height = 150, goal, format, label, kind = 'bars'
     <View style={{ gap: 6 }}>
       <Row style={{ justifyContent: 'space-between', minHeight: 18 }}>
         <T size={12} color={c.n400}>{shown ? label(shown.date) : vals.length ? 'Toca una barra para ver el valor' : ''}</T>
-        {shown ? <T size={12} w="medium" color={c.a200}>{shown.value != null ? format(shown.value) : 'Sin datos'}</T> : null}
+        {shown ? <T size={12} w="medium" color={c.a300}>{shown.value != null ? format(shown.value) : 'Sin datos'}</T> : null}
       </Row>
       <View onLayout={onLayout} style={{ height }}>
         {w > 0 ? (
           <Svg width={w} height={height}>
-            <Line x1={0} x2={w} y1={height - pad} y2={height - pad} stroke={c.divider} strokeWidth={1} />
+            <Line x1={0} x2={w} y1={height - pad} y2={height - pad} stroke={c.borderSubtle} strokeWidth={1} />
             {goal != null && goal > lo && goal < hi ? (
-              <Line x1={0} x2={w} y1={y(goal)} y2={y(goal)} stroke={c.n500} strokeWidth={1} strokeDasharray="4 4" />
+              <Line x1={0} x2={w} y1={y(goal)} y2={y(goal)} stroke={c.n500} strokeWidth={1.5} strokeDasharray="4 6" />
             ) : null}
             {kind === 'bars'
               ? points.map((p, i) => p.value == null ? null : (
                 <Rect key={p.date} x={x(i) - Math.max(1.5, slot * 0.32)} width={Math.max(3, slot * 0.64)} y={y(p.value)} height={Math.max(2, height - pad - y(p.value))}
-                  rx={Math.min(3, slot * 0.2)} fill={sel === i ? c.a200 : goal != null && p.value >= goal ? c.accent : c.a700} />
+                  rx={Math.min(6, slot * 0.3)} fill={sel === i ? c.a400 : c.accent} />
               ))
               : (
                 <>
-                  <Path d={linePath} stroke={c.accent} strokeWidth={2} fill="none" />
+                  <Path d={linePath} stroke={c.accent} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   {points.map((p, i) => p.value == null ? null : (
-                    <Circle key={p.date} cx={x(i)} cy={y(p.value)} r={sel === i ? 5 : points.length > 40 ? 0 : 3} fill={sel === i ? c.a200 : c.accent} />
+                    <Circle key={p.date} cx={x(i)} cy={y(p.value)} r={sel === i ? 5 : points.length > 40 ? 0 : 3} fill={sel === i ? c.a400 : c.accent} />
                   ))}
                 </>
               )}
@@ -98,7 +98,7 @@ export function Spark({ points, height = 36, goal }: { points: DayPoint[]; heigh
         <Svg width={w} height={height}>
           {points.map((p, i) => p.value == null ? null : (
             <Rect key={p.date} x={slot * i + slot * 0.18} width={Math.max(2, slot * 0.64)} y={height - Math.max(2, (p.value / hi) * height)}
-              height={Math.max(2, (p.value / hi) * height)} rx={1.5} fill={goal != null && p.value >= goal ? c.accent : c.a700} />
+              height={Math.max(2, (p.value / hi) * height)} rx={1.5} fill={goal != null && p.value >= goal ? c.accent : c.chartMuted} />
           ))}
         </Svg>
       ) : null}

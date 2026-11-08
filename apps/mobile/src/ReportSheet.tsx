@@ -9,7 +9,7 @@ import { Check } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { kova } from './client';
-import { c, font, r } from './theme';
+import { c, font, rad } from './theme';
 import { Button, Notice, Row, T } from './ui';
 
 export function ReportSheet({ visible, onClose, screen = 'other', context }: {
@@ -57,7 +57,7 @@ export function ReportSheet({ visible, onClose, screen = 'other', context }: {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <View style={{ backgroundColor: c.surface, borderTopLeftRadius: r.lg, borderTopRightRadius: r.lg, maxHeight: '90%' }}>
+        <View style={{ backgroundColor: c.surface, borderTopLeftRadius: rad.card, borderTopRightRadius: rad.card, maxHeight: '90%' }}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }} keyboardShouldPersistTaps="handled">
             <T size={18} w="medium">Reportar un problema</T>
             {sent ? (
@@ -74,7 +74,7 @@ export function ReportSheet({ visible, onClose, screen = 'other', context }: {
                     const on = picked.includes(o.key);
                     return (
                       <Pressable key={o.key} onPress={() => toggle(o.key)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingHorizontal: 12, borderRadius: r.md, borderWidth: 1, borderColor: on ? c.accent : c.divider, backgroundColor: on ? c.accentSoft : 'transparent' }}>
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingHorizontal: 12, borderRadius: rad.control, borderWidth: 1, borderColor: on ? c.accent : c.divider, backgroundColor: on ? c.accentSoft : 'transparent' }}>
                         <View style={{ width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: on ? c.accent : c.n500, backgroundColor: on ? c.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                           {on ? <Check size={14} weight="bold" color={c.bg} /> : null}
                         </View>
@@ -86,7 +86,7 @@ export function ReportSheet({ visible, onClose, screen = 'other', context }: {
                 <TextInput value={comment} onChangeText={setComment} multiline maxLength={1500}
                   placeholder="Contanos más: qué pasó, qué estabas haciendo, cada cuánto te pasa…"
                   placeholderTextColor={c.n500} accessibilityLabel="Comentario"
-                  style={{ minHeight: 96, textAlignVertical: 'top', padding: 12, borderRadius: r.md, borderWidth: 1, borderColor: c.divider, color: c.text, fontFamily: font.regular, fontSize: 15 }} />
+                  style={{ minHeight: 96, textAlignVertical: 'top', padding: 12, borderRadius: rad.control, borderWidth: 1, borderColor: c.divider, color: c.text, fontFamily: font.regular, fontSize: 15 }} />
                 {error ? <Notice tone="warn" text={error} /> : null}
                 <Row style={{ gap: 8 }}>
                   <Button label="Enviar" busy={busy} disabled={!canSend} onPress={send} />

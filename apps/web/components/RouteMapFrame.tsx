@@ -45,7 +45,7 @@ export function RouteMapFrame({ data, ride = null, height, onTap, onPick, onFlyE
     if (ready) ref.current?.contentWindow?.postMessage({ kovaRideIn: JSON.stringify(ride) }, '*');
   }, [ready, ride]);
   return (
-    <div style={{ height, borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: MAP_BG }}>
+    <div style={{ height, borderRadius: 'var(--kova-radius-xl)', overflow: 'hidden', background: MAP_BG }}>
       <iframe ref={ref} srcDoc={ROUTE_MAP_HTML} title="Mapa de la ruta" sandbox="allow-scripts"
         style={{ border: 0, width: '100%', height: '100%', display: 'block' }} />
     </div>

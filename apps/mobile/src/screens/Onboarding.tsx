@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { kova } from '../client';
 import { useSession, type Prefs } from '../session';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { Button, Card, ErrorNote, Field, Notice, Row, Seg, T } from '../ui';
 
 type Step = 1 | 2 | 3;
@@ -34,8 +34,8 @@ function Choice<V extends string>({ options, value, onChange, label }: {
           return (
             <Pressable key={v} onPress={() => onChange(v)} accessibilityRole="radio" accessibilityState={{ selected: on }}
               style={{ flexGrow: 1, flexBasis: hint ? '100%' : 0, minHeight: 44, paddingHorizontal: 12, paddingVertical: 8, justifyContent: 'center',
-                borderRadius: r.md, borderWidth: 1, borderColor: on ? c.accent : c.divider, backgroundColor: on ? c.accentSoft : c.surface }}>
-              <T size={14} w={on ? 'medium' : 'regular'} color={on ? c.a200 : c.text}>{title}</T>
+                borderRadius: rad.control, borderWidth: 1, borderColor: on ? c.accent : c.divider, backgroundColor: on ? c.accentSoft : c.surface }}>
+              <T size={14} w={on ? 'medium' : 'regular'} color={on ? c.a300 : c.text}>{title}</T>
               {hint ? <T size={12} color={c.n400}>{hint}</T> : null}
             </Pressable>
           );
@@ -226,7 +226,7 @@ export function Onboarding({ onCancel }: { onCancel?: () => void }) {
                 </View>
                 <Row style={{ gap: 8 }}>
                   {[['Proteína', target!.proteinG], ['Carbos', target!.carbsG], ['Grasa', target!.fatG]].map(([l, v]) => (
-                    <View key={l as string} style={{ flex: 1, padding: 10, borderRadius: r.md, backgroundColor: c.bg }}>
+                    <View key={l as string} style={{ flex: 1, padding: 10, borderRadius: rad.control, backgroundColor: c.bg }}>
                       <T size={11} color={c.n400}>{l}</T>
                       <T size={17} w="medium">{v} g</T>
                     </View>

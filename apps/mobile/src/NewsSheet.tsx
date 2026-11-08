@@ -9,7 +9,7 @@ import * as Application from 'expo-application';
 import { Sparkle } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { Modal, ScrollView, View } from 'react-native';
-import { c, r } from './theme';
+import { c, rad } from './theme';
 import { Button, Row, T } from './ui';
 
 const SEEN_KEY = 'kova:news-seen';
@@ -20,7 +20,7 @@ export function NewsSheet({ visible, days, onClose, title = 'Novedades' }: { vis
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <View style={{ backgroundColor: c.surface, borderTopLeftRadius: r.lg, borderTopRightRadius: r.lg, maxHeight: '85%' }}>
+        <View style={{ backgroundColor: c.surface, borderTopLeftRadius: rad.card, borderTopRightRadius: rad.card, maxHeight: '85%' }}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
             <Row style={{ gap: 10, alignItems: 'center' }}>
               <Sparkle size={22} color={c.accent} weight="fill" />

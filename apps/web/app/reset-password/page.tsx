@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
               <label htmlFor="password">Contraseña nueva</label>
               <input id="password" className="input" type="password" autoComplete="new-password" minLength={8} required
                 value={password} onChange={(e) => setPassword(e.target.value)} />
-              <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Mínimo 8 caracteres, con letras y números.</span>
+              <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Mínimo 8 caracteres, con letras y números.</span>
             </div>
             <button className="btn btn-primary btn-block" type="submit" disabled={busy || status !== 'signedIn' || password.length < 8}>
               <i className={busy ? 'ph ph-circle-notch kova-spin' : 'ph ph-check'} />

@@ -99,7 +99,7 @@ export default function EntrenamientoPage() {
   return (
     <div data-screen-label="Entrenamiento" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {active && (
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 16px', borderRadius: 'var(--kova-radius-xl)', border: '1px solid var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 10px var(--color-accent)' }} />
           <span style={{ flex: 1, fontSize: 14 }}>Sesión en curso · {active.name}{active.status === 'paused' ? ' (en pausa)' : ''}</span>
           <button className="btn btn-ghost" onClick={q.reload} style={{ fontSize: 12 }}><i className="ph ph-arrow-clockwise" />Actualizar</button>
@@ -121,17 +121,17 @@ export default function EntrenamientoPage() {
             <EmptyState icon="ph ph-barbell" title="Aún no tienes rutinas">Importa tu planilla (Excel, CSV o JSON) y aparecerán aquí, en el teléfono y en el reloj.</EmptyState>
           ) : (
             routines.map((r) => (
-              <div key={r.id} style={{ padding: 16, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div key={r.id} style={{ padding: 16, borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ fontSize: 17, fontWeight: 500 }}>{r.name}</span>
-                  <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{isoDays(r.schedule_days)}</span>
+                  <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{isoDays(r.schedule_days)}</span>
                 </div>
                 {r.assigned_by && <span style={{ fontSize: 12, color: 'var(--color-accent-300, #d2cefd)' }}>De tu coach</span>}
                 {routineItems(r, exercises, lastW, fw).map((it) => (
                   <button key={it.key} type="button" className="kova-exercise-row" title="Cómo se hace" onClick={() => setHowTo({ id: it.exerciseId, name: it.name })}>
                     <span style={{ color: 'var(--color-neutral-300)', flex: 1, textAlign: 'left' }}>{it.name}</span>
-                    <span style={{ color: 'var(--color-neutral-400)' }}>{it.scheme} · {it.w}</span>
-                    <i className="ph ph-info" style={{ color: 'var(--color-accent)' }} aria-hidden />
+                    <span style={{ color: 'var(--kova-text-2)' }}>{it.scheme} · {it.w}</span>
+                    <i className="ph ph-info" style={{ color: 'var(--kova-accent-text)' }} aria-hidden />
                   </button>
                 ))}
                 <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
@@ -150,14 +150,14 @@ export default function EntrenamientoPage() {
               </div>
             ))
           )}
-          <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--color-neutral-400)', display: 'flex', gap: 6, textWrap: 'pretty' }}>
+          <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--kova-text-2)', display: 'flex', gap: 6, textWrap: 'pretty' }}>
             <i className="ph ph-device-mobile" style={{ marginTop: 2 }} />Las rutinas se sincronizan con el teléfono y el reloj.
           </span>
           </>
           )}
         </div>
 
-        <div style={{ flex: '2 1 440px', minWidth: 0, padding: '16px 18px', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ flex: '2 1 440px', minWidth: 0, padding: '16px 18px', borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ fontSize: 15, fontWeight: 500 }}>1RM estimado · 8 semanas</span>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -193,11 +193,10 @@ export default function EntrenamientoPage() {
               </div>
               <svg viewBox="0 0 600 180" preserveAspectRatio="none" style={{ width: '100%', height: 180, display: 'block' }} role="img"
                 aria-label={'1RM estimado por semana de ' + exerciseName(exercises, ex!)}>
-                <line x1="0" y1="170" x2="600" y2="170" stroke="var(--color-divider)" vectorEffect="non-scaling-stroke" />
-                <path d={'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') + ` L${pts[pts.length - 1]![0].toFixed(1)} 170 L${pts[0]![0].toFixed(1)} 170 Z`} fill="var(--color-accent-900)" />
-                <polyline points={pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')} fill="none" stroke="var(--color-accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+                <line x1="0" y1="170" x2="600" y2="170" stroke="var(--kova-chart-grid)" vectorEffect="non-scaling-stroke" />
+                <polyline points={pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')} fill="none" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
               </svg>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--color-neutral-400)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--kova-text-2)' }}>
                 <span>{shortDate(weeks[0]!)}</span><span>{shortDate(weeks[7]!)}</span>
               </div>
             </>
@@ -205,7 +204,7 @@ export default function EntrenamientoPage() {
         </div>
       </div>
 
-      <div style={{ padding: '16px 18px', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: '16px 18px', borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <span style={{ fontSize: 15, fontWeight: 500 }}>Historial de sesiones</span>
         {done.length === 0 ? (
           <EmptyState icon="ph ph-clock-counter-clockwise" title="Sin sesiones todavía">
@@ -238,7 +237,7 @@ export default function EntrenamientoPage() {
                       </td>
                       <td style={{ textAlign: 'right' }}>{d?.avg_hr != null ? d.avg_hr + ' lpm' : '—'}</td>
                       <td style={{ textAlign: 'right', color: sl != null && sl < 390 ? 'var(--kova-warn)' : 'var(--color-text)' }}>{sl != null ? hm(sl) : '—'}</td>
-                      <td style={{ color: 'var(--color-neutral-400)', maxWidth: 280 }}>{d?.notes || '—'}</td>
+                      <td style={{ color: 'var(--kova-text-2)', maxWidth: 280 }}>{d?.notes || '—'}</td>
                     </tr>
                   );
                 })}
