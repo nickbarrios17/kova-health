@@ -20,7 +20,38 @@ export interface RawRoute {
   surface: Stretch[];
   /** Turn-by-turn maneuvers (navigation.ts). Missing on routes saved before navigation existed. */
   steps?: RouteStep[];
+  /** What the route goes through, from public statistics and cyclists' reports. Missing if unavailable. */
+  safety?: RouteSafety;
 }
+
+/**
+ * CABA: meters through ~275 m cells with many robberies (top 10 % of the city) or some (next 20 %),
+ * and with many traffic crashes, from the city's crime map. Conurbano: partidos crossed, with their
+ * robbery level against the conurbano average (1 above, 2 well above). `reports`: places other
+ * cyclists marked within 100 m of the route.
+ */
+export interface RouteSafety {
+  robo_high_m: number;
+  robo_mid_m: number;
+  choque_high_m: number;
+  caba_m: number;
+  partidos: Array<{ name: string; level: number }>;
+  reports: number;
+}
+
+/** What the map draws: zones (cell centers) and reports near the routes. */
+export interface SafetyZones {
+  cells: Array<{ lat: number; lng: number; r: number; c: number }>;
+  reports: Array<{ id: string; coord: [number, number]; kind: SafetyReportKind; day: string; mine: boolean }>;
+  grid: { lat0: number; lng0: number; dlat: number; dlng: number };
+}
+export type SafetyReportKind = 'robo' | 'intento' | 'insegura' | 'peligrosa';
+export const SAFETY_REPORT_KINDS: Array<{ kind: SafetyReportKind; label: string }> = [
+  { kind: 'robo', label: 'Me robaron' },
+  { kind: 'intento', label: 'Intento de robo' },
+  { kind: 'insegura', label: 'Zona insegura u oscura' },
+  { kind: 'peligrosa', label: 'Calle peligrosa para la bici' },
+];
 
 /** One maneuver: it starts at `coords[at]`. `type` is the OpenRouteService step type (0 left … 13 keep right). */
 export interface RouteStep { at: number; type: number; name: string; exit?: number }
@@ -47,6 +78,8 @@ export interface RouteAnalysis {
   tags: string[];
   /** Things to know before going: «3,2 km por avenidas». */
   warnings: string[];
+  /** Share of the distance (0–1) through CABA zones with many robberies; 0 without safety data. */
+  risk_share: number;
   /** For drawing: consecutive stretches by kind. */
   segments: Array<{ from: number; to: number; kind: WayKind }>;
 }
@@ -163,17 +196,30 @@ export function analyzeRoute(route: RawRoute, parks: Park[], speedKmh: number = 
   if (rough >= 500) warnings.push(km(rough) + ' km de adoquines o tierra');
   if (route.ascent_m >= 150) warnings.push(Math.round(route.ascent_m) + ' m de subida en total');
 
+  // Safety, from public statistics: said plainly, as an average, not as a promise either way.
+  const sf = route.safety;
+  let risk_share = 0;
+  if (sf) {
+    risk_share = sf.robo_high_m / total;
+    if (sf.robo_high_m >= 300) warnings.push(km(sf.robo_high_m) + ' km por zonas con muchos robos');
+    else if (sf.caba_m >= 1500 && sf.robo_high_m < 100 && sf.robo_mid_m / total < 0.15) tags.push('Evita las zonas con más robos');
+    if (sf.choque_high_m >= 300) warnings.push(km(sf.choque_high_m) + ' km por zonas con muchos choques');
+    const risky = sf.partidos.filter((p) => p.level >= 2).map((p) => p.name);
+    if (risky.length) warnings.push('Pasa por ' + risky.slice(0, 2).join(' y ') + ', con más robos que el promedio del conurbano');
+    if (sf.reports > 0) warnings.push(sf.reports === 1 ? 'Un aviso de otro ciclista cerca de la ruta' : sf.reports + ' avisos de ciclistas cerca de la ruta');
+  }
+
   return {
     distance_m: Math.round(route.distance_m || total),
     ascent_m: Math.round(route.ascent_m),
     duration_s: estimateDurationS(route.distance_m || total, route.ascent_m, speedKmh),
-    shares, park_share, parks: names, tags, warnings, segments,
+    shares, park_share, parks: names, tags, warnings, risk_share, segments,
   };
 }
 
-/** Order for the «por tiempo» options: more bike lanes and parks first, more avenues last. */
+/** Order for the «por tiempo» options: more bike lanes and parks first; avenues and zones with many robberies last. */
 export function routeScore(a: RouteAnalysis): number {
-  return a.shares.bicisenda * 2 + a.park_share * 1.5 + a.shares.calle * 0.5 + a.shares.sendero * 0.5 - a.shares.avenida;
+  return a.shares.bicisenda * 2 + a.park_share * 1.5 + a.shares.calle * 0.5 + a.shares.sendero * 0.5 - a.shares.avenida - a.risk_share * 2.5;
 }
 
 export const formatKm = (m: number) => km(m) + ' km';

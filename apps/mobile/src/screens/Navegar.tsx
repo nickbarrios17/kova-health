@@ -8,7 +8,7 @@
  */
 import {
   ARRIVE_M, analyzeRoute, announcement, bearing, cumulative, distanceM, formatKm, isOff, locate, navInfo, newId, pointAt, rideSummary,
-  stepText, type Coord, type NavInfo, type RawRoute,
+  stepText, type Coord, type NavInfo, type RawRoute, type SafetyZones,
 } from '@kova/domain';
 import * as Location from 'expo-location';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -40,10 +40,12 @@ export interface NavigateProps {
   /** Your planned pace, until there is a real average. */
   speedKmh: number;
   name: string;
+  /** Zones with many robberies: a voice heads-up when you enter one. */
+  zones?: SafetyZones | null;
   onClose: () => void;
 }
 
-export function Navegar({ route, kind, speedKmh, name: plannedName, onClose }: NavigateProps) {
+export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null, onClose }: NavigateProps) {
   useKeepAwake();
   const { height: screenH } = useWindowDimensions();
   const [rt, setRt] = useState(route);
@@ -61,15 +63,23 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, onClose }: N
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [inZone, setInZone] = useState(false);
+  const risky = useMemo(() => {
+    if (!zones) return null;
+    const g = zones.grid, set = new Set<string>();
+    for (const z of zones.cells) if (z.r === 2) set.add(Math.floor((z.lat - g.lat0) / g.dlat) + ':' + Math.floor((z.lng - g.lng0) / g.dlng));
+    return { g, set };
+  }, [zones]);
   // One id per ride: saving twice (a retry) keeps one workout.
   const rideId = useRef(newId());
 
   // Everything the GPS callback needs, without restarting the watch on each change.
   const s = useRef({
     rt: route, cum: cumulative(route.coords), along: 0, said: new Set<string>(), muted: false, voice: undefined as string | undefined,
+    risky: null as typeof risky, lastZoneWarn: 0, wasInZone: false,
     last: null as Coord | null, lastTs: 0, odometer: 0, moving: 0, startedAt: new Date(), offCount: 0, lastReroute: 0, rerouting: false, done: false,
   }).current;
-  s.rt = rt; s.cum = cum; s.muted = muted;
+  s.rt = rt; s.cum = cum; s.muted = muted; s.risky = risky;
 
   const say = (text: string | null) => {
     if (!text || s.muted) return;
@@ -138,6 +148,12 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, onClose }: N
           const gpsSpeed = loc.coords.speed != null && loc.coords.speed >= 0 ? loc.coords.speed : null;
           setKmh(Math.round((gpsSpeed ?? 0) * 3.6));
 
+          // Entering a zone with many robberies: say it once, then not again for a few minutes.
+          if (s.risky) {
+            const g = s.risky.g, here = s.risky.set.has(Math.floor((p[1] - g.lat0) / g.dlat) + ':' + Math.floor((p[0] - g.lng0) / g.dlng));
+            if (here && !s.wasInZone && Date.now() - s.lastZoneWarn > 180000) { s.lastZoneWarn = Date.now(); say('Atención: zona con muchos robos.'); }
+            if (here !== s.wasInZone) { s.wasInZone = here; setInZone(here); }
+          }
           const f = locate(s.rt.coords, s.cum, p, s.along);
           let heading: number;
           if (!isOff(f, acc)) {
@@ -226,7 +242,14 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, onClose }: N
           </View>
         </View>
       )}
-      <RouteMap data={mapData} nav={pos} height={mapH} />
+      <View>
+        <RouteMap data={mapData} nav={pos} height={mapH} />
+        {inZone ? (
+          <View style={{ position: 'absolute', left: 8, top: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(229,72,77,0.92)' }}>
+            <T size={12} w="medium">Zona con muchos robos</T>
+          </View>
+        ) : null}
+      </View>
       <Row style={{ justifyContent: 'space-between', paddingHorizontal: 4 }}>
         <Stat label="Falta" value={formatKm(remaining)} />
         <Stat label="Tiempo" value={fmtDuration(leftS)} />

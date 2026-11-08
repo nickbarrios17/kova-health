@@ -1,9 +1,10 @@
 /** Ciclismo (docs/ciclismo.md): routes through the `bike-route` Edge Function, saved routes in bike_routes. */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { KovaError, type Coord, type Park, type RawRoute, type RouteAnalysis } from '@kova/domain';
+import { KovaError, type Coord, type Park, type RawRoute, type RouteAnalysis, type SafetyReportKind, type SafetyZones } from '@kova/domain';
 
 export interface Place { name: string; label: string; coord: [number, number] }
-export interface PlannedRoutes { routes: RawRoute[]; parks: Park[] }
+export interface PlannedRoutes { routes: RawRoute[]; parks: Park[]; zones?: SafetyZones | null }
+export interface MySafetyReport { id: string; kind: SafetyReportKind; coord: [number, number]; created_at: string }
 export interface SavedRoute {
   id: string;
   name: string;
@@ -62,6 +63,17 @@ export function createCycling({ sb, call, toKovaError }: CyclingDeps) {
       }, { onConflict: 'id', ignoreDuplicates: true }));
     },
     remove: (id: string) => call(sb.from('bike_routes').update({ deleted_at: new Date().toISOString() }).eq('id', id).select('id')),
+    /** Mark a place: a robbery, an attempt, an unsafe or dangerous stretch. Others see it without your name. */
+    report: async (r: { id: string; kind: SafetyReportKind; coord: Coord }) => {
+      const [lng, lat] = pt(r.coord);
+      await call(sb.from('safety_reports').insert({ id: r.id, kind: r.kind, lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5 }).select('id'));
+    },
+    myReports: async () => {
+      const rows = await call(sb.from('safety_reports').select('id, kind, lat, lng, created_at').is('deleted_at', null)
+        .gte('created_at', new Date(Date.now() - 180 * 86400e3).toISOString()).order('created_at', { ascending: false }).limit(100)) as Array<{ id: string; kind: SafetyReportKind; lat: number; lng: number; created_at: string }>;
+      return rows.map((r): MySafetyReport => ({ id: r.id, kind: r.kind, coord: [Number(r.lng), Number(r.lat)], created_at: r.created_at }));
+    },
+    removeReport: (id: string) => call(sb.from('safety_reports').update({ deleted_at: new Date().toISOString() }).eq('id', id).select('id')),
     /** A navigated ride, saved as a completed workout (Ciclismo). Idempotent on `id`. */
     logRide: async (r: { id: string; name: string; startedAt: Date; endedAt: Date; movingS: number; distanceM: number; timeZone?: string }) => {
       await call(sb.rpc('log_bike_ride', {

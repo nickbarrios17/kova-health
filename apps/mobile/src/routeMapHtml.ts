@@ -2,7 +2,8 @@
  * The cycling map (docs/ciclismo.md): MapLibre GL in a WebView (phone) or an iframe (browser), with
  * OpenFreeMap tiles (no key) and AWS terrain tiles for the 3D view. The app talks to it with messages:
  *
- *   map:  { routes: [{ coords, segments, selected }], parks, markers: [{ coord, kind }], fit?: boolean, view3d?: boolean }
+ *   map:  { routes: [{ coords, segments, selected }], parks, markers: [{ coord, kind }], fit?: boolean, view3d?: boolean,
+ *           zones?: SafetyZones, showZones?: boolean }
  *   ride: { kmh, paused } to start or change «Recorrer en 3D» on the selected route, null to stop it
  *   nav:  { pos: [lng, lat], bearing, kmh } for each GPS fix while navigating, null to stop
  *   out:  { type: 'ready' } | { type: 'tap', coord: [lng, lat] } | { type: 'pick', index }
@@ -83,9 +84,16 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     map.addSource('route', { type: 'geojson', data: empty });
     map.addSource('marks', { type: 'geojson', data: empty });
     map.addLayer({ id: 'parks', type: 'fill', source: 'parks', paint: { 'fill-color': '#9fd8a8', 'fill-opacity': 0.35 } });
+    // Safety: zones with many robberies (red) or some (orange); crash spots (yellow); cyclists' reports.
+    map.addSource('zones', { type: 'geojson', data: empty });
+    map.addSource('crashes', { type: 'geojson', data: empty });
+    map.addSource('reports', { type: 'geojson', data: empty });
+    map.addLayer({ id: 'zones', type: 'fill', source: 'zones', paint: { 'fill-color': ['match', ['get', 'r'], 2, '#e5484d', '#f2994a'], 'fill-opacity': ['match', ['get', 'r'], 2, 0.24, 0.07] } });
+    map.addLayer({ id: 'crashes', type: 'circle', source: 'crashes', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 2, 16, 6], 'circle-color': '#f2c94c', 'circle-opacity': 0.6, 'circle-stroke-width': 1, 'circle-stroke-color': '#ffffff' } });
     map.addLayer({ id: 'others', type: 'line', source: 'others', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#7b7d92', 'line-width': 4, 'line-opacity': 0.75, 'line-dasharray': [2, 1.5] } });
     map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 10 } });
     map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': 6 } });
+    map.addLayer({ id: 'reports', type: 'circle', source: 'reports', paint: { 'circle-radius': 7, 'circle-color': ['match', ['get', 'kind'], 'robo', '#e5484d', 'intento', '#f2994a', 'peligrosa', '#f2c94c', '#8b5cf6'], 'circle-stroke-width': ['case', ['get', 'mine'], 3.5, 2], 'circle-stroke-color': ['case', ['get', 'mine'], '#7b68d9', '#ffffff'] } });
     map.addLayer({ id: 'marks', type: 'circle', source: 'marks', paint: { 'circle-radius': 8, 'circle-color': ['match', ['get', 'kind'], 'start', '#5fd39a', 'end', '#f25f5c', 'me', '#4aa3ff', '#e9e9ed'], 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
     ready = true;
     if (pending) apply(pending);
@@ -128,6 +136,18 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     map.getSource('others').setData({ type: 'FeatureCollection', features: others });
     map.getSource('route').setData({ type: 'FeatureCollection', features: parts });
     map.getSource('marks').setData({ type: 'FeatureCollection', features: marks });
+    var z = d.showZones && d.zones ? d.zones : null, zf = [], cf = [], rf = [];
+    if (z) {
+      var hy = z.grid.dlat / 2, hx = z.grid.dlng / 2;
+      z.cells.forEach(function(c){
+        if (c.r > 0) zf.push({ type: 'Feature', properties: { r: c.r }, geometry: { type: 'Polygon', coordinates: [[[c.lng - hx, c.lat - hy], [c.lng + hx, c.lat - hy], [c.lng + hx, c.lat + hy], [c.lng - hx, c.lat + hy], [c.lng - hx, c.lat - hy]]] } });
+        if (c.c === 2) cf.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [c.lng, c.lat] } });
+      });
+      z.reports.forEach(function(r){ rf.push({ type: 'Feature', properties: { kind: r.kind, mine: !!r.mine, id: r.id }, geometry: { type: 'Point', coordinates: r.coord } }); });
+    }
+    map.getSource('zones').setData({ type: 'FeatureCollection', features: zf });
+    map.getSource('crashes').setData({ type: 'FeatureCollection', features: cf });
+    map.getSource('reports').setData({ type: 'FeatureCollection', features: rf });
 
     set3d(!!d.view3d || !!ride || !!nav);
     if (d.fit && !ride && !nav) {

@@ -28,6 +28,35 @@ El mapa es claro, tipo maqueta, y cambia entre 2D y 3D (edificios blancos y reli
 
 Las indicaciones vienen de OpenRouteService (tipo de maniobra y calle), y la app las arma en castellano rioplatense (`packages/domain/src/navigation.ts`, con tests). Las rutas guardadas antes de esta versión no tienen indicaciones: se navegan siguiendo la línea.
 
+## Zonas inseguras
+
+Cada ruta dice por dónde pasa, con datos públicos y avisos de otros ciclistas. Los recorridos «por tiempo» ordenan primero los que evitan las zonas con más robos.
+
+- **CABA:** la ciudad se divide en celdas de unos 275 m. Con el [mapa del delito](https://data.buenosaires.gob.ar/dataset/delitos) de BA Data (2024 y 2025, licencia CC BY) se cuentan por año:
+  - los robos, sin contar robos de autos;
+  - los robos de noche, de 20 a 6 h;
+  - las personas heridas o muertas en choques.
+  
+  «Muchos robos» es el 10 % de las celdas con más robos de la ciudad, y «algunos» el 20 % siguiente. Para choques, el 8 % con más. La ruta avisa, por ejemplo, «1,1 km por zonas con muchos robos». Si evita esas zonas, lo dice como algo a favor.
+- **Conurbano:** la tasa de robos por partido del [SNIC](https://www.argentina.gob.ar/seguridad/estadisticascriminales/bases-de-datos) (Ministerio de Seguridad, 2024), comparada con el promedio de los 24 partidos del conurbano. Avisa solo si el partido está bastante por encima, un 30 % o más. Es un dato por partido entero, mucho menos preciso que el de CABA. Para saber por qué partidos pasa la ruta, la función consulta unos puntos en la [API Georef](https://apis.datos.gob.ar/georef) del Estado.
+- **Avisos de ciclistas:** con el botón del megáfono, tocás un lugar del mapa y elegís qué pasó: «Me robaron», «Intento de robo», «Zona insegura u oscura» o «Calle peligrosa para la bici».
+  - Los demás ven el punto, qué pasó y el día, nunca quién avisó.
+  - Cada aviso dura 6 meses y se puede borrar desde «Guardadas».
+  - Hay un máximo de 20 avisos por día por persona.
+  - Una ruta avisa cuántos hay a menos de 100 m.
+- **En el mapa:** el botón del escudo muestra u oculta las zonas (rojo, muchos robos; naranja, algunos), los puntos con muchos choques (amarillo) y los avisos.
+- **Navegando:** al entrar en una zona con muchos robos, la voz avisa «Atención: zona con muchos robos», como mucho una vez cada 3 minutos.
+
+Son promedios de dónde pasa más seguido, no una garantía, y la app lo dice así.
+
+**Actualizar los datos** (por ejemplo, cuando BA Data publica un año nuevo):
+1. Descargá los CSV del delito de CABA (`https://cdn.buenosaires.gob.ar/datosabiertos/datasets/ministerio-de-justicia-y-seguridad/delitos/delitos_AAAA.csv`) y `snic-departamentos-anual.csv` de la página del SNIC.
+2. Corré:
+   ```
+   python -I scripts/safety/build-safety-data.py --caba delitos_2024.csv delitos_2025.csv --snic snic-departamentos-anual.csv --snic-year 2024 --out supabase/migrations/<fecha>_safety_data.sql
+   ```
+   La migración reemplaza los datos anteriores.
+
 ## Cómo funciona
 
 | Parte | Dónde |
@@ -57,7 +86,6 @@ El tiempo estimado es la distancia a tu ritmo, más un 8 % por semáforos y esqu
 
 ## Lo que viene
 
-- **Zonas inseguras:** avisar o descartar rutas que pasan por zonas con más delitos. En CABA, con el mapa del delito de Buenos Aires Data. En el conurbano, con estadísticas por partido, que son menos precisas, y zonas marcadas por los usuarios.
 - La versión de escritorio de la web.
 
 ## Edificios de Overture
