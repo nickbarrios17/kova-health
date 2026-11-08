@@ -27,7 +27,7 @@ const fmtDuration = (s: number) => {
   return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '');
 };
 const message = (e: unknown) => (e instanceof KovaError ? e.message : 'Algo salió mal. Probá de nuevo.');
-const muted = { fontSize: 13, color: 'var(--color-neutral-400)' } as const;
+const muted = { fontSize: 13, color: 'var(--kova-text-2)' } as const;
 
 function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
   return (
@@ -42,10 +42,10 @@ function RouteCard({ a, title, selected, onClick }: { a: RouteAnalysis; title: s
   const parts = (['bicisenda', 'calle', 'avenida', 'sendero', 'otro'] as const).filter((k) => a.shares[k] >= 0.01);
   return (
     <button type="button" onClick={onClick} aria-pressed={selected}
-      style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 'var(--radius-lg)', cursor: 'pointer', color: 'var(--color-text)', font: 'inherit',
+      style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 'var(--kova-radius-xl)', cursor: 'pointer', color: 'var(--color-text)', font: 'inherit',
         border: '1px solid ' + (selected ? 'var(--color-accent)' : 'var(--color-divider)'), background: selected ? 'color-mix(in srgb, var(--color-accent) 8%, var(--color-surface))' : 'var(--color-surface)' }}>
       <span style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 500 }}>
-        <span>{title}</span><span style={{ color: 'var(--color-accent-200)' }}>{fmtDuration(a.duration_s)}</span>
+        <span>{title}</span><span style={{ color: 'var(--color-accent-300)' }}>{fmtDuration(a.duration_s)}</span>
       </span>
       <span style={muted}>{formatKm(a.distance_m)}{a.ascent_m >= 10 ? ' · ' + a.ascent_m + ' m de subida' : ''} · tiempo estimado</span>
       <span style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--color-neutral-800)' }}>
@@ -53,7 +53,7 @@ function RouteCard({ a, title, selected, onClick }: { a: RouteAnalysis; title: s
       </span>
       <span style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {parts.map((k) => (
-          <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--color-neutral-400)' }}>
+          <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--kova-text-2)' }}>
             <span style={{ width: 8, height: 8, borderRadius: 4, background: WAY_COLORS[k] }} />{NAMES[k]} {Math.round(a.shares[k] * 100)} %
           </span>
         ))}
@@ -72,7 +72,7 @@ function RouteCard({ a, title, selected, onClick }: { a: RouteAnalysis; title: s
 
 function Legend({ color, label, square }: { color: string; label: string; square?: boolean }) {
   return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--color-neutral-400)' }}>
+    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--kova-text-2)' }}>
       <span style={{ width: 10, height: 10, borderRadius: square ? 2 : 5, background: color }} />{label}
     </span>
   );
@@ -176,7 +176,7 @@ export default function CiclismoPage() {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-start' }}>
       <section style={{ flex: '1 1 380px', maxWidth: 520, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div role="tablist" aria-label="Modo" style={{ display: 'flex', border: '1px solid var(--color-divider)', borderRadius: 'var(--radius-md)', overflow: 'hidden', alignSelf: 'flex-start' }}>
+        <div role="tablist" aria-label="Modo" style={{ display: 'flex', border: '1px solid var(--color-divider)', borderRadius: 'var(--kova-radius-control)', overflow: 'hidden', alignSelf: 'flex-start' }}>
           {([['tiempo', 'Por tiempo'], ['ab', 'A → B'], ['guardadas', 'Guardadas']] as const).map(([m, l]) => (
             <button key={m} role="tab" aria-selected={mode === m} onClick={() => { setMode(m); setPlan(null); setError(null); setNotice(null); stopRide(); }}
               style={{ padding: '8px 14px', fontSize: 13, cursor: 'pointer', ...chip(mode === m), borderWidth: 0 }}>{l}</button>
@@ -200,7 +200,7 @@ export default function CiclismoPage() {
           <>
             <form onSubmit={(e) => { e.preventDefault(); search(); }} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
               <label className="field" style={{ flex: 1 }}>
-                <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>¿A dónde vas?</span>
+                <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>¿A dónde vas?</span>
                 <input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Dirección o lugar" />
               </label>
               <button className="btn btn-secondary" disabled={query.trim().length < 3 || busy === 'search'} aria-label="Buscar"><i className="ph ph-magnifying-glass" /></button>
@@ -209,7 +209,7 @@ export default function CiclismoPage() {
               <button key={p.label + p.coord.join()} type="button" className="kova-nav"
                 onClick={() => { setEnd({ coord: p.coord, label: p.name }); setPlaces(null); setQuery(p.name); setPlan(null); setFit((n) => n + 1); }}
                 style={{ textAlign: 'left', border: 0, borderBottom: '1px solid var(--color-divider)', background: 'transparent', color: 'var(--color-text)', padding: '8px 4px', cursor: 'pointer', font: 'inherit' }}>
-                <div style={{ fontSize: 14 }}>{p.name}</div><div style={{ fontSize: 12, color: 'var(--color-neutral-500)' }}>{p.label}</div>
+                <div style={{ fontSize: 14 }}>{p.name}</div><div style={{ fontSize: 12, color: 'var(--kova-text-3)' }}>{p.label}</div>
               </button>
             )) : <span style={muted}>No encontramos ese lugar.</span>)}
             <span style={{ display: 'flex', gap: 8, alignItems: 'center', ...muted }}>
@@ -232,8 +232,8 @@ export default function CiclismoPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {saved.data.map((sr) => (
                 <button key={sr.id} type="button" className="card" onClick={() => open(sr)} style={{ textAlign: 'left', border: 0, cursor: 'pointer', color: 'var(--color-text)', font: 'inherit' }}>
-                  <span style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 500 }}><span>{sr.name}</span><span style={{ color: 'var(--color-accent-200)' }}>{fmtDuration(sr.duration_s)}</span></span>
-                  <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{formatKm(sr.distance_m)}{sr.summary.tags?.length ? ' · ' + sr.summary.tags.join(' · ') : ''}</span>
+                  <span style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 500 }}><span>{sr.name}</span><span style={{ color: 'var(--color-accent-300)' }}>{fmtDuration(sr.duration_s)}</span></span>
+                  <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{formatKm(sr.distance_m)}{sr.summary.tags?.length ? ' · ' + sr.summary.tags.join(' · ') : ''}</span>
                 </button>
               ))}
             </div>
@@ -253,12 +253,12 @@ export default function CiclismoPage() {
           </div>
         ) : null}
 
-        {reporting === 'tap' && <span role="status" style={{ ...muted, color: 'var(--color-accent-200)' }}>Hacé clic en el mapa en el lugar del que querés avisar.</span>}
+        {reporting === 'tap' && <span role="status" style={{ ...muted, color: 'var(--color-accent-300)' }}>Hacé clic en el mapa en el lugar del que querés avisar.</span>}
         {reporting && reporting !== 'tap' && (
           <div className="card">
             <span style={{ fontSize: 15, fontWeight: 500 }}>¿Qué pasó ahí?</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{SAFETY_REPORT_KINDS.map((k) => <Chip key={k.kind} label={k.label} on={false} onClick={() => sendReport(k.kind)} />)}</div>
-            <span style={{ fontSize: 12, color: 'var(--color-neutral-500)' }}>Otros ciclistas ven el punto y qué pasó, nunca quién avisó. Se borra solo a los 6 meses.</span>
+            <span style={{ fontSize: 12, color: 'var(--kova-text-3)' }}>Otros ciclistas ven el punto y qué pasó, nunca quién avisó. Se borra solo a los 6 meses.</span>
             <button className="btn btn-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setReporting(null)}>Cancelar</button>
           </div>
         )}
@@ -292,7 +292,7 @@ export default function CiclismoPage() {
                 {!plan.savedId ? (
                   <form onSubmit={(e) => { e.preventDefault(); save(selected.a, selected.rt); }} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 6 }}>
                     <label className="field" style={{ flex: 1 }}>
-                      <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Nombre</span>
+                      <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Nombre</span>
                       <input className="input" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder={plan.kind === 'loop' ? 'Vuelta de ' + fmtDuration(selected.a.duration_s) : 'Mi ruta'} />
                     </label>
                     <button className="btn btn-primary" disabled={busy === 'save'}><i className="ph ph-floppy-disk" />Guardar ruta</button>
@@ -300,16 +300,16 @@ export default function CiclismoPage() {
                 ) : (
                   <button className="btn btn-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setPlan(null)}>Volver a la lista</button>
                 )}
-                <span style={{ fontSize: 12, color: 'var(--color-neutral-500)' }}>Para que te guíe con voz mientras andás, guardala y abrila en el celular: Ciclismo → Guardadas → Navegar.</span>
+                <span style={{ fontSize: 12, color: 'var(--kova-text-3)' }}>Para que te guíe con voz mientras andás, guardala y abrila en el celular: Ciclismo → Guardadas → Navegar.</span>
               </div>
             )}
           </div>
         )}
 
-        <span style={{ fontSize: 12, color: 'var(--color-neutral-500)', lineHeight: 1.5 }}>
+        <span style={{ fontSize: 12, color: 'var(--kova-text-3)', lineHeight: 1.5 }}>
           Los tiempos son estimados. Las zonas salen de estadísticas oficiales de robos y choques: muestran dónde pasa más seguido, no garantizan nada. En el conurbano el dato es por partido, menos preciso.
         </span>
-        <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>
+        <span style={{ fontSize: 11, color: 'var(--kova-text-3)' }}>
           Rutas: openrouteservice.org · Mapa y parques: © OpenStreetMap, OpenFreeMap · Edificios: Overture Maps · Delitos y choques en CABA: Mapa del delito, BA Data (CC BY) · Conurbano: SNIC, Ministerio de Seguridad
         </span>
       </section>

@@ -9,8 +9,8 @@ import { useSession } from '@/lib/session';
 type Mode = 'signin' | 'signup' | 'forgot';
 
 const COPY: Record<Mode, { title: string; cta: string; icon: string }> = {
-  signin: { title: 'Inicia sesión', cta: 'Entrar', icon: 'ph ph-sign-in' },
-  signup: { title: 'Crea tu cuenta', cta: 'Crear cuenta', icon: 'ph ph-user-plus' },
+  signin: { title: 'Iniciá sesión', cta: 'Entrar', icon: 'ph ph-sign-in' },
+  signup: { title: 'Creá tu cuenta', cta: 'Crear cuenta', icon: 'ph ph-user-plus' },
   forgot: { title: 'Recupera tu contraseña', cta: 'Enviar enlace', icon: 'ph ph-envelope-simple' },
 };
 
@@ -41,7 +41,7 @@ export default function LoginPage() {
       if (mode === 'signin') await auth.signIn(email, password);
       else if (mode === 'signup') {
         const res = await auth.signUp(email, password);
-        if (!res.session) setNotice('Revisa tu correo para confirmar la cuenta y después inicia sesión.');
+        if (!res.session) setNotice('Revisá tu correo para confirmar la cuenta y después inicia sesión.');
       } else {
         await auth.requestPasswordReset(email, window.location.origin + '/reset-password');
         setNotice('Si existe una cuenta con ese correo, te hemos enviado un enlace para cambiar la contraseña.');
@@ -94,7 +94,7 @@ export default function LoginPage() {
               value={password} onChange={(e) => setPassword(e.target.value)}
             />
             {mode === 'signup' && (
-              <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Mínimo 8 caracteres, con letras y números.</span>
+              <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Mínimo 8 caracteres, con letras y números.</span>
             )}
           </div>
         )}

@@ -53,7 +53,7 @@ export async function downloadAndInstall(rel: ApkRelease, onProgress: (fraction:
     if (p.totalBytesExpectedToWrite > 0) onProgress(p.totalBytesWritten / p.totalBytesExpectedToWrite);
   });
   const done = await task.downloadAsync();
-  if (!done || done.status !== 200) throw new Error('No se pudo descargar la actualización. Revisa tu conexión.');
+  if (!done || done.status !== 200) throw new Error('No se pudo descargar la actualización. Revisá tu conexión.');
   const contentUri = await FileSystem.getContentUriAsync(done.uri);
   const FLAG_GRANT_READ_URI_PERMISSION = 0x1, FLAG_ACTIVITY_NEW_TASK = 0x10000000;
   await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {

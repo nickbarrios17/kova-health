@@ -29,7 +29,7 @@ export default function CoachPage() {
           ))
         )}
       </div>
-      <aside style={{ flex: '1 1 260px', padding: '16px 18px', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <aside style={{ flex: '1 1 260px', padding: '16px 18px', borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <span style={{ fontSize: 15, fontWeight: 500 }}>Cómo leer el Coach</span>
         {(['fact', 'pattern', 'prediction', 'hypothesis'] as const).map((k) => (
           <span key={k} style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--color-neutral-300)' }}>
@@ -42,7 +42,7 @@ export default function CoachPage() {
             }[k]}
           </span>
         ))}
-        <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
+        <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>
           Niveles de evidencia: {Object.values(EVIDENCE_LABEL).slice(0, 3).join(' · ')}. Nada de esto es consejo médico.
         </span>
       </aside>

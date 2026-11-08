@@ -13,6 +13,37 @@ const setOp = (i: number): OutboxOp => ({
 });
 
 describe('Outbox', () => {
+  it('reports its state, tells listeners, and discards only failed entries', async () => {
+    let fail = true;
+    const outbox = new Outbox(async () => {
+      if (fail) throw new KovaError('INVALID_INPUT');
+    });
+    const seen = vi.fn();
+    const off = outbox.subscribe(seen);
+    const bad = await outbox.enqueue(setOp(0));
+    expect(await outbox.state()).toEqual({ pending: 1, failed: 0, sending: false });
+    await outbox.flush();
+    expect(await outbox.state()).toEqual({ pending: 0, failed: 1, sending: false });
+    expect(seen).toHaveBeenCalled();
+
+    fail = false;
+    const good = await outbox.enqueue(setOp(1));
+    expect(await outbox.discard(good.id)).toBe(false); // pending: not discardable
+    expect(await outbox.discard(bad.id)).toBe(true);
+    expect((await outbox.entries()).map((e) => e.id)).toEqual([good.id]);
+    off();
+  });
+
+  it('puts a failed operation back in the queue', async () => {
+    let fail = true;
+    const outbox = new Outbox(async () => { if (fail) throw new KovaError('ACTIVE_SESSION_EXISTS'); });
+    const e = await outbox.enqueue({ kind: 'start_session', input: { id: sessionId } });
+    await outbox.flush();
+    expect(await outbox.retry([e.id])).toBe(1);
+    fail = false;
+    expect(await outbox.flush()).toMatchObject({ confirmed: 1, failed: 0 });
+  });
+
   it('keeps operations pending while offline and replays them in order', async () => {
     const sent: OutboxOp[] = [];
     let online = false;

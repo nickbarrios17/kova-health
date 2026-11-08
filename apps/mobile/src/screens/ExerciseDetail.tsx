@@ -95,7 +95,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
                 {ins.steps.map((s, i) => (
                   <Row key={i} style={{ alignItems: 'flex-start', gap: 10 }}>
                     <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-                      <T size={12} color={c.a200}>{i + 1}</T>
+                      <T size={12} color={c.a300}>{i + 1}</T>
                     </View>
                     <T size={14} color={c.n200} style={{ flex: 1 }}>{s}</T>
                   </Row>
@@ -146,7 +146,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
 function Chip({ label, strong, muted }: { label: string; strong?: boolean; muted?: boolean }) {
   return (
     <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: strong ? c.accentSoft : 'transparent', borderWidth: 1, borderColor: strong ? c.accent : c.divider }}>
-      <T size={12} color={muted ? c.n400 : strong ? c.a200 : c.n300}>{label}</T>
+      <T size={12} color={muted ? c.n400 : strong ? c.a300 : c.n300}>{label}</T>
     </View>
   );
 }

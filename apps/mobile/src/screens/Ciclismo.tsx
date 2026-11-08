@@ -16,7 +16,7 @@ import { kova } from '../client';
 import { RouteMap, type MapData, type Ride } from '../RouteMap';
 import { WAY_COLORS } from '../routeMapHtml';
 import { Navegar } from './Navegar';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Confirm, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
 
@@ -36,7 +36,7 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }}
       style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: on ? c.accent : c.divider, backgroundColor: on ? c.accentSoft : 'transparent', justifyContent: 'center' }}>
-      <T size={13} color={on ? c.a200 : c.n300}>{label}</T>
+      <T size={13} color={on ? c.a300 : c.n300}>{label}</T>
     </Pressable>
   );
 }
@@ -64,10 +64,10 @@ function Shares({ a }: { a: RouteAnalysis }) {
 function RouteCard({ a, title, selected, onPress }: { a: RouteAnalysis; title: string; selected: boolean; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected }}
-      style={{ padding: 14, gap: 10, borderRadius: r.lg, borderWidth: 1, borderColor: selected ? c.accent : c.divider, backgroundColor: selected ? 'rgba(145,132,217,0.08)' : c.surface }}>
+      style={{ padding: 14, gap: 10, borderRadius: rad.card, borderWidth: 1, borderColor: selected ? c.accent : c.divider, backgroundColor: selected ? 'rgba(145,132,217,0.08)' : c.surface }}>
       <Row style={{ justifyContent: 'space-between' }}>
         <T size={15} w="medium">{title}</T>
-        <T size={15} w="medium" color={c.a200}>{fmtDuration(a.duration_s)}</T>
+        <T size={15} w="medium" color={c.a300}>{fmtDuration(a.duration_s)}</T>
       </Row>
       <T size={13} color={c.n400}>{formatKm(a.distance_m)}{a.ascent_m >= 10 ? ' · ' + a.ascent_m + ' m de subida' : ''} · tiempo estimado</T>
       <Shares a={a} />
@@ -317,7 +317,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
               <Pressable onPress={() => open(s)} accessibilityRole="button" style={{ gap: 4 }}>
                 <Row style={{ justifyContent: 'space-between' }}>
                   <T size={15} w="medium" style={{ flex: 1 }}>{s.name}</T>
-                  <T size={14} color={c.a200}>{fmtDuration(s.duration_s)}</T>
+                  <T size={14} color={c.a300}>{fmtDuration(s.duration_s)}</T>
                 </Row>
                 <T size={12} color={c.n400}>{formatKm(s.distance_m)}{s.summary.tags?.length ? ' · ' + s.summary.tags.join(' · ') : ''}</T>
               </Pressable>
@@ -351,7 +351,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
           ))}
           {selected ? (
             <View style={{ gap: 10 }}>
-              <Button label="Navegar" icon={NavigationArrow} onPress={() => { stopRide(); setNavigating(true); }} />
+              <Button large label="Navegar" icon={NavigationArrow} onPress={() => { stopRide(); setNavigating(true); }} />
               <View style={{ gap: 8 }}>
                 <T size={13} color={c.n300}>{riding ? (progress ? formatKm(progress.done) + ' de ' + formatKm(progress.total) : 'Preparando la bici…') : 'Velocidad del recorrido en 3D'}</T>
                 <Row style={{ flexWrap: 'wrap', gap: 8 }}>{RIDE_SPEEDS.map((o) => (
@@ -371,7 +371,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
               {!plan.savedId ? (
                 <Row style={{ gap: 8, alignItems: 'flex-end' }}>
                   <View style={{ flex: 1 }}><Field label="Nombre" value={name} onChangeText={setName} placeholder={plan.kind === 'loop' ? 'Vuelta de ' + fmtDuration(selected.a.duration_s) : 'Mi ruta'} maxLength={80} /></View>
-                  <Button label="Guardar ruta" icon={FloppyDisk} onPress={() => save(selected.a, selected.rt)} busy={busy === 'save'} />
+                  <Button variant="secondary" label="Guardar ruta" icon={FloppyDisk} onPress={() => save(selected.a, selected.rt)} busy={busy === 'save'} />
                 </Row>
               ) : (
                 <Button variant="ghost" label="Volver a la lista" onPress={() => setPlan(null)} />

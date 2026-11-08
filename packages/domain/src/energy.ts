@@ -78,7 +78,7 @@ export const EnergyInputSchema = z
     /** Body fat %, if known: switches resting energy to the lean-mass formula. */
     bodyFatPct: z.number().min(3).max(60).nullish(),
   })
-  .refine((v) => !goalHasPace(v.goal) || v.pace != null, { message: 'Elige un ritmo', path: ['pace'] });
+  .refine((v) => !goalHasPace(v.goal) || v.pace != null, { message: 'Elegí un ritmo', path: ['pace'] });
 export type EnergyInput = z.input<typeof EnergyInputSchema>;
 
 export interface EnergyTarget {
@@ -291,5 +291,5 @@ export const OnboardingSchema = z
     timeZone: z.string().optional(),
   })
   .strict()
-  .refine((v) => !goalHasPace(v.goal) || v.pace != null, { message: 'Elige un ritmo', path: ['pace'] });
+  .refine((v) => !goalHasPace(v.goal) || v.pace != null, { message: 'Elegí un ritmo', path: ['pace'] });
 export type OnboardingInput = z.input<typeof OnboardingSchema>;

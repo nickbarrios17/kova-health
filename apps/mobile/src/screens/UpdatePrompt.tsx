@@ -3,7 +3,7 @@ import { DownloadSimple } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Modal, View } from 'react-native';
 import { downloadAndInstall, isMandatory, type ApkRelease } from '../appUpdate';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { Button, ErrorNote, T } from '../ui';
 
 export function UpdatePrompt({ release, onLater }: { release: ApkRelease; onLater: () => void }) {
@@ -26,8 +26,8 @@ export function UpdatePrompt({ release, onLater }: { release: ApkRelease; onLate
 
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={mandatory ? () => undefined : onLater}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(8,9,16,0.72)', justifyContent: 'center', padding: 24 }}>
-        <View accessibilityViewIsModal style={{ backgroundColor: c.surface, borderRadius: r.lg, borderWidth: 1, borderColor: c.divider, padding: 20, gap: 12 }}>
+      <View style={{ flex: 1, backgroundColor: c.scrim, justifyContent: 'center', padding: 24 }}>
+        <View accessibilityViewIsModal style={{ backgroundColor: c.surface, borderRadius: rad.card, borderWidth: 1, borderColor: c.divider, padding: 20, gap: 12 }}>
           <T size={18} w="medium" accessibilityRole="header">Hay una versión nueva de Kova Health</T>
           <T size={14} color={c.n300}>
             Versión {release.versionName}.{release.notes ? ' ' + release.notes : ''}

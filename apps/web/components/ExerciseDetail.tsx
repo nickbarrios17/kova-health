@@ -91,12 +91,12 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
             {anim && (
               <div style={{ display: 'grid', gap: 4 }}>
                 <gym-mannequin slug={anim.slug} muscle={anim.muscle} equipment={anim.equipment} category={anim.category} layer="muscles" view="34"
-                  style={{ display: 'block', height: 280, borderRadius: 'var(--radius-lg)', background: '#0f1019' }} />
-                <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Arrastra para girar el modelo. Los músculos que trabajan se iluminan.</span>
+                  style={{ display: 'block', height: 280, borderRadius: 'var(--kova-radius-xl)', background: '#0f1019' }} />
+                <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Arrastra para girar el modelo. Los músculos que trabajan se iluminan.</span>
               </div>
             )}
             {urls.length > 0 && !anim && <Frames urls={urls} />}
-            {q.data?.borrowed && <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Instrucciones de «{ex.name}», el ejercicio del catálogo más parecido.</span>}
+            {q.data?.borrowed && <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Instrucciones de «{ex.name}», el ejercicio del catálogo más parecido.</span>}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {label('primary').map((m) => <span key={'p' + m} className="kova-chip strong">{m}</span>)}
               {label('secondary').map((m) => <span key={'s' + m} className="kova-chip">{m}</span>)}
@@ -110,7 +110,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
             <button type="button" className="btn btn-ghost" style={{ alignSelf: 'flex-start', fontSize: 13 }} onClick={() => setReport(true)}>
               <i className="ph ph-flag" />Reportar un error en este ejercicio o su modelo 3D
             </button>
-            {urls.length > 0 && !anim && <span style={{ fontSize: 11, color: 'var(--color-neutral-600)' }}>Imágenes: free-exercise-db (dominio público).</span>}
+            {urls.length > 0 && !anim && <span style={{ fontSize: 11, color: 'var(--kova-text-3)' }}>Imágenes: free-exercise-db (dominio público).</span>}
           </>
         ) : null}
       </div>

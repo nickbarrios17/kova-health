@@ -113,7 +113,7 @@ export function createKovaClient(opts: KovaClientOptions) {
   const uid = async (): Promise<string> => {
     const { data } = await sb.auth.getSession();
     const id = data.session?.user.id;
-    if (!id) throw new KovaError('UNAUTHENTICATED', 'Inicia sesión de nuevo.');
+    if (!id) throw new KovaError('UNAUTHENTICATED', 'Iniciá sesión de nuevo.');
     return id;
   };
 

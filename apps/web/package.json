@@ -10,9 +10,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@phosphor-icons/web": "2.1.2",
+    "@fontsource/inter": "5.2.8",
     "@kova/api-client": "0.1.0",
     "@kova/domain": "0.1.0",
+    "@phosphor-icons/web": "2.1.2",
     "next": "^15.5.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
