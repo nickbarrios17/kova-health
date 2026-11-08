@@ -51,7 +51,7 @@ a:hover { color: var(--color-accent-200); }
 button { font-family: inherit; }
 
 .kova-insight:hover { background: var(--color-surface) !important; }
-.kova-tile:hover { border-color: var(--color-accent-800) !important; }
+
 .kova-nav:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
 
 /* Auth screens: no prototype exists; built from the same tokens and form classes. */
@@ -263,3 +263,37 @@ a.kova-chip { text-decoration: none; }
   .kova-anim-ring { transition: none !important; }
 }
 @keyframes kova-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* — app shell: sidebar 248 (nav-bg), collapsed to 72 between 1024 and 1279 px and below (HANDOFF §5.1, §7.1) — */
+.kova-shell { min-height: 100vh; display: flex; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
+.kova-side {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; flex: none; width: 248px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 20px; padding: 20px 12px; background: var(--kova-nav-bg);
+}
+.kova-side-brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px; }
+.kova-side-nav { display: flex; flex-direction: column; gap: 2px; }
+.kova-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+.kova-side-item {
+  position: relative; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px; border-radius: var(--kova-radius-control);
+  border: 0; background: transparent; color: var(--kova-text-2); font: inherit; font-size: 14px; text-decoration: none; cursor: pointer; text-align: left; width: 100%;
+  transition: background-color var(--kova-dur-fast), color var(--kova-dur-fast);
+}
+.kova-side-item:hover { background: rgba(233, 233, 237, 0.05); color: var(--color-text); }
+.kova-side-item[aria-current='page'] { background: var(--kova-surface-raised); color: var(--color-text); font-weight: 600; }
+.kova-side-sep { display: block; height: 1px; margin: 8px 10px; background: var(--kova-border-subtle); }
+.kova-side-device { position: relative; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 10px; outline: none; }
+.kova-side-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--kova-accent-soft); color: var(--color-accent-300); font-size: 12px; font-weight: 600; display: grid; place-items: center; }
+@media (max-width: 1279px) {
+  .kova-side { width: 72px; padding: 20px 14px; }
+  .kova-side .kova-side-label { display: none; }
+  .kova-side-brand { justify-content: center; padding: 4px 0; }
+  .kova-side-item, .kova-side-device { justify-content: center; width: 44px; min-height: 44px; padding: 0; }
+  .kova-side-sep { margin: 8px 4px; }
+  .kova-side-item[data-tip]:hover::after, .kova-side-item[data-tip]:focus-visible::after, .kova-side-device[data-tip]:hover::after {
+    content: attr(data-tip); position: fixed; left: 80px; margin-top: 0; padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+    background: var(--kova-surface-raised); border: 1px solid var(--color-divider); box-shadow: var(--kova-elev-3);
+    color: var(--color-text); font-size: 13px; font-weight: 500; z-index: var(--kova-z-toast); pointer-events: none;
+  }
+}
+.kova-tile { transition: border-color var(--kova-dur-fast); }
+.kova-tile:hover { border-color: var(--color-divider) !important; }
