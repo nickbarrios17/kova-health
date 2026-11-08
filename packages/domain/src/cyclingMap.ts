@@ -59,7 +59,7 @@ const STYLE = {
 export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <link rel="stylesheet" href="${MAPLIBRE}.css">
-<style>html,body,#m{margin:0;height:100%;background:${MAP_BG}}.maplibregl-ctrl-attrib{font-size:10px}</style>
+<style>html,body,#m{margin:0;height:100%;background:${MAP_BG};touch-action:none;overscroll-behavior:none}.maplibregl-ctrl-attrib{font-size:10px}.maplibregl-ctrl-group button{width:36px;height:36px}</style>
 </head><body><div id="m"></div>
 <script src="${MAPLIBRE}.js"></script>
 <script src="${PMTILES}"></script>
@@ -76,6 +76,8 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     container: 'm', style: ${JSON.stringify(STYLE)},
     center: [-58.4370, -34.6070], zoom: 11.5, attributionControl: { compact: true }, maxPitch: 75
   });
+  // Zoom and a compass: tap it to face north again, drag it to tilt. Handy with one hand.
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-left');
   var ready = false, pending = null, last = null;
   var empty = { type: 'FeatureCollection', features: [] };
   map.on('load', function(){

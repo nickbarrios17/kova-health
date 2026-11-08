@@ -25,6 +25,8 @@ export interface MapEvents {
   onPick?: (index: number) => void;
   onFlyEnd?: () => void;
   onRideProgress?: (doneM: number, totalM: number) => void;
+  /** A finger is on the map: the screen around it should stop scrolling so the map gets the gesture. */
+  onTouching?: (touching: boolean) => void;
 }
 
 const SOURCE = { html: ROUTE_MAP_HTML, baseUrl: 'https://kova-health.vercel.app/' };
@@ -44,8 +46,11 @@ export function RouteMap({ data, ride = null, nav = null, height, ...events }: {
     if (ready) ref.current?.injectJavaScript(`window.kovaNav(${JSON.stringify(nav)});true;`);
   }, [ready, nav]);
   return (
-    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: MAP_BG }}>
-      <WebView ref={ref} source={SOURCE} originWhitelist={['*']} javaScriptEnabled domStorageEnabled
+    <View style={{ height, borderRadius: r.lg, overflow: 'hidden', backgroundColor: MAP_BG }}
+      onTouchStart={() => ev.current.onTouching?.(true)}
+      onTouchEnd={() => ev.current.onTouching?.(false)}
+      onTouchCancel={() => ev.current.onTouching?.(false)}>
+      <WebView nestedScrollEnabled ref={ref} source={SOURCE} originWhitelist={['*']} javaScriptEnabled domStorageEnabled
         allowFileAccess={false} setSupportMultipleWindows={false} overScrollMode="never" bounces={false}
         // The map loads tiles and its library, but never navigates away.
         onShouldStartLoadWithRequest={(req) => req.url === SOURCE.baseUrl || req.url.startsWith('about:')}

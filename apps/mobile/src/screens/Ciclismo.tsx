@@ -100,6 +100,8 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   const [rideX, setRideX] = useState(15);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [navigating, setNavigating] = useState(false);
+  // While a finger is on the map, the screen does not scroll: rotating or tilting the map is a two-finger drag.
+  const [onMap, setOnMap] = useState(false);
   const [fit, setFit] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -204,7 +206,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" scrollEnabled={!onMap}>
       <Row style={{ gap: 8 }}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Volver" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 }}>
           <ArrowLeft size={22} color={c.text} />
@@ -217,7 +219,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
         onChange={(m) => { setMode(m); setPlan(null); setError(null); setNotice(null); stopRide(); }} />
 
       <View>
-        <RouteMap data={mapData} height={mapH} onTap={onTap}
+        <RouteMap data={mapData} height={mapH} onTap={onTap} onTouching={setOnMap}
           onPick={(i) => { setSel(i); stopRide(); }} onFlyEnd={endRide} ride={ride}
           onRideProgress={(done, total) => setProgress({ done, total })} />
         <View style={{ position: 'absolute', right: 8, top: 8, gap: 8 }}>
