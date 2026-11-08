@@ -217,7 +217,7 @@ export default function HoyPage() {
               </span>
             </div>
           </div>
-          <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, paddingLeft: 28, borderLeft: '1px solid var(--kova-border-subtle)' }}>
+          <div className="kova-plan" style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0, paddingLeft: 28, borderLeft: '1px solid var(--kova-border-subtle)' }}>
             <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--kova-text-2)' }}>Plan de hoy</span>
             {plan ? (
               <>

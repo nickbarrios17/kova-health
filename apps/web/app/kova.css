@@ -267,7 +267,7 @@ a.kova-chip { text-decoration: none; }
 /* — app shell: sidebar 248 (nav-bg), collapsed to 72 between 1024 and 1279 px and below (HANDOFF §5.1, §7.1) — */
 .kova-shell { min-height: 100vh; display: flex; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
 .kova-side {
-  position: sticky; top: 0; height: 100vh; overflow-y: auto; flex: none; width: 248px; box-sizing: border-box;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; overflow-x: hidden; flex: none; width: 248px; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 20px; padding: 20px 12px; background: var(--kova-nav-bg);
 }
 .kova-side-brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px; }
@@ -285,7 +285,8 @@ a.kova-chip { text-decoration: none; }
 .kova-side-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--kova-accent-soft); color: var(--color-accent-300); font-size: 12px; font-weight: 600; display: grid; place-items: center; }
 @media (max-width: 1279px) {
   .kova-side { width: 72px; padding: 20px 14px; }
-  .kova-side .kova-side-label { display: none; }
+  .kova-side .kova-side-label { display: none !important; }
+  .kova-plan { border-left: 0 !important; padding-left: 0 !important; border-top: 1px solid var(--kova-border-subtle); padding-top: 20px; }
   .kova-side-brand { justify-content: center; padding: 4px 0; }
   .kova-side-item, .kova-side-device { justify-content: center; width: 44px; min-height: 44px; padding: 0; }
   .kova-side-sep { margin: 8px 4px; }
