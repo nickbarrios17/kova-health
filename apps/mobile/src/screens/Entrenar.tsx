@@ -54,7 +54,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
         <CaretRight size={18} color={c.n500} />
       </Pressable>
       {training.routines.length === 0 ? (
-        <Empty icon={Barbell} title="Aún no tienes rutinas">Crea una con «Nueva rutina» o importa tu planilla desde la web. Aparecerán aquí y en el reloj.</Empty>
+        <Empty icon={Barbell} title="Aún no tenés rutinas">Creá una con «Nueva rutina» o importá tu planilla desde la web. Aparecerán aquí y en el reloj.</Empty>
       ) : (
         training.routines.map((r) => (
           <Card key={r.id} style={{ gap: 12 }}>

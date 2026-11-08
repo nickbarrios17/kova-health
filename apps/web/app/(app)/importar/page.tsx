@@ -78,7 +78,7 @@ export default function ImportPage() {
       } else if (ext === 'csv' || ext === 'txt' || ext === 'tsv') {
         read = [{ name: f.name.replace(/\.[^.]+$/, ''), rows: parseCsv(await f.text()) }];
       } else {
-        throw new Error(ext === 'xls' ? 'El formato .xls (Excel antiguo) no se puede leer: guárdalo como .xlsx o .csv.' : 'Formato no soportado. Usa .xlsx, .csv o .json.');
+        throw new Error(ext === 'xls' ? 'El formato .xls (Excel antiguo) no se puede leer: guárdalo como .xlsx o .csv.' : 'Formato no soportado. Usá .xlsx, .csv o .json.');
       }
       read = read.filter((s) => s.rows.some((r) => r.some((c) => c != null && String(c).trim() !== '')));
       if (!read.length) throw new Error('El archivo está vacío.');
@@ -189,7 +189,7 @@ export default function ImportPage() {
         </div>
       )}
       <div className="card" style={{ gap: 12 }}>
-        <span style={{ fontSize: 15, fontWeight: 500 }}>Elige un archivo</span>
+        <span style={{ fontSize: 15, fontWeight: 500 }}>Elegí un archivo</span>
         <span style={{ fontSize: 13, color: 'var(--kova-text-2)', lineHeight: 1.5 }}>
           Excel (.xlsx), CSV o JSON. No hace falta un formato exacto: Kova Health reconoce columnas como «Ejercicio», «Series», «Reps», «4x8», «Descanso» o «Peso»,
           y si no las encuentra te deja elegirlas. Cada hoja, o cada fila título como «Día A», es una rutina.
@@ -217,7 +217,7 @@ export default function ImportPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'baseline', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 15, fontWeight: 500 }}>Columnas · {s.name}</span>
               <span style={{ fontSize: 12, color: planReady(p) ? 'var(--kova-ok)' : 'var(--kova-warn)' }}>
-                {planReady(p) ? 'Listo para leer' : 'Elige al menos la columna del ejercicio'}
+                {planReady(p) ? 'Listo para leer' : 'Elegí al menos la columna del ejercicio'}
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
@@ -261,7 +261,7 @@ export default function ImportPage() {
       })}
 
       {fileName && drafts.length === 0 && !error && unmappedSheets.length === 0 ? (
-        <EmptyState icon="ph ph-table" title="No encontramos ejercicios">Revisa qué columna tiene el nombre del ejercicio y la fila de títulos.</EmptyState>
+        <EmptyState icon="ph ph-table" title="No encontramos ejercicios">Revisá qué columna tiene el nombre del ejercicio y la fila de títulos.</EmptyState>
       ) : null}
 
       {drafts.length > 0 && (

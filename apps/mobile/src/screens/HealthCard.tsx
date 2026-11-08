@@ -26,7 +26,7 @@ export function HealthCard({ onSynced }: { onSynced: () => void }) {
       q.reload();
       onSynced();
     } catch (e) {
-      setMsg(e instanceof KovaError ? e.message : 'No se pudo sincronizar. Revisa los permisos de Health Connect.');
+      setMsg(e instanceof KovaError ? e.message : 'No se pudo sincronizar. Revisá los permisos de Health Connect.');
     } finally {
       setBusy(false);
     }
@@ -55,7 +55,7 @@ export function HealthCard({ onSynced }: { onSynced: () => void }) {
           <T size={13} color={c.n400}>Importa pasos, sueño, peso, % de grasa corporal, frecuencia cardíaca en reposo y HRV desde tu reloj o tus apps de salud. Solo lectura: Kova Health no escribe en Health Connect.</T>
           <Button label="Conectar" icon={Link} busy={busy} onPress={() => run(async () => {
             const n = await hc.connect();
-            if (n === 0) return 'No diste permiso a ningún dato. Puedes cambiarlo cuando quieras.';
+            if (n === 0) return 'No diste permiso a ningún dato. Podés cambiarlo cuando quieras.';
             await hc.sync(prefs!.time_zone, deviceId, 30);
             return `Conectado (${n} de ${hc.PERMISSION_COUNT} tipos de datos).`;
           })} />

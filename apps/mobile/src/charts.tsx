@@ -42,7 +42,7 @@ export function Chart({ points, height = 150, goal, format, label, kind = 'bars'
   return (
     <View style={{ gap: 6 }}>
       <Row style={{ justifyContent: 'space-between', minHeight: 18 }}>
-        <T size={12} color={c.n400}>{shown ? label(shown.date) : vals.length ? 'Toca una barra para ver el valor' : ''}</T>
+        <T size={12} color={c.n400}>{shown ? label(shown.date) : vals.length ? 'Tocá una barra para ver el valor' : ''}</T>
         {shown ? <T size={12} w="medium" color={c.a300}>{shown.value != null ? format(shown.value) : 'Sin datos'}</T> : null}
       </Row>
       <View onLayout={onLayout} style={{ height }}>

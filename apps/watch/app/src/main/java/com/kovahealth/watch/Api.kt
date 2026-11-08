@@ -50,7 +50,7 @@ class KovaApi(private val store: Store) {
             JSONObject(request("POST", "/auth/v1/token?grant_type=password", JSONObject().put("email", email).put("password", password).toString(), auth = false))
         } catch (e: ApiError) {
             throw ApiError(e.status, e.code, when {
-                e.code == "email_not_confirmed" -> "Confirma tu correo primero"
+                e.code == "email_not_confirmed" -> "Confirmá tu correo primero"
                 e.status == 400 || e.status == 401 -> "Correo o contraseña incorrectos"
                 else -> e.message ?: "Algo salió mal"
             })
@@ -135,7 +135,7 @@ object Errors {
         "VD003" -> "La sesión ya terminó"
         "VD004" -> "Acción no válida ahora"
         "VD404" -> "No encontrado"
-        else -> if (status == 401) "Inicia sesión de nuevo" else "Algo salió mal"
+        else -> if (status == 401) "Iniciá sesión de nuevo" else "Algo salió mal"
     }
 }
 

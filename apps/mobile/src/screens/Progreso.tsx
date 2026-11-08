@@ -73,7 +73,7 @@ export function Progreso() {
       <Seg options={[['30', 'Últimos 30 días'], ['90', 'Últimos 90 días']]} value={range} onChange={setRange} />
 
       {withData.length === 0 ? (
-        <Empty title="Todavía no hay progreso para mostrar">Entrena, registra comidas o conecta Health Connect en Ajustes y aquí verás cómo vienes, con gráficos de cada área.</Empty>
+        <Empty title="Todavía no hay progreso para mostrar">Entrená, registrá comidas o conectá Health Connect en Ajustes y acá verás cómo vienes, con gráficos de cada área.</Empty>
       ) : withData.map((x) => {
         const Ic = METRIC[x.k].icon;
         return (

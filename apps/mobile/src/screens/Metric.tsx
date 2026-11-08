@@ -24,12 +24,12 @@ import { useReportTarget } from '../report';
 export const METRIC: Record<MetricKey, { title: string; icon: Icon; empty: string }> = {
   steps: { title: 'Pasos', icon: SneakerMove, empty: 'Los pasos llegan del reloj o de Health Connect.' },
   sleep: { title: 'Sueño', icon: Moon, empty: 'El sueño llega del reloj o de Health Connect.' },
-  food: { title: 'Comida', icon: ForkKnife, empty: 'Registra lo que comes en la pestaña Comida.' },
-  weight: { title: 'Cuerpo', icon: Scales, empty: 'Anota tu peso arriba o conecta una balanza en Health Connect.' },
-  mood: { title: 'Ánimo', icon: Smiley, empty: 'Elige cómo te sientes arriba, un toque por día.' },
+  food: { title: 'Comida', icon: ForkKnife, empty: 'Registrá lo que comés en la pestaña Comida.' },
+  weight: { title: 'Cuerpo', icon: Scales, empty: 'Anotá tu peso arriba o conectá una balanza en Health Connect.' },
+  mood: { title: 'Ánimo', icon: Smiley, empty: 'Elegí cómo te sentís arriba, un toque por día.' },
   training: { title: 'Entrenamientos', icon: Barbell, empty: 'Tus sesiones completadas aparecerán aquí.' },
   heart: { title: 'Corazón', icon: Heartbeat, empty: 'La frecuencia cardíaca en reposo llega del reloj o de Health Connect.' },
-  habits: { title: 'Hábitos', icon: Flame, empty: 'Crea un hábito arriba y márcalo cada día.' },
+  habits: { title: 'Hábitos', icon: Flame, empty: 'Creá un hábito arriba y marcalo cada día.' },
 };
 
 const MOOD_ICONS: Icon[] = [SmileySad, SmileyNervous, SmileyMeh, Smiley, SmileyWink];
@@ -204,7 +204,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
 
       {metric === 'mood' ? (
         <Card>
-          <T size={14} w="medium">¿Cómo te sientes hoy?</T>
+          <T size={14} w="medium">¿Cómo te sentís hoy?</T>
           <Row style={{ justifyContent: 'space-between' }}>
             {MOOD_ICONS.map((Ic, i) => {
               const on = todayMood === i + 1;
@@ -232,7 +232,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
       {metric === 'habits' ? (
         <Card>
           <T size={14} w="medium">Hoy</T>
-          {habits.length === 0 ? <T size={13} color={c.n400}>Todavía no tienes hábitos.</T> : habits.map((h) => {
+          {habits.length === 0 ? <T size={13} color={c.n400}>Todavía no tenés hábitos.</T> : habits.map((h) => {
             const hd = habitDays.filter((d) => d.habit_id === h.id);
             const t = hd.find((d) => d.local_date === today);
             const done = !!t?.completed;

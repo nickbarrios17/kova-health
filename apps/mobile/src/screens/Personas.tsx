@@ -67,9 +67,9 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
   const look = () => run(async () => {
     Keyboard.dismiss();
     const c0 = inviteCode(code);
-    if (!c0) throw new KovaError('INVITE_INVALID', 'Escribe el código de 6 caracteres que te pasaron.');
+    if (!c0) throw new KovaError('INVITE_INVALID', 'Escribí el código de 6 caracteres que te pasaron.');
     const info = await kova.people.inviteInfo(c0);
-    if (!info || !info.valid) throw new KovaError('INVITE_INVALID', 'El código no es válido o ya venció. Pide uno nuevo.');
+    if (!info || !info.valid) throw new KovaError('INVITE_INVALID', 'El código no es válido o ya venció. Pedí uno nuevo.');
     setPreview({ code: c0, kind: info.kind, inviter_name: info.inviter_name });
   });
   const accept = () => run(async () => {
@@ -120,7 +120,7 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
                 ? preview.inviter_name + ' te invita a ser su alumno. Va a ver tus entrenamientos y va a poder armar y ajustar tus rutinas.'
                 : preview.inviter_name + ' te invita como amigo. Van a ver los entrenamientos del otro; nadie edita nada.'}
             </T>
-            <T size={12} color={c.n400}>Peso, comida y sueño no se comparten salvo que los actives. Puedes cortar el vínculo cuando quieras.</T>
+            <T size={12} color={c.n400}>Peso, comida y sueño no se comparten salvo que los actives. Podés cortar el vínculo cuando quieras.</T>
             <Row style={{ gap: 8 }}>
               <Button label="Aceptar" busy={busy} onPress={accept} />
               <Button variant="ghost" label="Cancelar" onPress={() => setPreview(null)} />
@@ -200,7 +200,7 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
           ) : null}
 
           {!coach && !students.length && !friends.length ? (
-            <Empty icon={UsersThree} title="Todavía no tienes coach ni amigos">
+            <Empty icon={UsersThree} title="Todavía no tenés coach ni amigos">
               Invita a un alumno para armarle las rutinas y ver cómo entrena, o a un amigo para ver los entrenamientos del otro.
             </Empty>
           ) : null}

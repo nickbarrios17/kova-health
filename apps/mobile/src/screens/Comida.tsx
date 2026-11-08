@@ -200,9 +200,9 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
                 </Pressable>
               ))}
               {query.trim().length >= 2 && !results.loading && (results.data ?? []).length === 0 ? (
-                <Empty icon={MagnifyingGlass} title="Sin resultados">El catálogo verificado aún no está disponible. Crea el alimento con los datos de la etiqueta.</Empty>
+                <Empty icon={MagnifyingGlass} title="Sin resultados">El catálogo verificado aún no está disponible. Creá el alimento con los datos de la etiqueta.</Empty>
               ) : null}
-              {query.trim().length < 2 ? <Empty icon={ForkKnife} title="Busca o crea un alimento">Escribe al menos 2 letras. Si no aparece, créalo con los valores de la etiqueta.</Empty> : null}
+              {query.trim().length < 2 ? <Empty icon={ForkKnife} title="Buscá o creá un alimento">Escribí al menos 2 letras. Si no aparece, créalo con los valores de la etiqueta.</Empty> : null}
               <Button variant="secondary" label="Crear alimento" icon={Plus} onPress={() => setManual(true)} />
             </>
           )}

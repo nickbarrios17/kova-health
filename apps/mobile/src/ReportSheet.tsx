@@ -48,7 +48,7 @@ export function ReportSheet({ visible, onClose, screen = 'other', context }: {
       });
       setSent(true);
     } catch (e) {
-      setError(e instanceof KovaError ? e.message : 'No se pudo enviar. Revisa tu conexión.');
+      setError(e instanceof KovaError ? e.message : 'No se pudo enviar. Revisá tu conexión.');
     } finally {
       setBusy(false);
     }
@@ -68,7 +68,7 @@ export function ReportSheet({ visible, onClose, screen = 'other', context }: {
             ) : (
               <>
                 {context?.exercise_name ? <T size={13} color={c.n400}>Sobre «{context.exercise_name}»</T> : null}
-                <T size={13} color={c.n300}>¿Qué pasa? Puedes marcar varias.</T>
+                <T size={13} color={c.n300}>¿Qué pasa? Podés marcar varias.</T>
                 <View style={{ gap: 6 }}>
                   {options.map((o) => {
                     const on = picked.includes(o.key);

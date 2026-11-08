@@ -131,7 +131,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId, tit
       const code = e instanceof KovaError ? e.code : '';
       setErrors([code === 'VERSION_CONFLICT'
         ? 'Esta rutina cambió en otro dispositivo mientras la editabas. Cancela y vuelve a abrirla.'
-        : e instanceof KovaError ? e.message : 'No se pudo guardar. Revisa tu conexión.']);
+        : e instanceof KovaError ? e.message : 'No se pudo guardar. Revisá tu conexión.']);
     } finally {
       setBusy(false);
     }
@@ -185,7 +185,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId, tit
         </View>
 
         <Card style={{ gap: 8 }}>
-          <Field label="Añadir ejercicio" value={query} onChangeText={setQuery} placeholder="Busca o escribe uno nuevo" autoCorrect={false}
+          <Field label="Añadir ejercicio" value={query} onChangeText={setQuery} placeholder="Buscá o escribí uno nuevo" autoCorrect={false}
             returnKeyType="done" onSubmitEditing={() => (matches[0] && exact ? add(matches[0].id, matches[0].name) : addNew())} />
           {matches.map((e) => (
             <Pressable key={e.id} onPress={() => add(e.id, e.name)} accessibilityRole="button" style={{ minHeight: 40, justifyContent: 'center' }}>

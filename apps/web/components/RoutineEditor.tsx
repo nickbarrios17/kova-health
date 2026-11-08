@@ -123,7 +123,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId }: {
       const code = e instanceof KovaError ? e.code : '';
       setErrors([code === 'VERSION_CONFLICT'
         ? 'Esta rutina cambió en otro dispositivo mientras la editabas. Cierra el editor y vuelve a abrirla.'
-        : e instanceof KovaError ? e.message : 'No se pudo guardar. Revisa tu conexión.']);
+        : e instanceof KovaError ? e.message : 'No se pudo guardar. Revisá tu conexión.']);
     } finally {
       setBusy(false);
     }
@@ -177,7 +177,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId }: {
 
       <div className="field" style={{ position: 'relative' }}>
         <label htmlFor="re-search">Añadir ejercicio</label>
-        <input id="re-search" className="input" placeholder="Busca o escribe uno nuevo: sentadilla, hip thrust…" value={query} autoComplete="off"
+        <input id="re-search" className="input" placeholder="Buscá o escribí uno nuevo: sentadilla, hip thrust…" value={query} autoComplete="off"
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (matches[0] && exact) add(matches[0].id, matches[0].name); else addNew(); } }} />
         {query.trim() ? (

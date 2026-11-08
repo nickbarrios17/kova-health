@@ -30,11 +30,11 @@ export default function ResetPasswordPage() {
   return (
     <div className="kova-auth">
       <form className="kova-auth-card" onSubmit={submit}>
-        <h1 style={{ fontSize: 22, margin: 0 }}>Elige una contraseña nueva</h1>
+        <h1 style={{ fontSize: 22, margin: 0 }}>Elegí una contraseña nueva</h1>
         {status === 'signedOut' ? (
           <div className="kova-error" role="alert">
             <i className="ph ph-warning" style={{ color: 'var(--kova-warn)', fontSize: 16, marginTop: 1 }} />
-            <span>El enlace no es válido o ha caducado. Pide uno nuevo desde «Olvidé mi contraseña».</span>
+            <span>El enlace no es válido o ha caducado. Pedí uno nuevo desde «Olvidé mi contraseña».</span>
           </div>
         ) : (
           <>

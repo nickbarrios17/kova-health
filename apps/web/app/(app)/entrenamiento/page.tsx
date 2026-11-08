@@ -118,7 +118,7 @@ export default function EntrenamientoPage() {
             <Link className="btn btn-secondary" href="/importar"><i className="ph ph-upload-simple" />Importar</Link>
           </div>
           {routines.length === 0 ? (
-            <EmptyState icon="ph ph-barbell" title="Aún no tienes rutinas">Importa tu planilla (Excel, CSV o JSON) y aparecerán aquí, en el teléfono y en el reloj.</EmptyState>
+            <EmptyState icon="ph ph-barbell" title="Aún no tenés rutinas">Importá tu planilla (Excel, CSV o JSON) y aparecerán aquí, en el teléfono y en el reloj.</EmptyState>
           ) : (
             routines.map((r) => (
               <div key={r.id} style={{ padding: 16, borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -171,7 +171,7 @@ export default function EntrenamientoPage() {
           </div>
           {withHistory.length === 0 ? (
             <EmptyState icon="ph ph-chart-line" title="Aún no hay sesiones completadas">
-              Completa tu primer entrenamiento y verás aquí cómo evoluciona tu fuerza. Usamos la fórmula de Epley con series de 1 a 12 repeticiones.
+              Completá tu primer entrenamiento y vas a ver aquí cómo evoluciona tu fuerza. Usamos la fórmula de Epley con series de 1 a 12 repeticiones.
             </EmptyState>
           ) : series.loading ? (
             <Loading />

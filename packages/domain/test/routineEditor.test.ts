@@ -34,7 +34,7 @@ describe('routine editor', () => {
   it('a new routine has no version and needs a name and an exercise', () => {
     const d = emptyDraft();
     expect(d.version).toBeNull();
-    expect(validateDraft(d)).toEqual(['Ponle un nombre a la rutina.', 'Añade al menos un ejercicio.']);
+    expect(validateDraft(d)).toEqual(['Ponle un nombre a la rutina.', 'Agregá al menos un ejercicio.']);
     const ok = { ...d, name: 'Pierna', items: [newItem('a0000000-0000-4000-8000-000000000001', 'Sentadilla')] };
     expect(validateDraft(ok)).toEqual([]);
     expect(SaveRoutineSchema.safeParse(draftToSaveInput(ok)).success).toBe(true);

@@ -193,7 +193,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
               </button>
             ))}
             {query.trim().length >= 2 && !results.loading && (results.data ?? []).length === 0 && (
-              <EmptyState icon="ph ph-magnifying-glass" title="Sin resultados">El catálogo verificado aún no está disponible. Crea el alimento con los datos de la etiqueta.</EmptyState>
+              <EmptyState icon="ph ph-magnifying-glass" title="Sin resultados">El catálogo verificado aún no está disponible. Creá el alimento con los datos de la etiqueta.</EmptyState>
             )}
             <button className="btn btn-secondary" onClick={() => setManual(true)}><i className="ph ph-plus" />Crear alimento</button>
           </>

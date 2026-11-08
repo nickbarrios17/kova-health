@@ -9,8 +9,8 @@ import { Button, Card, Field, Notice, T } from '../ui';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 const COPY = {
-  signin: { title: 'Inicia sesión', cta: 'Entrar', icon: SignIn },
-  signup: { title: 'Crea tu cuenta', cta: 'Crear cuenta', icon: UserPlus },
+  signin: { title: 'Iniciá sesión', cta: 'Entrar', icon: SignIn },
+  signup: { title: 'Creá tu cuenta', cta: 'Crear cuenta', icon: UserPlus },
   forgot: { title: 'Recupera tu contraseña', cta: 'Enviar enlace', icon: EnvelopeSimple },
 } as const;
 

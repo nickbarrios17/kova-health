@@ -45,7 +45,7 @@ export default function AlumnoPage() {
   if (q.loading && !q.data) return <span style={muted}>Cargando…</span>;
   const { link, routines, exercises } = q.data!;
   if (!link) {
-    return <EmptyState icon="ph ph-user-circle-minus" title="No eres coach de esta persona">Puede que el vínculo se haya cortado. <Link href="/personas">Volver a Coach y amigos</Link></EmptyState>;
+    return <EmptyState icon="ph ph-user-circle-minus" title="No sos coach de esta persona">Puede que el vínculo se haya cortado. <Link href="/personas">Volver a Coach y amigos</Link></EmptyState>;
   }
 
   return (

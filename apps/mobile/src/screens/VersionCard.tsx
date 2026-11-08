@@ -22,7 +22,7 @@ export function VersionCard() {
     } catch (e) {
       console.warn('[kova] APK update check failed:', String(e).slice(0, 300));
       setBusy(false);
-      return setMsg('No se pudo buscar actualizaciones. Revisa tu conexión.');
+      return setMsg('No se pudo buscar actualizaciones. Revisá tu conexión.');
     }
     // The code-update service (Expo) is separate: if it fails, the installed APK is still the latest.
     try {

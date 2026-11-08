@@ -58,7 +58,7 @@ export default function TendenciasPage() {
         </div>
         {vals.length === 0 ? (
           <EmptyState icon="ph ph-chart-line" title={`Aún no hay datos de ${m.label.toLowerCase()}`}>
-            {metric === 'kcal' || metric === 'protein_g' ? 'Registra tus comidas en el móvil o en Comida.'
+            {metric === 'kcal' || metric === 'protein_g' ? 'Registrá tus comidas en el móvil o en Comida.'
               : metric === 'weight_kg' || metric === 'mood' ? 'Regístralo desde el móvil o el reloj.'
               : 'Llegan del reloj o de Health Connect / HealthKit cuando los conectes.'}
           </EmptyState>
