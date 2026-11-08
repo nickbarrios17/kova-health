@@ -18,10 +18,11 @@ const NAV: Array<[href: string, label: string, icon: string]> = [
   ['/tendencias', 'Tendencias', 'ph-chart-line'],
   ['/comida', 'Comida', 'ph-fork-knife'],
   ['/entrenamiento', 'Entrenamiento', 'ph-barbell'],
+  ['/ciclismo', 'Ciclismo', 'ph-bicycle'],
   ['/coach', 'Coach', 'ph-lightbulb-filament'],
   ['/personas', 'Coach y amigos', 'ph-users-three'],
 ];
-const TITLES: Record<string, string> = { '/importar': 'Importar rutinas', '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/coach': 'Coach', '/personas': 'Coach y amigos', '/reportes': 'Reportes recibidos', '/admin': 'Administración' };
+const TITLES: Record<string, string> = { '/importar': 'Importar rutinas', '/tendencias': 'Tendencias', '/comida': 'Comida', '/entrenamiento': 'Entrenamiento', '/ciclismo': 'Ciclismo', '/coach': 'Coach', '/personas': 'Coach y amigos', '/reportes': 'Reportes recibidos', '/admin': 'Administración' };
 const DEVICE_ICON: Record<string, string> = { watch: 'ph ph-watch', mobile: 'ph ph-device-mobile', web: 'ph ph-desktop' };
 const DEVICE_KEY = 'kova:web-device-id';
 

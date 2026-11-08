@@ -1,6 +1,6 @@
 # Ciclismo
 
-**Entrenar → Ciclismo** en el celular, y en el navegador del celular (`/m`).
+**Entrenar → Ciclismo** en el celular y en el navegador del celular (`/m`). En la web de escritorio, **Ciclismo** en la barra lateral: el mismo planificador con un mapa grande. Ahí no se navega; las rutas que guardes aparecen en el celular para navegarlas.
 
 - **Por tiempo:** elegís cuánto querés andar (30 min a 2 h) y tu ritmo. Kova arma hasta 3 vueltas que salen y vuelven al mismo punto, y ordena primero la que tiene más bicisendas y parques.
 - **A → B:** buscás un lugar, o tocás el mapa, y te da la ruta en bici.
@@ -64,7 +64,7 @@ Son promedios de dónde pasa más seguido, no una garantía, y la app lo dice as
 | Rutas y búsqueda de lugares | [OpenRouteService](https://openrouteservice.org), perfil bici, a través de la Edge Function `bike-route`. La clave está solo en el servidor. |
 | Parques | OpenStreetMap (Overpass), consultado por la misma función alrededor de la ruta. |
 | Análisis (bicisenda, calles, avenidas, parques, tiempo) | `packages/domain/src/cycling.ts`, con tests. |
-| Mapa | MapLibre GL con un estilo propio claro, tipo maqueta (`routeMapHtml.ts`): calles y edificios de OpenFreeMap, edificios en 3D de [Overture Maps](https://docs.overturemaps.org/examples/overture-tiles) (que suma huellas de Microsoft y Google, así se llenan todas las manzanas) y relieve de AWS Terrain Tiles. Va en un WebView (`RouteMap.tsx`) o un iframe (`RouteMap.web.tsx`). No necesita claves. |
+| Mapa | MapLibre GL con un estilo propio claro, tipo maqueta (`packages/domain/src/cyclingMap.ts`): calles y edificios de OpenFreeMap, edificios en 3D de [Overture Maps](https://docs.overturemaps.org/examples/overture-tiles) (que suma huellas de Microsoft y Google, así se llenan todas las manzanas) y relieve de AWS Terrain Tiles. Va en un WebView (`RouteMap.tsx`) o un iframe (`RouteMap.web.tsx`). No necesita claves. |
 | Rutas guardadas | Tabla `bike_routes`: cada persona ve solo las suyas. |
 | Tu ubicación | `expo-location`, solo mientras usás la pantalla y solo para marcar la salida. No se guarda. |
 
@@ -84,10 +84,11 @@ El tiempo estimado es la distancia a tu ritmo, más un 8 % por semáforos y esqu
 
    Prueba: `nvegmmpovtytrmdhgvlh`. Oficial: `oxfucatgikqbwowtgkow`.
 
-## Lo que viene
+## Para más adelante
 
-- La versión de escritorio de la web.
+- Seguir navegando con la pantalla bloqueada: necesita el permiso de ubicación «todo el tiempo», que Google revisa aparte.
+- Pasar las fases de ciclismo a la app oficial: clave de OpenRouteService en producción, publicar la función y correr las migraciones (ver «Configuración»).
 
 ## Edificios de Overture
 
-El archivo de edificios es de una versión con fecha (`OVERTURE_BUILDINGS` en `routeMapHtml.ts`, hoy `2026-10-21.0`). Overture publica una nueva cada mes y puede borrar las viejas. Si la que usamos deja de estar, el mapa usa solo los edificios de OpenStreetMap, que en Buenos Aires son bastantes menos. Para actualizar, cambiá la fecha por la de la última versión de su [calendario](https://docs.overturemaps.org/release-calendar/).
+El archivo de edificios es de una versión con fecha (`OVERTURE_BUILDINGS` en `packages/domain/src/cyclingMap.ts`, hoy `2026-10-21.0`). Overture publica una nueva cada mes y puede borrar las viejas. Si la que usamos deja de estar, el mapa usa solo los edificios de OpenStreetMap, que en Buenos Aires son bastantes menos. Para actualizar, cambiá la fecha por la de la última versión de su [calendario](https://docs.overturemaps.org/release-calendar/).
