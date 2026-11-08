@@ -5,10 +5,10 @@
  * Each route says how much is bike lane, neighbourhood streets or avenues, which parks it crosses,
  * the estimated time at your speed, and what to watch out for. 2D/3D map and a 3D ride: a bike follows the route at the speed you pick.
  */
-import { KovaError, SPEEDS_KMH, analyzeRoute, formatKm, newId, routeScore, type Coord, type Park, type RawRoute, type RouteAnalysis } from '@kova/domain';
-import type { Place, SavedRoute } from '@kova/api-client';
+import { KovaError, SAFETY_REPORT_KINDS, SPEEDS_KMH, analyzeRoute, formatKm, newId, routeScore, type Coord, type Park, type RawRoute, type RouteAnalysis, type SafetyReportKind, type SafetyZones } from '@kova/domain';
+import type { MySafetyReport, Place, SavedRoute } from '@kova/api-client';
 import * as Location from 'expo-location';
-import { ArrowLeft, Bicycle, Crosshair, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, NavigationArrow, Pause, Play, Stop, Trash, Warning } from 'phosphor-react-native';
+import { ArrowLeft, Bicycle, Crosshair, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, MegaphoneSimple, NavigationArrow, ShieldWarning, Pause, Play, Stop, Trash, Warning } from 'phosphor-react-native';
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useBack } from '../back';
@@ -21,7 +21,7 @@ import { useAsync } from '../useAsync';
 import { Button, Card, Confirm, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
 
 type Mode = 'tiempo' | 'ab' | 'guardadas';
-type Plan = { kind: 'ab' | 'loop'; routes: RawRoute[]; parks: Park[]; savedName?: string; savedId?: string };
+type Plan = { kind: 'ab' | 'loop'; routes: RawRoute[]; parks: Park[]; zones?: SafetyZones | null; savedName?: string; savedId?: string };
 const MINUTES = [30, 45, 60, 90, 120];
 // «Recorrer en 3D»: how many times faster than your pace the bike goes on the map.
 const RIDE_SPEEDS = [{ label: 'Lenta', x: 5 }, { label: 'Media', x: 15 }, { label: 'Rápida', x: 40 }];
@@ -106,6 +106,11 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [removing, setRemoving] = useState<SavedRoute | null>(null);
+  const [showZones, setShowZones] = useState(true);
+  // «Avisar»: the next tap on the map marks the place, then you say what happened.
+  const [reporting, setReporting] = useState<'tap' | { coord: [number, number] } | null>(null);
+  const [removingReport, setRemovingReport] = useState<MySafetyReport | null>(null);
+  const myReports = useAsync(() => (mode === 'guardadas' ? kova.cycling.myReports() : Promise.resolve([] as MySafetyReport[])), [mode]);
   const saved = useAsync(() => (mode === 'guardadas' ? kova.cycling.saved() : Promise.resolve([] as SavedRoute[])), [mode]);
 
   const from = start ?? me;
@@ -121,9 +126,9 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
     return {
       routes: plan ? plan.routes.map((rt, i) => ({ coords: rt.coords, segments: analyses[i]?.segments ?? [], selected: i === sel })) : [],
       parks: plan?.parks ?? [],
-      markers, fit: fit > 0, view3d,
+      markers, fit: fit > 0, view3d, zones: plan?.zones ?? null, showZones,
     };
-  }, [plan, analyses, sel, me, from, end, mode, view3d, fit]);
+  }, [plan, analyses, sel, me, from, end, mode, view3d, fit, showZones]);
   const ride = useMemo<Ride | null>(() => (riding ? { kmh: speed * rideX, paused: riding.paused } : null), [riding, speed, rideX]);
   const stopRide = () => { setRiding(null); setProgress(null); };
   // Back to the whole route when a ride ends or is stopped.
@@ -171,18 +176,29 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   });
 
   const onTap = (coord: [number, number]) => {
+    if (reporting === 'tap') { setReporting({ coord }); return; }
     if (mode === 'guardadas') return;
     if (mode === 'ab' && tapSets === 'end') { setEnd({ coord, label: 'punto del mapa' }); setPlaces(null); }
     else setStart(coord);
     setPlan(null);
   };
 
+  const sendReport = (kind: SafetyReportKind) => run('report', async () => {
+    if (!reporting || reporting === 'tap') return;
+    const id = newId();
+    await kova.cycling.report({ id, kind, coord: reporting.coord });
+    // Show it right away on the map, as yours.
+    setPlan((p) => (p?.zones ? { ...p, zones: { ...p.zones, reports: [{ id, coord: reporting.coord, kind, day: '', mine: true }, ...p.zones.reports] } } : p));
+    setReporting(null);
+    setNotice('Gracias. Otros ciclistas lo van a ver durante 6 meses, sin tu nombre.');
+  });
+
   const selected = plan ? { a: analyses[sel]!, rt: plan.routes[sel]! } : null;
   const mapH = Math.max(260, Math.min(420, Math.round(screenH * 0.42)));
 
   if (navigating && selected && plan) {
     return (
-      <Navegar route={selected.rt} kind={plan.kind} speedKmh={speed} onClose={() => setNavigating(false)}
+      <Navegar route={selected.rt} kind={plan.kind} speedKmh={speed} onClose={() => setNavigating(false)} zones={plan.zones ?? null}
         name={plan.savedName ?? (plan.kind === 'loop' ? 'Vuelta en bici' : 'A ' + (end?.label ?? 'destino'))} />
     );
   }
@@ -210,6 +226,15 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
             {view3d ? <MapTrifold size={18} color={c.text} /> : <CubeFocus size={18} color={c.text} />}
             <T size={12}>{view3d ? '2D' : '3D'}</T>
           </Pressable>
+          <Pressable onPress={() => setShowZones((v) => !v)} accessibilityRole="button" accessibilityState={{ selected: showZones }}
+            accessibilityLabel={showZones ? 'Ocultar zonas' : 'Mostrar zonas con más robos y choques'}
+            style={{ width: 44, height: 40, borderRadius: 20, backgroundColor: showZones ? 'rgba(229,72,77,0.92)' : 'rgba(22,24,38,0.88)', alignItems: 'center', justifyContent: 'center' }}>
+            <ShieldWarning size={18} color={c.text} />
+          </Pressable>
+          <Pressable onPress={() => { setReporting((r) => (r ? null : 'tap')); setNotice(null); }} accessibilityRole="button" accessibilityLabel="Avisar de un lugar inseguro"
+            style={{ width: 44, height: 40, borderRadius: 20, backgroundColor: reporting ? c.accent : 'rgba(22,24,38,0.88)', alignItems: 'center', justifyContent: 'center' }}>
+            <MegaphoneSimple size={18} color={c.text} />
+          </Pressable>
           {mode !== 'guardadas' ? (
             <Pressable onPress={locate} accessibilityRole="button" accessibilityLabel="Ir a mi ubicación"
               style={{ width: 44, height: 40, borderRadius: 20, backgroundColor: 'rgba(22,24,38,0.88)', alignItems: 'center', justifyContent: 'center' }}>
@@ -218,6 +243,26 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
           ) : null}
         </View>
       </View>
+
+      {showZones && plan?.zones ? (
+        <Row style={{ flexWrap: 'wrap', gap: 12 }}>
+          <Legend color="rgba(229,72,77,0.55)" label="Muchos robos" square />
+          <Legend color="rgba(242,153,74,0.45)" label="Algunos robos" square />
+          <Legend color="#f2c94c" label="Choques" />
+          <Legend color="#8b5cf6" label="Avisos de ciclistas" />
+        </Row>
+      ) : null}
+      {reporting === 'tap' ? <Notice text="Tocá en el mapa el lugar del que querés avisar." /> : null}
+      {reporting && reporting !== 'tap' ? (
+        <Card style={{ gap: 10 }}>
+          <T size={15} w="medium">¿Qué pasó ahí?</T>
+          <Row style={{ flexWrap: 'wrap', gap: 8 }}>
+            {SAFETY_REPORT_KINDS.map((k) => <Chip key={k.kind} label={k.label} on={false} onPress={() => sendReport(k.kind)} />)}
+          </Row>
+          <T size={12} color={c.n500}>Otros ciclistas ven el punto y qué pasó, nunca quién avisó. Se borra solo a los 6 meses.</T>
+          <Button variant="ghost" label="Cancelar" onPress={() => setReporting(null)} style={{ alignSelf: 'flex-start' }} />
+        </Card>
+      ) : null}
 
       {mode === 'tiempo' ? (
         <View style={{ gap: 12 }}>
@@ -280,6 +325,18 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
         )
       ) : null}
 
+      {mode === 'guardadas' && !plan && myReports.data?.length ? (
+        <View style={{ gap: 8 }}>
+          <T size={15} w="medium">Tus avisos</T>
+          {myReports.data.map((rp) => (
+            <Row key={rp.id} style={{ justifyContent: 'space-between' }}>
+              <T size={13} color={c.n300} style={{ flex: 1 }}>{SAFETY_REPORT_KINDS.find((k) => k.kind === rp.kind)?.label} · {rp.created_at.slice(8, 10)}/{rp.created_at.slice(5, 7)}</T>
+              <Button variant="ghost" label="Borrar" icon={Trash} onPress={() => setRemovingReport(rp)} />
+            </Row>
+          ))}
+        </View>
+      ) : null}
+
       {error ? <ErrorNote message={error} /> : null}
       {notice ? <Notice text={notice} /> : null}
 
@@ -322,8 +379,21 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
         </View>
       ) : null}
 
-      <Notice text="Los tiempos son estimados. Pronto: avisos de zonas con más delitos en CABA y el conurbano." />
-      <T size={11} color={c.n600}>Rutas: openrouteservice.org · Mapa y parques: © OpenStreetMap, OpenFreeMap</T>
+      <Notice text="Los tiempos son estimados. Las zonas salen de estadísticas oficiales de robos y choques: muestran dónde pasa más seguido, no garantizan nada. En el conurbano el dato es por partido, menos preciso." />
+      <T size={11} color={c.n600}>Rutas: openrouteservice.org · Mapa y parques: © OpenStreetMap, OpenFreeMap · Edificios: Overture Maps · Delitos y choques en CABA: Mapa del delito, BA Data (CC BY) · Conurbano: SNIC, Ministerio de Seguridad</T>
+
+      <Confirm
+        visible={!!removingReport}
+        title="¿Borrar este aviso?"
+        message={removingReport ? SAFETY_REPORT_KINDS.find((k) => k.kind === removingReport.kind)?.label ?? '' : ''}
+        confirmLabel="Borrar"
+        onCancel={() => setRemovingReport(null)}
+        onConfirm={async () => {
+          const rp = removingReport!;
+          setRemovingReport(null);
+          await run('remove', async () => { await kova.cycling.removeReport(rp.id); myReports.reload(); });
+        }}
+      />
 
       <Confirm
         visible={!!removing}
@@ -338,5 +408,14 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
         }}
       />
     </ScrollView>
+  );
+}
+
+function Legend({ color, label, square }: { color: string; label: string; square?: boolean }) {
+  return (
+    <Row style={{ gap: 5 }}>
+      <View style={{ width: 10, height: 10, borderRadius: square ? 2 : 5, backgroundColor: color }} />
+      <T size={11} color={c.n400}>{label}</T>
+    </Row>
   );
 }

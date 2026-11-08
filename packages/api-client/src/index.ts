@@ -47,7 +47,7 @@ export { toKovaError } from './errors.js';
 export { withRetry } from './retry.js';
 export { inviteCode, type CoachRoutine } from './people.js';
 export * from './outbox.js';
-export type { Place, PlannedRoutes, SavedRoute } from './cycling.js';
+export type { MySafetyReport, Place, PlannedRoutes, SavedRoute } from './cycling.js';
 
 export interface KovaClientOptions {
   url: string;

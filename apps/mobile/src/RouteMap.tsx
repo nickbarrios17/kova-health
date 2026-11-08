@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import type { SafetyZones } from '@kova/domain';
 import { MAP_BG, ROUTE_MAP_HTML } from './routeMapHtml';
 import { r } from './theme';
 
@@ -11,6 +12,9 @@ export interface MapData {
   markers: Array<{ coord: [number, number]; kind: 'start' | 'end' | 'stop' | 'me' }>;
   fit?: boolean;
   view3d?: boolean;
+  /** Safety overlay: zones, crash spots and cyclists' reports. */
+  zones?: SafetyZones | null;
+  showZones?: boolean;
 }
 /** «Recorrer en 3D» on the selected route: map speed in km/h, and whether it is paused. */
 export interface Ride { kmh: number; paused: boolean }

@@ -57,4 +57,21 @@ describe('cycling', () => {
     expect(insideRing([0.5, 0.5], sq)).toBe(true);
     expect(insideRing([1.5, 0.5], sq)).toBe(false);
   });
+  it('safety: warns about zones with many robberies and crashes, risky partidos and reports', () => {
+    const a = analyzeRoute(route({ safety: { robo_high_m: 600, robo_mid_m: 0, choque_high_m: 400, caba_m: 1113, partidos: [{ name: 'La Matanza', level: 2 }, { name: 'Tigre', level: 0 }], reports: 2 } }), []);
+    expect(a.warnings).toContain('0,6 km por zonas con muchos robos');
+    expect(a.warnings).toContain('0,4 km por zonas con muchos choques');
+    expect(a.warnings).toContain('Pasa por La Matanza, con más robos que el promedio del conurbano');
+    expect(a.warnings).toContain('2 avisos de ciclistas cerca de la ruta');
+    expect(a.risk_share).toBeGreaterThan(0.5);
+    const calm = analyzeRoute(route({ coords: line(20), safety: { robo_high_m: 0, robo_mid_m: 100, choque_high_m: 0, caba_m: 2200, partidos: [], reports: 0 } }), []);
+    expect(calm.tags).toContain('Evita las zonas con más robos');
+    expect(routeScore(calm)).toBeGreaterThan(routeScore(a));
+  });
+
+  it('without safety data says nothing about it', () => {
+    const a = analyzeRoute(route(), []);
+    expect(a.risk_share).toBe(0);
+    expect(a.warnings.join(' ')).not.toMatch(/robos|choques|avisos/);
+  });
 });
