@@ -70,19 +70,24 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.roundToInt
 
-// Tokens from design/prototypes/nocturne.css + the watch prototype (VIDA Watch v2).
-private val Bg = Color(0xFF000000)          // OLED: true black, as watch faces do
-private val Surface = Color(0xFF292B31)     // neutral-900
-private val TextC = Color(0xFFE9E9ED)
-private val Accent = Color(0xFF9184D9)
-private val Accent100 = Color(0xFFF5F4FF)
-private val Accent300 = Color(0xFFD2CEFD)
-private val N400 = Color(0xFFB2B6CA)
-private val N500 = Color(0xFF9397AB)
-private val N800 = Color(0xFF3F424D)
-private val Divider = Color(0x29E9E9ED)
-private val Ok = Color(0xFF6FD6A3)
-private val Warn = Color(0xFFEFC173)
+// Tokens live in KovaWatchTheme (Theme.kt); these short names stay so the screens read the same.
+private val Bg = KovaWatchTheme.Bg
+private val Surface = KovaWatchTheme.Surface
+private val TextC = KovaWatchTheme.TextC
+private val Accent = KovaWatchTheme.Accent
+private val Accent100 = KovaWatchTheme.Accent100
+private val Accent300 = KovaWatchTheme.Accent300
+private val Accent400 = KovaWatchTheme.Accent400
+private val Accent700 = KovaWatchTheme.Accent700
+private val Accent700Pressed = KovaWatchTheme.Accent700Pressed
+private val N400 = KovaWatchTheme.N400
+private val N500 = KovaWatchTheme.N500
+private val N800 = KovaWatchTheme.N800
+private val Divider = KovaWatchTheme.Divider
+private val Track = KovaWatchTheme.Track
+private val Ok = KovaWatchTheme.Ok
+private val Warn = KovaWatchTheme.Warn
+private val Crit = KovaWatchTheme.Crit
 private const val LB = 2.20462
 
 private sealed interface Screen {

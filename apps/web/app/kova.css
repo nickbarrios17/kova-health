@@ -1,12 +1,50 @@
 /* App-level styles. Tokens and component classes live in nocturne.css (copied verbatim from
    design/prototypes). These rules come from the prototype's <helmet> and its style-hover hints. */
+/* Nocturno Vital tokens (docs/design/tokens.json). The names nocturne.css already had stay as they are;
+   these are added next to them. Older --space-* (2.8 px steps) and --radius-sm/md/lg stay as aliases. */
+:root {
+  --kova-surface-raised: #2C2F3F;
+  --kova-nav-bg: #1C1E2C;
+  --kova-accent-strong-hover: #6B60A8;
+  --kova-accent-strong-pressed: #4E457E;
+  --kova-accent-soft: #2A2843;
+  --kova-accent-track: #3A3466;
+  --kova-ok: #6FD6A3;
+  --kova-warn: #EFC173;
+  --kova-crit: #F08A78;
+  --kova-ok-soft: #1D3A2E;
+  --kova-warn-soft: #3A3020;
+  --kova-crit-soft: #3D2522;
+  --kova-chart-muted: #6B6F84;
+  --kova-chart-empty: #3A3D4C;
+  --kova-skeleton: #2C2F3F;
+  --kova-border-subtle: rgba(233, 233, 237, 0.08);
+  --kova-border-strong: rgba(233, 233, 237, 0.24);
+  --kova-scrim: rgba(10, 11, 18, 0.70);
+  --kova-text-2: var(--color-neutral-400);
+  --kova-text-3: var(--color-neutral-500);
+  --kova-text-disabled: var(--color-neutral-600);
+  --kova-accent-text: var(--color-accent-400);
+  --kova-accent-strong: var(--color-accent-700);
+
+  --kova-space-1: 4px; --kova-space-2: 8px; --kova-space-3: 12px; --kova-space-4: 16px; --kova-space-5: 20px;
+  --kova-space-6: 24px; --kova-space-8: 32px; --kova-space-10: 40px; --kova-space-12: 48px; --kova-space-16: 64px;
+  --kova-radius-sm: 6px; --kova-radius-control: 10px; --kova-radius-md: 12px; --kova-radius-lg: 16px;
+  --kova-radius-xl: 20px; --kova-radius-2xl: 24px; --kova-radius-pill: 999px;
+
+  --kova-fs-display: 44px; --kova-fs-title-1: 34px; --kova-fs-metric: 30px; --kova-fs-title-2: 20px;
+  --kova-fs-title-3: 17px; --kova-fs-body: 15px; --kova-fs-label: 13px; --kova-fs-caption: 12px; --kova-fs-axis: 11px;
+
+  --kova-elev-3: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --kova-focus: 2px solid var(--color-accent-400);
+  --kova-z-sticky: 10; --kova-z-overlay: 40; --kova-z-toast: 50;
+  --kova-dur-fast: 120ms; --kova-dur-base: 200ms; --kova-dur-slow: 320ms;
+  --kova-ease: cubic-bezier(0.2, 0, 0, 1); --kova-ease-exit: cubic-bezier(0.3, 0, 1, 1);
+  --kova-chart-grid: rgba(233, 233, 237, 0.06);
+}
 body {
   margin: 0;
   background: var(--color-bg);
-  --kova-ok: oklch(0.80 0.12 158);
-  --kova-warn: oklch(0.84 0.12 75);
-  --kova-crit: oklch(0.74 0.14 28);
-  --kova-text-2: var(--color-neutral-400);
 }
 a { color: var(--color-accent-300); }
 a:hover { color: var(--color-accent-200); }
