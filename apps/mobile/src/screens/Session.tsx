@@ -12,7 +12,7 @@ import { MannequinView } from '../MannequinView';
 import { useAsync } from '../useAsync';
 import { ExerciseDetail } from './ExerciseDetail';
 import { addSet, elapsedS, fillForward, saveLive, summarize, toggleSet, transition, type LiveSession, type Summary } from '../workout';
-import { useReportTarget } from '../report';
+import { ReportButton, useOpenReport, useReportTarget } from '../report';
 
 const parseNum = (s: string) => {
   const v = Number(s.replace(',', '.'));
@@ -27,6 +27,8 @@ export function Session({ live, setLive, onClose, onFinished }: {
 }) {
   const { prefs, setUnit, deviceId } = useSession();
   const sync = useSync();
+  // In the session the floating ⚠️ would cover the set checks, so it lives in the top bar.
+  const openReport = useOpenReport();
   const units: WeightUnit = prefs!.weight_unit;
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +97,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
           <T size={16} w="semibold" numberOfLines={1}>{live.name}</T>
           <T size={12} color={c.n400}>{clock(elapsedS(live, now))} · {doneSets} de {series(totalSets)} · {vol(volumeKg)}</T>
         </View>
+        <ReportButton onPress={openReport} />
         <Button variant="text" label="Terminar" onPress={() => setConfirming(true)} />
       </Row>
 
@@ -121,21 +124,24 @@ export function Session({ live, setLive, onClose, onFinished }: {
           })}
         </ScrollView>
 
-        <Row style={{ gap: 12, alignItems: 'center' }}>
-          {anim ? (
-            <View style={{ width: 60, height: 60, borderRadius: 14, overflow: 'hidden', backgroundColor: c.surface }}>
-              <MannequinView spec={anim} height={60} />
-            </View>
-          ) : null}
-          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+        <Row style={{ gap: 12, alignItems: 'flex-start' }}>
+          <Pressable onPress={() => setHowTo(true)} accessibilityRole="button" accessibilityHint="Muestra cómo se hace"
+            style={{ flex: 1, gap: 2, minWidth: 0 }}>
             <T size={13} color={c.n400}>Ejercicio {live.cur + 1} de {live.exercises.length} · {scheme(ex)}</T>
-            <T size={22} w="semibold" style={{ lineHeight: 27 }}>{ex.name}</T>
-          </View>
-        </Row>
-        <Row style={{ justifyContent: 'space-between' }}>
-          <Button variant="text" label="Ver técnica" icon={Info} onPress={() => setHowTo(true)} style={{ paddingHorizontal: 0 }} />
+            <Row style={{ gap: 8 }}>
+              <T size={22} w="semibold" style={{ lineHeight: 27, flexShrink: 1 }}>{ex.name}</T>
+              <Info size={20} color={c.a400} />
+            </Row>
+          </Pressable>
           <Seg options={[['kg', 'kg'], ['lb', 'lb']]} value={units} onChange={setUnit} label="Unidad de peso" />
         </Row>
+        {/* Big 3D model while training (the user prefers it to the small preview); the full technique opens below. */}
+        {anim ? (
+          <View style={{ borderRadius: rad.card, overflow: 'hidden', backgroundColor: c.surface }}>
+            <MannequinView spec={anim} height={220} />
+          </View>
+        ) : null}
+        <Button variant="text" label="Ver la técnica completa" icon={Info} onPress={() => setHowTo(true)} style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} />
         {error ? <Banner tone="crit" text={error} /> : null}
 
         <View style={{ gap: 6 }}>
