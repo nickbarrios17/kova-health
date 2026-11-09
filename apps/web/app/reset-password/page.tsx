@@ -30,11 +30,11 @@ export default function ResetPasswordPage() {
   return (
     <div className="kova-auth">
       <form className="kova-auth-card" onSubmit={submit}>
-        <h1 style={{ fontSize: 22, margin: 0 }}>Elige una contraseña nueva</h1>
+        <h1 style={{ fontSize: 22, margin: 0 }}>Elegí una contraseña nueva</h1>
         {status === 'signedOut' ? (
           <div className="kova-error" role="alert">
             <i className="ph ph-warning" style={{ color: 'var(--kova-warn)', fontSize: 16, marginTop: 1 }} />
-            <span>El enlace no es válido o ha caducado. Pide uno nuevo desde «Olvidé mi contraseña».</span>
+            <span>El enlace no es válido o ha caducado. Pedí uno nuevo desde «Olvidé mi contraseña».</span>
           </div>
         ) : (
           <>
@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
               <label htmlFor="password">Contraseña nueva</label>
               <input id="password" className="input" type="password" autoComplete="new-password" minLength={8} required
                 value={password} onChange={(e) => setPassword(e.target.value)} />
-              <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Mínimo 8 caracteres, con letras y números.</span>
+              <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Mínimo 8 caracteres, con letras y números.</span>
             </div>
             <button className="btn btn-primary btn-block" type="submit" disabled={busy || status !== 'signedIn' || password.length < 8}>
               <i className={busy ? 'ph ph-circle-notch kova-spin' : 'ph ph-check'} />

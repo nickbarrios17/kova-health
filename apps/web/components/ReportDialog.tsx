@@ -45,7 +45,7 @@ export function ReportDialog({ onClose, screen, context }: { onClose: () => void
       await kova().feedback.report({ id, category, message, context: { screen: where, ...context, symptoms: chosen.map((o) => o.key), platform: 'web' } });
       setSent(true);
     } catch (e) {
-      setError(e instanceof KovaError ? e.message : 'No se pudo enviar. Revisa tu conexión.');
+      setError(e instanceof KovaError ? e.message : 'No se pudo enviar. Revisá tu conexión.');
     } finally {
       setBusy(false);
     }
@@ -62,11 +62,11 @@ export function ReportDialog({ onClose, screen, context }: { onClose: () => void
           </>
         ) : (
           <>
-            {context?.exercise_name && <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Sobre «{context.exercise_name}»</span>}
+            {context?.exercise_name && <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>Sobre «{context.exercise_name}»</span>}
             <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 6 }}>
-              <legend style={{ fontSize: 13, color: 'var(--color-neutral-300)', marginBottom: 6 }}>¿Qué pasa? Puedes marcar varias.</legend>
+              <legend style={{ fontSize: 13, color: 'var(--color-neutral-300)', marginBottom: 6 }}>¿Qué pasa? Podés marcar varias.</legend>
               {options.map((o) => (
-                <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, padding: '8px 10px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, padding: '8px 10px', borderRadius: 'var(--kova-radius-control)', cursor: 'pointer',
                   border: '1px solid ' + (picked.includes(o.key) ? 'var(--color-accent)' : 'var(--color-divider, rgba(233,233,237,.16))') }}>
                   <input type="checkbox" checked={picked.includes(o.key)} onChange={() => setPicked((p) => (p.includes(o.key) ? p.filter((x) => x !== o.key) : [...p, o.key]))} />
                   {o.label}

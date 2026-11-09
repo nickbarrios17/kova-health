@@ -80,13 +80,13 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
   const bodyFat = resolveBodyFat({ sex, heightCm: h, typedPct: num(fatPct), neckCm: num(neck), waistCm: num(waist), hipCm: num(hip) });
 
   const step2Error = (() => {
-    if (age == null || age < 14 || age > 100) return 'Revisa el año de nacimiento: necesitas tener entre 14 y 100 años.';
+    if (age == null || age < 14 || age > 100) return 'Revisá el año de nacimiento: necesitás tener entre 14 y 100 años.';
     if (h == null || h < 120 || h > 230) return 'La altura va en centímetros, entre 120 y 230.';
-    if (weightKg == null || weightKg < 30 || weightKg > 300) return 'Revisa el peso.';
-    if (!sex) return 'Elige tu sexo: la fórmula de energía cambia según el sexo.';
-    if (!activity) return 'Elige tu nivel de actividad.';
-    if (!goal) return 'Elige tu objetivo.';
-    if (goalHasPace(goal) && !pace) return 'Elige un ritmo para tu objetivo.';
+    if (weightKg == null || weightKg < 30 || weightKg > 300) return 'Revisá el peso.';
+    if (!sex) return 'Elegí tu sexo: la fórmula de energía cambia según el sexo.';
+    if (!activity) return 'Elegí tu nivel de actividad.';
+    if (!goal) return 'Elegí tu objetivo.';
+    if (goalHasPace(goal) && !pace) return 'Elegí un ritmo para tu objetivo.';
     if (fatPct.trim() && !(num(fatPct)! >= 3 && num(fatPct)! <= 60)) return 'El % de grasa va de 3 a 60.';
     return null;
   })();
@@ -113,7 +113,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
       ? { kcal: num(custom.kcal), proteinG: num(custom.protein), carbsG: num(custom.carbs), fatG: num(custom.fat) }
       : { kcal: t.kcal, proteinG: t.proteinG, carbsG: t.carbsG, fatG: t.fatG };
     if (vals.kcal == null || vals.kcal < 800 || vals.kcal > 10000) return setError('Las calorías van entre 800 y 10.000.');
-    if ([vals.proteinG, vals.carbsG, vals.fatG].some((v) => v == null || v < 0)) return setError('Completa proteína, carbohidratos y grasa.');
+    if ([vals.proteinG, vals.carbsG, vals.fatG].some((v) => v == null || v < 0)) return setError('Completá proteína, carbohidratos y grasa.');
     setBusy(true);
     try {
       // Measurements the user typed or changed are saved too, so the daily target can use them later.
@@ -137,7 +137,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
       await reload();
       onClose?.();
     } catch (err) {
-      setError(err instanceof KovaError ? err.message : 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');
+      setError(err instanceof KovaError ? err.message : 'No se pudo guardar. Revisá tu conexión e intentalo de nuevo.');
     } finally {
       setBusy(false);
     }
@@ -149,14 +149,14 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
     <div className="kova-auth">
       <form className="kova-auth-card" style={{ width: 'min(520px, 100%)' }} onSubmit={submit} noValidate>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 12, color: 'var(--color-neutral-500)' }}>Paso {step} de 3</span>
+          <span style={{ fontSize: 12, color: 'var(--kova-text-3)' }}>Paso {step} de 3</span>
           {onClose ? <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button> : null}
         </div>
 
         {step === 1 ? (
           <>
             <h1 style={{ fontSize: 24, margin: 0 }}>Bienvenido a Kova Health</h1>
-            <p style={{ margin: 0, color: 'var(--color-neutral-400)', fontSize: 14 }}>Antes de empezar, unos datos para ajustar la app a vos. Lleva un minuto.</p>
+            <p style={{ margin: 0, color: 'var(--kova-text-2)', fontSize: 14 }}>Antes de empezar, unos datos para ajustar la app a vos. Lleva un minuto.</p>
             <div className="field">
               <label htmlFor="ob-name">¿Cómo te llamamos?</label>
               <input id="ob-name" className="input" value={name} maxLength={80} placeholder="Tu nombre" autoComplete="given-name" onChange={(e) => setName(e.target.value)} />
@@ -167,7 +167,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
         ) : step === 2 ? (
           <>
             <h1 style={{ fontSize: 22, margin: 0 }}>Tus datos</h1>
-            <p style={{ margin: 0, color: 'var(--color-neutral-400)', fontSize: 14 }}>Los usamos para estimar cuánta energía gastás al día.</p>
+            <p style={{ margin: 0, color: 'var(--kova-text-2)', fontSize: 14 }}>Los usamos para estimar cuánta energía gastás al día.</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
               <div className="field">
                 <label htmlFor="ob-year">Año de nacimiento</label>
@@ -192,9 +192,9 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
               <Choice name="pace" label="Ritmo" value={pace} onChange={setPace}
                 options={(['light', 'moderate', 'aggressive'] as GoalPace[]).map((k) => [k, PACE_LABEL[k] + ' · ' + paceHint(goal, k)])} />
             ) : null}
-            <fieldset className="kova-choice-group" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 'var(--radius-md)', background: 'var(--color-bg)' }}>
+            <fieldset className="kova-choice-group" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 'var(--kova-radius-control)', background: 'var(--color-bg)' }}>
               <legend style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text)', float: 'left', marginBottom: 2 }}>Composición corporal (opcional)</legend>
-              <span style={{ fontSize: 12, color: 'var(--color-neutral-400)', clear: 'both' }}>
+              <span style={{ fontSize: 12, color: 'var(--kova-text-2)', clear: 'both' }}>
                 Con tu % de grasa el cálculo usa tu masa magra, que es más preciso. Si no lo sabés, con un centímetro: cuello, cintura a la altura del ombligo{sex === 'female' ? ' y cadera' : ''}.
               </span>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10 }}>
@@ -217,33 +217,33 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
                   </div>
                 ) : null}
               </div>
-              {loaded?.fatFromDevice && fatPct === loaded.fat ? <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>El % de grasa lo midió tu reloj (Health Connect).</span> : null}
+              {loaded?.fatFromDevice && fatPct === loaded.fat ? <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>El % de grasa lo midió tu reloj (Health Connect).</span> : null}
               {bodyFat?.source === 'tape' ? <span style={{ fontSize: 12, color: 'var(--color-accent-300)' }}>Según tus medidas: {String(bodyFat.pct).replace('.', ',')} % de grasa (estimación).</span> : null}
             </fieldset>
           </>
         ) : (
           <>
             <h1 style={{ fontSize: 22, margin: 0 }}>Tu meta diaria</h1>
-            <p style={{ margin: 0, color: 'var(--color-neutral-400)', fontSize: 14 }}>Una estimación según tus datos. Podés cambiarla cuando quieras.</p>
+            <p style={{ margin: 0, color: 'var(--kova-text-2)', fontSize: 14 }}>Una estimación según tus datos. Podés cambiarla cuando quieras.</p>
             {!manual ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16, borderRadius: 'var(--radius-md)', background: 'var(--color-bg)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 16, borderRadius: 'var(--kova-radius-control)', background: 'var(--color-bg)' }}>
                 <div>
                   <div style={{ fontSize: 40, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{nf(target!.kcal, 0)}</div>
-                  <div style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>kcal al día · estimación</div>
+                  <div style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>kcal al día · estimación</div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
                   {([['Proteína', target!.proteinG], ['Carbos', target!.carbsG], ['Grasa', target!.fatG]] as const).map(([l, v]) => (
-                    <div key={l} style={{ padding: 10, borderRadius: 'var(--radius-md)', background: 'var(--color-surface)' }}>
-                      <div style={{ fontSize: 11, color: 'var(--color-neutral-400)' }}>{l}</div>
+                    <div key={l} style={{ padding: 10, borderRadius: 'var(--kova-radius-control)', background: 'var(--color-surface)' }}>
+                      <div style={{ fontSize: 11, color: 'var(--kova-text-2)' }}>{l}</div>
                       <div style={{ fontSize: 17, fontWeight: 500 }}>{v} g</div>
                     </div>
                   ))}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
+                <div style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>
                   Gasto en reposo {nf(target!.bmr, 0)} kcal ({RMR_METHOD_LABEL[target!.method]}{bodyFat ? ', ' + String(bodyFat.pct).replace('.', ',') + ' % de grasa' : ''}) × actividad = {nf(target!.tdee, 0)} kcal
                   {target!.adjust ? (target!.adjust < 0 ? ' − ' : ' + ') + Math.round(Math.abs(target!.adjust) * 100) + '% por tu objetivo' : ''}.
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
+                <div style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>
                   Es tu meta de un día típico. Cada día se ajusta a lo que te moviste: los días con más pasos o entrenamiento tenés más margen.
                 </div>
                 {target!.floored ? (
@@ -263,7 +263,7 @@ export function Onboarding({ onClose }: { onClose?: () => void }) {
             <button type="button" className="btn btn-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setManual(!manual)}>
               <i className={manual ? 'ph ph-calculator' : 'ph ph-pencil-simple'} />{manual ? 'Usar la estimación' : 'Editar a mano'}
             </button>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-neutral-400)' }}>Es una estimación general, no una indicación médica.</p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--kova-text-2)' }}>Es una estimación general, no una indicación médica.</p>
           </>
         )}
 

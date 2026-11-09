@@ -185,7 +185,7 @@ function missingSleep(days: DaySummary[]): Insight | null {
   return {
     key: 'sleep-missing', kind: 'fact', evidence: 'confirmed', domains: ['sleep'],
     title: `No hay datos de sueño en ${missing} de los últimos 7 días.`,
-    detail: 'No significa que hayas dormido poco: simplemente no llegó ningún registro. Usa el reloj para dormir o regístralo.',
+    detail: 'No significa que hayas dormido poco: simplemente no llegó ningún registro. Usá el reloj para dormir o registralo.',
     severity: 0, actionable: true, support: { missing }, score: 0,
   };
 }

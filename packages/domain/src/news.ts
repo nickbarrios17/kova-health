@@ -20,6 +20,13 @@ export interface NewsDay {
 
 export const NEWS: NewsDay[] = [
   {
+    date: '2026-11-09',
+    items: [
+      { title: 'Ciclismo', body: 'En Entrenar → Ciclismo: decí cuánto querés andar y te armamos recorridos, o buscá a dónde vas. Te mostramos cuánto va por bicisenda, calles o avenidas, qué parques cruzás y el tiempo estimado. Mirala en 3D, tocá Navegar para que te guíe con voz, y mirá qué zonas tienen más robos o choques.' },
+      { title: 'Nuevo diseño', body: 'Kova Health se ve distinto: botones más claros, Hoy ordenado en tu preparación, tu plan y tu progreso, y un aviso de cuántas series quedan por enviar cuando no tenés conexión.' },
+    ],
+  },
+  {
     date: '2026-11-07',
     items: [
       { title: 'Kova en iPhone', body: 'Abrí la web de Kova desde el celular y vas a ver la app, igual que en Android. En iPhone, desde Safari: Compartir → Agregar a la pantalla de inicio. Los pasos y el sueño no llegan en el navegador.' },

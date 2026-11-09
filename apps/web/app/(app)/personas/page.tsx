@@ -12,8 +12,8 @@ import { EmptyState, ErrorNotice } from '@/components/EmptyState';
 import { kova } from '@/lib/client';
 import { useAsync } from '@/lib/useAsync';
 
-const card = { padding: 18, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 } as const;
-const muted = { fontSize: 13, color: 'var(--color-neutral-400)' } as const;
+const card = { padding: 18, borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 } as const;
+const muted = { fontSize: 13, color: 'var(--kova-text-2)' } as const;
 const SHARES: Array<['share_body' | 'share_nutrition' | 'share_health', 'body' | 'nutrition' | 'health', string]> = [
   ['share_body', 'body', 'Peso y medidas'], ['share_nutrition', 'nutrition', 'Comida'], ['share_health', 'health', 'Sueño, pasos y corazón'],
 ];
@@ -66,9 +66,9 @@ export default function PersonasPage() {
   });
   const look = () => run(async () => {
     const c0 = inviteCode(code);
-    if (!c0) throw new KovaError('INVITE_INVALID', 'Escribe el código de 6 caracteres que te pasaron.');
+    if (!c0) throw new KovaError('INVITE_INVALID', 'Escribí el código de 6 caracteres que te pasaron.');
     const info = await kova().people.inviteInfo(c0);
-    if (!info || !info.valid) throw new KovaError('INVITE_INVALID', 'El código no es válido o ya venció. Pide uno nuevo.');
+    if (!info || !info.valid) throw new KovaError('INVITE_INVALID', 'El código no es válido o ya venció. Pedí uno nuevo.');
     setPreview({ code: c0, kind: info.kind, inviter_name: info.inviter_name });
   });
   const accept = () => run(async () => {
@@ -94,7 +94,7 @@ export default function PersonasPage() {
   return (
     <div style={{ display: 'grid', gap: 16, maxWidth: 760 }}>
       {error && <div className="kova-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)' }} /><span>{error}</span></div>}
-      {notice && <div role="status" style={{ ...muted, color: 'var(--color-accent-200)' }}>{notice}</div>}
+      {notice && <div role="status" style={{ ...muted, color: 'var(--color-accent-300)' }}>{notice}</div>}
 
       <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
         <section style={card}>
@@ -106,7 +106,7 @@ export default function PersonasPage() {
                   ? preview.inviter_name + ' te invita a ser su alumno. Va a ver tus entrenamientos y va a poder armar y ajustar tus rutinas.'
                   : preview.inviter_name + ' te invita como amigo. Van a ver los entrenamientos del otro; nadie edita nada.'}
               </span>
-              <span style={muted}>Peso, comida y sueño no se comparten salvo que los actives. Puedes cortar el vínculo cuando quieras.</span>
+              <span style={muted}>Peso, comida y sueño no se comparten salvo que los actives. Podés cortar el vínculo cuando quieras.</span>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn btn-primary" disabled={busy} onClick={accept}>Aceptar</button>
                 <button className="btn btn-ghost" onClick={() => setPreview(null)}>Cancelar</button>
@@ -184,7 +184,7 @@ export default function PersonasPage() {
             </section>
           )}
           {!coach && students.length === 0 && friends.length === 0 && (
-            <EmptyState icon="ph ph-users-three" title="Todavía no tienes coach ni amigos">
+            <EmptyState icon="ph ph-users-three" title="Todavía no tenés coach ni amigos">
               Invita a un alumno para armarle las rutinas y ver cómo entrena, o a un amigo para ver los entrenamientos del otro.
             </EmptyState>
           )}

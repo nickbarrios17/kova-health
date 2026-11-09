@@ -10,7 +10,7 @@ import { Keyboard, Pressable, ScrollView, Share, Switch, View } from 'react-nati
 import { useBack } from '../back';
 import { useReportTarget } from '../report';
 import { kova } from '../client';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Confirm, Empty, ErrorNote, Field, Loading, Notice, Row, T } from '../ui';
 import { Alumno } from './Alumno';
@@ -67,9 +67,9 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
   const look = () => run(async () => {
     Keyboard.dismiss();
     const c0 = inviteCode(code);
-    if (!c0) throw new KovaError('INVITE_INVALID', 'Escribe el código de 6 caracteres que te pasaron.');
+    if (!c0) throw new KovaError('INVITE_INVALID', 'Escribí el código de 6 caracteres que te pasaron.');
     const info = await kova.people.inviteInfo(c0);
-    if (!info || !info.valid) throw new KovaError('INVITE_INVALID', 'El código no es válido o ya venció. Pide uno nuevo.');
+    if (!info || !info.valid) throw new KovaError('INVITE_INVALID', 'El código no es válido o ya venció. Pedí uno nuevo.');
     setPreview({ code: c0, kind: info.kind, inviter_name: info.inviter_name });
   });
   const accept = () => run(async () => {
@@ -120,7 +120,7 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
                 ? preview.inviter_name + ' te invita a ser su alumno. Va a ver tus entrenamientos y va a poder armar y ajustar tus rutinas.'
                 : preview.inviter_name + ' te invita como amigo. Van a ver los entrenamientos del otro; nadie edita nada.'}
             </T>
-            <T size={12} color={c.n400}>Peso, comida y sueño no se comparten salvo que los actives. Puedes cortar el vínculo cuando quieras.</T>
+            <T size={12} color={c.n400}>Peso, comida y sueño no se comparten salvo que los actives. Podés cortar el vínculo cuando quieras.</T>
             <Row style={{ gap: 8 }}>
               <Button label="Aceptar" busy={busy} onPress={accept} />
               <Button variant="ghost" label="Cancelar" onPress={() => setPreview(null)} />
@@ -168,7 +168,7 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
             <Card style={{ gap: 0 }}>
               <T size={16} w="medium" style={{ paddingBottom: 6 }}>Tus alumnos</T>
               {students.map((l, i) => (
-                <Row key={l.id} style={{ paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: 'rgba(233,233,237,0.06)' }}>
+                <Row key={l.id} style={{ paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: c.borderSubtle }}>
                   <Pressable onPress={() => setStudent(l)} accessibilityRole="button" accessibilityLabel={'Ver a ' + l.person_name}
                     style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 }}>
                     <View style={{ flex: 1 }}>
@@ -187,7 +187,7 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
             <Card>
               <T size={16} w="medium">Amigos</T>
               {friends.map((l) => (
-                <View key={l.id} style={{ gap: 6, paddingVertical: 6, borderTopWidth: 1, borderTopColor: 'rgba(233,233,237,0.06)' }}>
+                <View key={l.id} style={{ gap: 6, paddingVertical: 6, borderTopWidth: 1, borderTopColor: c.borderSubtle }}>
                   <Row style={{ justifyContent: 'space-between' }}>
                     <T size={15}>{l.person_name}</T>
                     <T size={12} color={c.n400}>{linkLabel(l)}</T>
@@ -200,14 +200,14 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
           ) : null}
 
           {!coach && !students.length && !friends.length ? (
-            <Empty icon={UsersThree} title="Todavía no tienes coach ni amigos">
+            <Empty icon={UsersThree} title="Todavía no tenés coach ni amigos">
               Invita a un alumno para armarle las rutinas y ver cómo entrena, o a un amigo para ver los entrenamientos del otro.
             </Empty>
           ) : null}
         </>
       )}
 
-      <View style={{ padding: 12, borderRadius: r.md, borderWidth: 1, borderColor: c.divider }}>
+      <View style={{ padding: 12, borderRadius: rad.control, borderWidth: 1, borderColor: c.divider }}>
         <T size={12} color={c.n400}>Tus datos son tuyos: un coach o un amigo solo ve lo que este vínculo permite, y deja de verlo apenas lo cortas.</T>
       </View>
 

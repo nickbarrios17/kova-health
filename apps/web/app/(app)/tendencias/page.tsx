@@ -49,16 +49,16 @@ export default function TendenciasPage() {
             style={{ height: 30, padding: '0 12px', borderRadius: 15, border: '1px solid', fontSize: 13, cursor: 'pointer', ...chip(metric === x.k) }}>{x.label}</button>
         ))}
       </div>
-      <div style={{ padding: '16px 18px', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ padding: '16px 18px', borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
           <span style={{ fontSize: 15, fontWeight: 500 }}>{m.label} · 28 días</span>
-          <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>
+          <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>
             {avg == null ? 'Sin datos' : `Media ${m.fmt(avg, units)} · ${vals.length} ${vals.length === 1 ? 'día' : 'días'} con datos`}
           </span>
         </div>
         {vals.length === 0 ? (
           <EmptyState icon="ph ph-chart-line" title={`Aún no hay datos de ${m.label.toLowerCase()}`}>
-            {metric === 'kcal' || metric === 'protein_g' ? 'Registra tus comidas en el móvil o en Comida.'
+            {metric === 'kcal' || metric === 'protein_g' ? 'Registrá tus comidas en el móvil o en Comida.'
               : metric === 'weight_kg' || metric === 'mood' ? 'Regístralo desde el móvil o el reloj.'
               : 'Llegan del reloj o de Health Connect / HealthKit cuando los conectes.'}
           </EmptyState>
@@ -66,25 +66,25 @@ export default function TendenciasPage() {
           <>
             <svg viewBox="0 0 600 180" preserveAspectRatio="none" style={{ width: '100%', height: 200, display: 'block' }} role="img"
               aria-label={`${m.label} de los últimos 28 días`}>
-              <line x1="0" y1="170" x2="600" y2="170" stroke="var(--color-divider)" vectorEffect="non-scaling-stroke" />
-              {avg != null && <line x1="0" x2="600" y1={y(avg)} y2={y(avg)} stroke="var(--color-neutral-600)" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />}
+              <line x1="0" y1="170" x2="600" y2="170" stroke="var(--kova-chart-grid)" vectorEffect="non-scaling-stroke" />
+              {avg != null && <line x1="0" x2="600" y1={y(avg)} y2={y(avg)} stroke="var(--kova-text-3)" strokeWidth="1.5" strokeDasharray="4 6" vectorEffect="non-scaling-stroke" />}
               {m.bars
                 ? pts.map((p, i) => p.v == null ? null : (
-                    <rect key={p.date} x={x(i) - 7} width="14" y={y(p.v)} height={170 - y(p.v)} rx="2"
-                      fill={p.date === today ? 'var(--color-accent)' : 'var(--color-neutral-700)'}><title>{dayShort(p.date) + ': ' + m.fmt(p.v, units)}</title></rect>
+                    <rect key={p.date} x={x(i) - 7} width="14" y={y(p.v)} height={170 - y(p.v)} rx="3"
+                      fill={p.date === today ? 'var(--color-accent)' : 'var(--kova-chart-muted)'}><title>{dayShort(p.date) + ': ' + m.fmt(p.v, units)}</title></rect>
                   ))
                 : (
-                  <polyline fill="none" stroke="var(--color-accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke"
+                  <polyline fill="none" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
                     points={pts.map((p, i) => (p.v == null ? null : `${x(i).toFixed(1)},${y(p.v).toFixed(1)}`)).filter(Boolean).join(' ')} />
                 )}
             </svg>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--color-neutral-400)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--kova-text-2)' }}>
               <span>{shortDate(pts[0]!.date)}</span><span>Línea discontinua: tu media</span><span>Hoy</span>
             </div>
           </>
         )}
       </div>
-      <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Los días sin registro no se dibujan: no rellenamos huecos con ceros ni estimaciones.</span>
+      <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Los días sin registro no se dibujan: no rellenamos huecos con ceros ni estimaciones.</span>
     </div>
   );
 }

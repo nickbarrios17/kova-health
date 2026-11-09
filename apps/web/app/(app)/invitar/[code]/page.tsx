@@ -9,5 +9,5 @@ export default function InvitarPage() {
   useEffect(() => {
     router.replace('/personas?code=' + encodeURIComponent(String(code ?? '').slice(0, 20)));
   }, [code, router]);
-  return <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Abriendo la invitación…</span>;
+  return <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>Abriendo la invitación…</span>;
 }

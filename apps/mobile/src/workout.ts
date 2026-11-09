@@ -118,7 +118,7 @@ export async function toggleSet(s: LiveSession, exIdx: number, setIdx: number, d
   const ex = s.exercises[exIdx]!;
   const set = ex.sets[setIdx]!;
   if (!set.done) {
-    if (set.reps == null || set.reps < 0) throw new KovaError('INVALID_INPUT', 'Indica las repeticiones.');
+    if (set.reps == null || set.reps < 0) throw new KovaError('INVALID_INPUT', 'Indicá las repeticiones.');
     const completedAt = new Date().toISOString();
     await outbox.enqueue({
       kind: 'record_set',

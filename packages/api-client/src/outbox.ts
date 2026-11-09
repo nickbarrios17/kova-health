@@ -76,8 +76,16 @@ const SCHEMA = {
   record_observation: HealthObservationSchema,
 } as const;
 
+/** What a sync indicator needs: counts by status and whether a flush is running. */
+export interface OutboxState {
+  pending: number;
+  failed: number;
+  sending: boolean;
+}
+
 export class Outbox {
   private flushing: Promise<FlushResult> | null = null;
+  private listeners = new Set<() => void>();
 
   constructor(
     private readonly send: OutboxSender,
@@ -92,7 +100,53 @@ export class Outbox {
     const entry: OutboxEntry = { id: newId(), op, status: 'pending', attempts: 0, enqueued_at: new Date().toISOString() };
     entries.push(entry);
     await this.storage.save(entries);
+    this.emit();
     return entry;
+  }
+
+  /** Called whenever the queue may have changed (enqueue, flush start/end, prune, discard). */
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => { this.listeners.delete(listener); };
+  }
+
+  private emit() {
+    for (const l of this.listeners) {
+      try { l(); } catch { /* a listener never breaks the queue */ }
+    }
+  }
+
+  async state(): Promise<OutboxState> {
+    const entries = await this.storage.load();
+    return {
+      pending: entries.filter((e) => e.status === 'pending').length,
+      failed: entries.filter((e) => e.status === 'failed').length,
+      sending: this.flushing != null,
+    };
+  }
+
+  /**
+   * Removes one failed operation from the queue («Descartar»). Only failed entries can go: the
+   * server never accepted them, so nothing on the server is deleted.
+   */
+  async discard(id: string): Promise<boolean> {
+    const entries = await this.storage.load();
+    const next = entries.filter((e) => !(e.id === id && e.status === 'failed'));
+    if (next.length === entries.length) return false;
+    await this.storage.save(next);
+    this.emit();
+    return true;
+  }
+
+  /** Puts failed operations back in the queue, keeping their place (after resolving what blocked them). */
+  async retry(ids: string[]): Promise<number> {
+    const entries = await this.storage.load();
+    let n = 0;
+    for (const e of entries) {
+      if (e.status === 'failed' && ids.includes(e.id)) { e.status = 'pending'; delete e.error; n++; }
+    }
+    if (n) { await this.storage.save(entries); this.emit(); }
+    return n;
   }
 
   async entries(): Promise<OutboxEntry[]> {
@@ -108,15 +162,20 @@ export class Outbox {
    * preserving order). Non-retryable errors mark that entry `failed` so the UI can surface it.
    */
   flush(): Promise<FlushResult> {
-    this.flushing ??= this.doFlush().finally(() => {
-      this.flushing = null;
-    });
+    if (!this.flushing) {
+      this.flushing = this.doFlush().finally(() => {
+        this.flushing = null;
+        this.emit();
+      });
+      this.emit();
+    }
     return this.flushing;
   }
 
   /** Drop confirmed entries (call after the UI has reconciled with the server). */
   async prune(): Promise<void> {
     await this.storage.save((await this.storage.load()).filter((e) => e.status !== 'confirmed'));
+    this.emit();
   }
 
   private async doFlush(): Promise<FlushResult> {

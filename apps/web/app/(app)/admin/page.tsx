@@ -16,7 +16,7 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { day
 function Stat({ label, value, href }: { label: string; value: number; href?: string }) {
   const body = (
     <>
-      <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{label}</span>
+      <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{label}</span>
       <span style={{ fontSize: 26, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
     </>
   );
@@ -38,7 +38,7 @@ export default function AdminPage() {
   }, []);
 
   if (q.error) return <ErrorNotice message={q.error} onRetry={q.reload} />;
-  if (q.loading && !q.data) return <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>Cargando…</span>;
+  if (q.loading && !q.data) return <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>Cargando…</span>;
   if (q.data === null || !q.data) return <EmptyState icon="ph ph-lock" title="Solo para administradores">Esta página muestra las cuentas de la app.</EmptyState>;
   const { overview: o, users } = q.data;
   const rows = searchUsers(users, query);
@@ -79,7 +79,7 @@ export default function AdminPage() {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <input className="input" type="search" placeholder="Buscar por nombre o correo" aria-label="Buscar cuentas" value={query}
           onChange={(e) => setQuery(e.target.value)} style={{ maxWidth: 320 }} />
-        <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>{rows.length} de {users.length}</span>
+        <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>{rows.length} de {users.length}</span>
       </div>
       {error && !action && <div className="kova-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)' }} /><span>{error}</span></div>}
 
@@ -90,8 +90,8 @@ export default function AdminPage() {
             {rows.map((u) => (
               <tr key={u.id} style={u.suspended ? { opacity: 0.6 } : undefined}>
                 <td>
-                  <div style={{ fontWeight: 500 }}>{u.name}{u.is_admin && <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--color-accent-200)' }}>ADMIN</span>}</div>
-                  <div style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>{u.email}</div>
+                  <div style={{ fontWeight: 500 }}>{u.name}{u.is_admin && <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--color-accent-300)' }}>ADMIN</span>}</div>
+                  <div style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>{u.email}</div>
                 </td>
                 <td style={{ whiteSpace: 'nowrap' }}>{fmtDate(u.created_at)}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>{u.last_seen_at ? ago(u.last_seen_at, now) : 'Nunca'}</td>
@@ -117,7 +117,7 @@ export default function AdminPage() {
           </tbody>
         </table>
       </div>
-      <span style={{ fontSize: 12, color: 'var(--color-neutral-500)' }}>
+      <span style={{ fontSize: 12, color: 'var(--kova-text-3)' }}>
         El panel muestra cantidades y fechas, no el contenido de las comidas, el peso ni la salud de nadie.
       </span>
 

@@ -78,7 +78,7 @@ export default function ImportPage() {
       } else if (ext === 'csv' || ext === 'txt' || ext === 'tsv') {
         read = [{ name: f.name.replace(/\.[^.]+$/, ''), rows: parseCsv(await f.text()) }];
       } else {
-        throw new Error(ext === 'xls' ? 'El formato .xls (Excel antiguo) no se puede leer: guárdalo como .xlsx o .csv.' : 'Formato no soportado. Usa .xlsx, .csv o .json.');
+        throw new Error(ext === 'xls' ? 'El formato .xls (Excel antiguo) no se puede leer: guárdalo como .xlsx o .csv.' : 'Formato no soportado. Usá .xlsx, .csv o .json.');
       }
       read = read.filter((s) => s.rows.some((r) => r.some((c) => c != null && String(c).trim() !== '')));
       if (!read.length) throw new Error('El archivo está vacío.');
@@ -165,7 +165,7 @@ export default function ImportPage() {
     return (
       <div className="card" style={{ maxWidth: 560, gap: 12 }}>
         <span style={{ fontSize: 17, fontWeight: 500 }}><i className="ph ph-check-circle" style={{ color: 'var(--kova-ok)' }} /> {done === 1 ? '1 rutina importada' : done + ' rutinas importadas'}</span>
-        <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>{targetName ? 'Ya están en la cuenta de ' + targetName + ', en su teléfono y su reloj.' : 'Ya están en Entrenamiento, en el teléfono y en el reloj.'}</span>
+        <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>{targetName ? 'Ya están en la cuenta de ' + targetName + ', en su teléfono y su reloj.' : 'Ya están en Entrenamiento, en el teléfono y en el reloj.'}</span>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link className="btn btn-primary" href={target ? '/personas/' + target : '/entrenamiento'}>Ver rutinas</Link>
           <button className="btn btn-ghost" onClick={() => { setDone(null); setFileName(null); setSheets([]); setPlans([]); setJsonDraft(null); }}>Importar otro archivo</button>
@@ -185,12 +185,12 @@ export default function ImportPage() {
               {students.data!.map((l) => <option key={l.person_id} value={l.person_id}>{l.person_name} (tu alumno)</option>)}
             </select>
           </div>
-          <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>Elígelo antes del archivo: los ejercicios se buscan entre los que puede usar esa cuenta.</span>
+          <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>Elígelo antes del archivo: los ejercicios se buscan entre los que puede usar esa cuenta.</span>
         </div>
       )}
       <div className="card" style={{ gap: 12 }}>
-        <span style={{ fontSize: 15, fontWeight: 500 }}>Elige un archivo</span>
-        <span style={{ fontSize: 13, color: 'var(--color-neutral-400)', lineHeight: 1.5 }}>
+        <span style={{ fontSize: 15, fontWeight: 500 }}>Elegí un archivo</span>
+        <span style={{ fontSize: 13, color: 'var(--kova-text-2)', lineHeight: 1.5 }}>
           Excel (.xlsx), CSV o JSON. No hace falta un formato exacto: Kova Health reconoce columnas como «Ejercicio», «Series», «Reps», «4x8», «Descanso» o «Peso»,
           y si no las encuentra te deja elegirlas. Cada hoja, o cada fila título como «Día A», es una rutina.
         </span>
@@ -201,7 +201,7 @@ export default function ImportPage() {
           </label>
           <button className="btn btn-ghost" onClick={() => download('plantilla-rutinas-kova.csv', TEMPLATE_CSV, 'text/csv;charset=utf-8')}><i className="ph ph-file-csv" />Plantilla para Excel</button>
           <button className="btn btn-ghost" onClick={() => download('rutinas-kova.json', TEMPLATE_JSON, 'application/json')}><i className="ph ph-brackets-curly" />Ejemplo JSON</button>
-          {fileName ? <span style={{ fontSize: 13, color: 'var(--color-neutral-400)' }}>{fileName}</span> : null}
+          {fileName ? <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>{fileName}</span> : null}
         </div>
       </div>
 
@@ -217,7 +217,7 @@ export default function ImportPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'baseline', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 15, fontWeight: 500 }}>Columnas · {s.name}</span>
               <span style={{ fontSize: 12, color: planReady(p) ? 'var(--kova-ok)' : 'var(--kova-warn)' }}>
-                {planReady(p) ? 'Listo para leer' : 'Elige al menos la columna del ejercicio'}
+                {planReady(p) ? 'Listo para leer' : 'Elegí al menos la columna del ejercicio'}
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
@@ -261,7 +261,7 @@ export default function ImportPage() {
       })}
 
       {fileName && drafts.length === 0 && !error && unmappedSheets.length === 0 ? (
-        <EmptyState icon="ph ph-table" title="No encontramos ejercicios">Revisa qué columna tiene el nombre del ejercicio y la fila de títulos.</EmptyState>
+        <EmptyState icon="ph ph-table" title="No encontramos ejercicios">Revisá qué columna tiene el nombre del ejercicio y la fila de títulos.</EmptyState>
       ) : null}
 
       {drafts.length > 0 && (
@@ -278,11 +278,11 @@ export default function ImportPage() {
                     const on = r.days.includes(d);
                     return (
                       <button key={d} type="button" aria-pressed={on} onClick={() => edit(r.key, { days: on ? r.days.filter((x) => x !== d) : [...r.days, d].sort() })}
-                        style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'), background: on ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent', color: on ? 'var(--color-accent-200)' : 'var(--color-neutral-400)', fontSize: 12, cursor: 'pointer' }}>{l}</button>
+                        style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid ' + (on ? 'var(--color-accent)' : 'var(--color-divider)'), background: on ? 'color-mix(in srgb, var(--color-accent) 16%, transparent)' : 'transparent', color: on ? 'var(--color-accent-300)' : 'var(--color-neutral-400)', fontSize: 12, cursor: 'pointer' }}>{l}</button>
                     );
                   })}
                 </div>
-                <span style={{ fontSize: 12, color: 'var(--color-neutral-500)' }}>{isoDays(r.days)}</span>
+                <span style={{ fontSize: 12, color: 'var(--kova-text-3)' }}>{isoDays(r.days)}</span>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table className="table" style={{ fontSize: 13, minWidth: 620 }}>
@@ -318,7 +318,7 @@ export default function ImportPage() {
             <button className="btn btn-primary" disabled={busy || chosen.length === 0 || catalog.loading} onClick={save}>
               {busy ? <><i className="ph ph-circle-notch kova-spin" />Importando…</> : <><i className="ph ph-download-simple" />Importar {chosen.length === 1 ? '1 rutina' : chosen.length + ' rutinas'}</>}
             </button>
-            <span style={{ fontSize: 12, color: 'var(--color-neutral-400)' }}>
+            <span style={{ fontSize: 12, color: 'var(--kova-text-2)' }}>
               {newNames.length ? 'Se crearán ' + newNames.length + (newNames.length === 1 ? ' ejercicio nuevo' : ' ejercicios nuevos') + (targetName ? ' en la cuenta de ' + targetName + '. ' : ' en tu cuenta. ') : ''}
               Nada se guarda hasta que pulses Importar.
             </span>

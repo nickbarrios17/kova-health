@@ -21,11 +21,11 @@ export function NewsDialog({ days, onClose, title = 'Novedades' }: { days: NewsD
     <div className="dialog-backdrop" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dialog" style={{ width: 'min(520px, 100%)', maxHeight: '85vh', overflowY: 'auto', gap: 16 }}>
         <span className="dialog-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <i className="ph-fill ph-sparkle" style={{ color: 'var(--color-accent)', fontSize: 22 }} />{title}
+          <i className="ph-fill ph-sparkle" style={{ color: 'var(--kova-accent-text)', fontSize: 22 }} />{title}
         </span>
         {days.map((d) => (
           <section key={d.date} style={{ display: 'grid', gap: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-neutral-400)' }}>{newsDate(d.date)}</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--kova-text-2)' }}>{newsDate(d.date)}</span>
             {d.items.map((i) => (
               <div key={i.title} style={{ display: 'grid', gap: 2, paddingLeft: 12, borderLeft: '2px solid var(--color-accent)' }}>
                 <span style={{ fontSize: 15, fontWeight: 500 }}>{i.title}</span>

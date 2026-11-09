@@ -10,7 +10,7 @@ import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { Spark } from '../charts';
 import { kova } from '../client';
 import { useSession } from '../session';
-import { c, r } from '../theme';
+import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
 import { Empty, ErrorNote, Loading, Row, Seg, T } from '../ui';
 import { Ajustes } from './Ajustes';
@@ -73,12 +73,12 @@ export function Progreso() {
       <Seg options={[['30', 'Últimos 30 días'], ['90', 'Últimos 90 días']]} value={range} onChange={setRange} />
 
       {withData.length === 0 ? (
-        <Empty title="Todavía no hay progreso para mostrar">Entrena, registra comidas o conecta Health Connect en Ajustes y aquí verás cómo vienes, con gráficos de cada área.</Empty>
+        <Empty title="Todavía no hay progreso para mostrar">Entrená, registrá comidas o conectá Health Connect en Ajustes y acá verás cómo vienes, con gráficos de cada área.</Empty>
       ) : withData.map((x) => {
         const Ic = METRIC[x.k].icon;
         return (
           <Pressable key={x.k} onPress={() => setOpen(x.k)} accessibilityRole="button" accessibilityLabel={METRIC[x.k].title + ', ver detalle'}
-            style={{ padding: 14, borderRadius: r.lg, backgroundColor: c.surface, gap: 10 }}>
+            style={{ padding: 14, borderRadius: rad.card, backgroundColor: c.surface, gap: 10 }}>
             <Row style={{ gap: 8 }}>
               <Ic size={16} color={c.a300} />
               <T size={14} color={c.n300} style={{ flex: 1 }}>{METRIC[x.k].title}</T>

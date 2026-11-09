@@ -70,19 +70,24 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.roundToInt
 
-// Tokens from design/prototypes/nocturne.css + the watch prototype (VIDA Watch v2).
-private val Bg = Color(0xFF000000)          // OLED: true black, as watch faces do
-private val Surface = Color(0xFF292B31)     // neutral-900
-private val TextC = Color(0xFFE9E9ED)
-private val Accent = Color(0xFF9184D9)
-private val Accent100 = Color(0xFFF5F4FF)
-private val Accent300 = Color(0xFFD2CEFD)
-private val N400 = Color(0xFFB2B6CA)
-private val N500 = Color(0xFF9397AB)
-private val N800 = Color(0xFF3F424D)
-private val Divider = Color(0x29E9E9ED)
-private val Ok = Color(0xFF6FD6A3)
-private val Warn = Color(0xFFEFC173)
+// Tokens live in KovaWatchTheme (Theme.kt); these short names stay so the screens read the same.
+private val Bg = KovaWatchTheme.Bg
+private val Surface = KovaWatchTheme.Surface
+private val TextC = KovaWatchTheme.TextC
+private val Accent = KovaWatchTheme.Accent
+private val Accent100 = KovaWatchTheme.Accent100
+private val Accent300 = KovaWatchTheme.Accent300
+private val Accent400 = KovaWatchTheme.Accent400
+private val Accent700 = KovaWatchTheme.Accent700
+private val Accent700Pressed = KovaWatchTheme.Accent700Pressed
+private val N400 = KovaWatchTheme.N400
+private val N500 = KovaWatchTheme.N500
+private val N800 = KovaWatchTheme.N800
+private val Divider = KovaWatchTheme.Divider
+private val Track = KovaWatchTheme.Track
+private val Ok = KovaWatchTheme.Ok
+private val Warn = KovaWatchTheme.Warn
+private val Crit = KovaWatchTheme.Crit
 private const val LB = 2.20462
 
 private sealed interface Screen {
@@ -153,7 +158,7 @@ private fun KovaWatch(store: Store, api: KovaApi) {
             } catch (e: IOException) {
                 withContext(Dispatchers.Main) { offline = true }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { message = e.message }
+                withContext(Dispatchers.Main) { message = "Algo salió mal" }
             }
         }
     }
@@ -188,9 +193,9 @@ private fun KovaWatch(store: Store, api: KovaApi) {
                         api.signIn(email.trim(), pass)
                         withContext(Dispatchers.Main) { message = null; screen = Screen.Home }
                     } catch (e: IOException) {
-                        withContext(Dispatchers.Main) { message = "Sin conexión" }
+                        withContext(Dispatchers.Main) { message = "⌁ Sin conexión" }
                     } catch (e: Exception) {
-                        withContext(Dispatchers.Main) { message = e.message ?: "Algo salió mal" }
+                        withContext(Dispatchers.Main) { message = "No pudimos entrar. Revisá el correo y la contraseña." }
                     }
                 }
             }
@@ -224,7 +229,7 @@ private fun KovaWatch(store: Store, api: KovaApi) {
                                 screen = Screen.Workout
                             }
                         } else if (!offline) {
-                            Label("Crea una rutina en la web o en el móvil", N500, 12)
+                            Label("Sin rutina hoy · Creá una rutina en la web o en el móvil", N500, 12)
                         }
                     }
                     Pill("Ánimo") { screen = Screen.Mood }
@@ -237,7 +242,7 @@ private fun KovaWatch(store: Store, api: KovaApi) {
                 val restLeft = l.restEndsAt?.let { ((it - now) / 1000).coerceAtLeast(0) } ?: 0
                 when {
                     l.pausedAt != null -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Label("Sesión en pausa", TextC, 18, FontWeight.Medium)
+                        Label("‖ Sesión en pausa", TextC, 18, FontWeight.Medium)
                         Label(if (l.doneSets == 1) "1 serie hecha" else "${l.doneSets} series hechas", N400, 13)
                         Pill("Reanudar", primary = true) {
                             save(l.copy(pausedAt = null, pausedMs = l.pausedMs + (System.currentTimeMillis() - l.pausedAt)))
@@ -280,14 +285,14 @@ private fun KovaWatch(store: Store, api: KovaApi) {
                                 save(l.copy(pausedAt = System.currentTimeMillis(), restEndsAt = null))
                                 queue("transition_session", transitionParams(l.id, "pause"))
                             }
-                            Label(ex.name, Accent300, 14)
+                            Label(ex.name, Accent300, 13)
                             Label("Serie ${idx + 1} de ${ex.sets.size}", N400, 13)
                             Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.clickable { screen = Screen.Edit }
                                 .semantics { contentDescription = "Ajustar carga y repeticiones" }) {
-                                Label(fw(set.w), TextC, 42, FontWeight.Medium)
+                                Label(fw(set.w), TextC, 48, FontWeight.SemiBold)
                                 Label(" $unit × ${set.reps}", N400, 14)
                             }
-                            Pill("Serie hecha", primary = true, wide = true) {
+                            Pill("✓ Serie hecha", primary = true, wide = true) {
                                 val updated = l.copy(
                                     exercises = l.exercises.mapIndexed { i, e -> if (i != l.cur) e else e.copy(sets = e.sets.mapIndexed { j, x -> if (j == idx) x.copy(done = true) else x }) },
                                     restEndsAt = System.currentTimeMillis() + ex.restS * 1000L,
@@ -321,7 +326,7 @@ private fun KovaWatch(store: Store, api: KovaApi) {
             }
 
             Screen.Mood -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Label("¿Cómo te sientes?", TextC, 15, FontWeight.Medium)
+                Label("¿Cómo te sentís?", TextC, 15, FontWeight.Medium)
                 val labels = listOf("Muy mal", "Mal", "Normal", "Bien", "Muy bien")
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     (1..5).forEach { m ->
@@ -389,18 +394,17 @@ private fun Modifier.clip() = this.background(Color.Transparent, CircleShape)
 // ── Building blocks (48–56 dp targets, 12 sp minimum: watch rules from the design system) ──
 @Composable
 private fun Label(text: String, color: Color, size: Int, weight: FontWeight = FontWeight.Normal) =
-    BasicText(text, style = TextStyle(color = color, fontSize = size.sp, fontWeight = weight, textAlign = TextAlign.Center))
+    BasicText(text, style = TextStyle(color = color, fontSize = size.sp, fontWeight = weight, textAlign = TextAlign.Center, fontFeatureSettings = "tnum"))
 
 @Composable
 private fun Pill(label: String, primary: Boolean = false, small: Boolean = false, wide: Boolean = false, onClick: () -> Unit) {
     val h = if (small) 44.dp else 52.dp
     Box(
         Modifier.height(h).then(if (wide) Modifier.width(168.dp) else Modifier)
-            .background(if (primary) Accent.copy(alpha = 0.20f) else Color.Transparent, RoundedCornerShape(h / 2))
-            .border(1.dp, if (primary) Accent else Divider, RoundedCornerShape(h / 2))
+            .background(if (primary) Accent700 else Surface, RoundedCornerShape(h / 2))
             .clickable(onClick = onClick).padding(horizontal = 18.dp),
         contentAlignment = Alignment.Center,
-    ) { Label(label, if (primary) Accent100 else TextC, if (small) 13 else 16, FontWeight.Medium) }
+    ) { Label(label, if (primary) KovaWatchTheme.White else TextC, if (small) 13 else 16, FontWeight.SemiBold) }
 }
 
 @Composable
@@ -415,8 +419,8 @@ private fun Stepper(value: String, unit: String, dec: () -> Unit, inc: () -> Uni
 @Composable
 private fun SyncLine(pending: Int, offline: Boolean) {
     when {
-        pending > 0 -> Label(if (pending == 1) "1 envío pendiente" else "$pending envíos pendientes", Warn, 12)
-        offline -> Label("Sin conexión", Warn, 12)
+        pending > 0 -> Label(if (pending == 1) "↑ 1 envío pendiente" else "↑ $pending envíos pendientes", Warn, 12)
+        offline -> Label("⌁ Sin conexión", Warn, 12)
         else -> Label("Sincronizado", N500, 12)
     }
 }
@@ -424,10 +428,10 @@ private fun SyncLine(pending: Int, offline: Boolean) {
 @Composable
 private fun Ring(fraction: Float) {
     Canvas(Modifier.fillMaxSize().padding(6.dp)) {
-        val stroke = 8.dp.toPx()
+        val stroke = 10.dp.toPx()
         val d = size.minDimension - stroke
         val tl = Offset((size.width - d) / 2, (size.height - d) / 2)
-        drawArc(N800, 0f, 360f, false, tl, Size(d, d), style = Stroke(stroke))
+        drawArc(Track, 0f, 360f, false, tl, Size(d, d), style = Stroke(stroke))
         drawArc(Accent, -90f, 360f * fraction.coerceIn(0f, 1f), false, tl, Size(d, d), style = Stroke(stroke, cap = StrokeCap.Round))
     }
 }
@@ -445,7 +449,7 @@ private fun LoginScreen(error: String?, onSubmit: (String, String) -> Unit) {
         Input(email, "Correo", KeyboardType.Email, false) { email = it }
         Input(pass, "Contraseña", KeyboardType.Password, true) { pass = it }
         Pill("Entrar", primary = true) { if (email.isNotBlank() && pass.isNotBlank()) onSubmit(email, pass) }
-        Label("Usa la misma cuenta que en el móvil", N500, 11)
+        Label("Usá la misma cuenta que en el móvil", N500, 12)
     }
 }
 

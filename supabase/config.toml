@@ -416,3 +416,7 @@ enabled = true
 [functions.delete-account]
 # The function verifies the caller's JWT itself and then uses the service role.
 verify_jwt = true
+
+[functions.bike-route]
+# Bike routes through OpenRouteService (docs/ciclismo.md); needs the secret ORS_API_KEY.
+verify_jwt = true
