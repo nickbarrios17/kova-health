@@ -184,7 +184,7 @@ export function Loading() {
 }
 
 /** Segmented control: container bg, active option raised + border + 600. */
-export function Seg<V extends string>({ options, value, onChange, label }: { options: Array<[V, string]>; value: V; onChange: (v: V) => void; label?: string }) {
+export function Seg<V extends string>({ options, value, onChange, label, stretch }: { options: Array<[V, string]>; value: V; onChange: (v: V) => void; label?: string; /** Options share the full width (only where the control has its own row). */ stretch?: boolean }) {
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={label}
       style={{ flexDirection: 'row', borderWidth: 1, borderColor: c.divider, borderRadius: 10, padding: 2, gap: 2, backgroundColor: c.bg }}>
@@ -192,7 +192,7 @@ export function Seg<V extends string>({ options, value, onChange, label }: { opt
         const on = v === value;
         return (
           <Pressable key={v} onPress={() => onChange(v)} accessibilityRole="radio" accessibilityState={{ selected: on, checked: on }} accessibilityLabel={text}
-            style={{ flexGrow: 1, paddingHorizontal: 12, minHeight: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
+            style={{ flexGrow: stretch ? 1 : 0, paddingHorizontal: 12, minHeight: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
               backgroundColor: on ? c.raised : 'transparent', borderWidth: 1, borderColor: on ? c.divider : 'transparent' }}>
             <T size={13} w={on ? 'semibold' : 'regular'} color={on ? c.text : c.n400}>{text}</T>
           </Pressable>
