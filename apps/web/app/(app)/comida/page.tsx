@@ -5,6 +5,7 @@ import {
 } from '@kova/domain';
 import { useState } from 'react';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
+import { FoodAssistant } from '@/components/FoodAssistant';
 import { kova } from '@/lib/client';
 import { seg } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -54,6 +55,7 @@ export default function ComidaPage() {
           <button key={d} onClick={() => setDay(d!)} aria-pressed={day === d} style={{ border: 0, fontSize: 13, padding: '7px 14px', cursor: 'pointer', ...seg(day === d) }}>{l}</button>
         ))}
       </div>
+      <FoodAssistant day={day} onLogged={q.reload} />
       <div style={{ padding: '18px 20px', borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
           <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-neutral-300)' }}>Calorías</span>
@@ -72,7 +74,7 @@ export default function ComidaPage() {
         </span>
       ) : null}
       {Boolean(s.nutrition_has_unverified) && (
-        <span style={{ fontSize: 12, color: 'var(--kova-text-2)', display: 'flex', gap: 6, alignItems: 'center' }}><i className="ph ph-info" />Incluye valores introducidos por ti o estimados.</span>
+        <span style={{ fontSize: 12, color: 'var(--kova-text-2)', display: 'flex', gap: 6, alignItems: 'center' }}><i className="ph ph-info" />Incluye valores cargados por vos o estimados.</span>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 12 }}>
         {MEAL_SLOTS.map(([slot, label]) => {
@@ -95,7 +97,7 @@ export default function ComidaPage() {
                     onClick={() => kova().nutrition.removeItem(i.id).then(q.reload)}><i className="ph ph-trash" /></button>
                 </div>
               ))}
-              <button className="btn btn-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setAdding(slot)}><i className="ph ph-plus" />Añadir</button>
+              <button className="btn btn-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => setAdding(slot)}><i className="ph ph-plus" />Agregar</button>
             </div>
           );
         })}
@@ -133,10 +135,10 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
   );
 
   return (
-    <div className="dialog-backdrop" role="dialog" aria-modal="true" aria-label={'Añadir a ' + label} onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="dialog-backdrop" role="dialog" aria-modal="true" aria-label={'Agregar a ' + label} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dialog" style={{ width: 'min(480px, 100%)', maxHeight: '85vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <span className="dialog-title" style={{ flex: 1 }}>Añadir a {label}</span>
+          <span className="dialog-title" style={{ flex: 1 }}>Agregar a {label}</span>
           <button className="btn btn-icon btn-secondary" aria-label="Cerrar" style={{ border: 0 }} onClick={onClose}><i className="ph ph-x" /></button>
         </div>
         {error && <div className="kova-error" role="alert"><i className="ph ph-x-circle" style={{ color: 'var(--kova-crit)' }} /><span>{error}</span></div>}
@@ -151,12 +153,12 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
               <button className="btn btn-primary" disabled={busy || !(qn > 0)} onClick={() => run(async () => {
                 await kova().nutrition.logFood({ id: newId(), local_date: day, slot, quantity: qn, food_id: picked.id });
                 onAdded();
-              })}><i className="ph ph-plus" />Añadir</button>
+              })}><i className="ph ph-plus" />Agregar</button>
             </div>
           </>
         ) : manual ? (
           <>
-            <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>Copia los valores de la etiqueta. Se guardan como introducidos por ti.</span>
+            <span style={{ fontSize: 13, color: 'var(--kova-text-2)' }}>Copiá los valores de la etiqueta. Se guardan como cargados por vos.</span>
             {field('Nombre', mf.name, (v) => setMf({ ...mf, name: v }), 'text')}
             <div style={{ display: 'flex', border: '1px solid var(--color-divider)', borderRadius: 'var(--kova-radius-control)', overflow: 'hidden', alignSelf: 'flex-start' }}>
               {([['g', 'Por gramos'], ['serving', 'Por porción']] as const).map(([u, l]) => (
@@ -193,7 +195,7 @@ function AddFood({ slot, day, onClose, onAdded }: { slot: Slot; day: string; onC
               </button>
             ))}
             {query.trim().length >= 2 && !results.loading && (results.data ?? []).length === 0 && (
-              <EmptyState icon="ph ph-magnifying-glass" title="Sin resultados">El catálogo verificado aún no está disponible. Creá el alimento con los datos de la etiqueta.</EmptyState>
+              <EmptyState icon="ph ph-magnifying-glass" title="Sin resultados">Probá con otra palabra, contalo arriba en «Contame qué comiste» o creá el alimento con los datos de la etiqueta.</EmptyState>
             )}
             <button className="btn btn-secondary" onClick={() => setManual(true)}><i className="ph ph-plus" />Crear alimento</button>
           </>

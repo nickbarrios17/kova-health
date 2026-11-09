@@ -9,8 +9,9 @@ import { outbox, kova } from '../client';
 import { useSession } from '../session';
 import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
-import { Button, Card, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
+import { Button, Card, Chip, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
 import { useReportTarget } from '../report';
+import { FoodAssistant } from './FoodAssistant';
 
 type Slot = (typeof MEAL_SLOTS)[number][0];
 interface Food { id: string; name: string; brand: string | null; ref_amount: number; ref_unit: 'g' | 'ml' | 'serving'; serving_label: string | null; default_quantity: number | null; kcal: number; protein_g: number; carbs_g: number; fat_g: number; data_source: NutritionSource }
@@ -49,12 +50,13 @@ export function Comida() {
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
         <Row style={{ justifyContent: 'space-between' }}>
-          <T size={22} w="medium">Comida</T>
+          <T size={26} w="semibold" accessibilityRole="header">Comida</T>
           <Seg options={[[addDays(today, -1), 'Ayer'], [today, 'Hoy']]} value={day} onChange={setDay} />
         </Row>
+        <FoodAssistant day={day} deviceId={deviceId} onLogged={q.reload} />
         {q.loading && !q.data ? <Loading /> : q.error ? <ErrorNote message={q.error} onRetry={q.reload} /> : (
           <>
-            <Card style={{ backgroundColor: c.a900 }}>
+            <Card>
               <T size={13} w="medium" color={c.n300}>{day === today ? 'Hoy' : 'Ayer'}</T>
               <Row style={{ alignItems: 'baseline', gap: 6 }}>
                 <T size={30} w="medium">{q.data!.s.kcal != null ? nf(Math.round(n(q.data!.s.kcal)), 0) : '0'}</T>
@@ -71,7 +73,7 @@ export function Comida() {
               {q.data!.dynamic?.day ? (
                 <T size={12} color={c.n300}>Meta de hoy según tu actividad: {describeDailyTarget(q.data!.dynamic.day)} Se actualiza a medida que te movés.</T>
               ) : null}
-              {q.data!.s.nutrition_has_unverified ? <Notice text="Incluye valores introducidos por ti o estimados." /> : null}
+              {q.data!.s.nutrition_has_unverified ? <Notice text="Incluye valores cargados por vos o estimados." /> : null}
             </Card>
 
             {MEAL_SLOTS.map(([slot, label]) => {
@@ -91,7 +93,7 @@ export function Comida() {
                       <Pressable accessibilityLabel={'Quitar ' + i.name} onPress={() => remove(i.id)} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}><Trash size={18} color={c.n400} /></Pressable>
                     </Row>
                   ))}
-                  <Button variant="ghost" label="Añadir" icon={Plus} onPress={() => setAdding(slot)} style={{ alignSelf: 'flex-start' }} />
+                  <Button variant="ghost" label="Agregar" icon={Plus} onPress={() => setAdding(slot)} style={{ alignSelf: 'flex-start' }} />
                 </Card>
               );
             })}
@@ -114,6 +116,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const results = useAsync(async () => (query.trim().length >= 2 ? ((await kova.nutrition.searchFoods(query)) as Food[]) : []), [query]);
+  const portions = useAsync(async () => (picked ? (await kova.nutrition.portions([picked.id])) as Array<{ label: string; grams: number }> : []), [picked?.id]);
   const label = MEAL_SLOTS.find(([s]) => s === slot)![1];
 
   const log = async (food: Food, quantity: number) => {
@@ -157,7 +160,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
       <View style={{ flex: 1, backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityLabel="Cerrar" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
-          <T size={17} w="medium" style={{ flex: 1 }}>Añadir a {label}</T>
+          <T size={17} w="semibold" style={{ flex: 1 }}>Agregar a {label}</T>
         </Row>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} keyboardShouldPersistTaps="handled">
           {error ? <Notice tone="warn" text={error} /> : null}
@@ -166,14 +169,21 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
               <T size={16} w="medium">{picked.name}</T>
               <T size={12} color={c.n400}>{nf(Number(picked.kcal), 0)} kcal por {nf(Number(picked.ref_amount), 1)} {unitLabel(picked)} · {nutritionSourceLabel(picked.data_source)}</T>
               <Field label={'Cantidad (' + (picked.ref_unit === 'serving' ? 'porciones' : picked.ref_unit) + ')'} value={qty} onChangeText={setQty} keyboardType="decimal-pad" />
+              {(portions.data ?? []).length ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                  {(portions.data ?? []).map((p) => (
+                    <Chip key={p.label} label={p.label + ' · ' + nf(Number(p.grams), 0) + ' ' + picked.ref_unit} selected={qn === Number(p.grams)} onPress={() => setQty(String(Number(p.grams)))} />
+                  ))}
+                </ScrollView>
+              ) : null}
               {preview ? <T size={13} color={c.n300}>{nf(preview.kcal, 0)} kcal · {nf(preview.protein_g, 1)} g proteína · {nf(preview.carbs_g, 1)} g carbos · {nf(preview.fat_g, 1)} g grasa</T> : null}
-              <Button label="Añadir" icon={Plus} busy={busy} disabled={!(qn > 0)} onPress={() => log(picked, qn)} />
+              <Button label="Agregar" icon={Plus} busy={busy} disabled={!(qn > 0)} onPress={() => log(picked, qn)} />
               <Button variant="ghost" label="Elegir otro alimento" onPress={() => setPicked(null)} />
             </Card>
           ) : manual ? (
             <Card>
               <T size={16} w="medium">Alimento nuevo</T>
-              <Notice text="Copia los valores de la etiqueta. Se guardan como introducidos por ti." />
+              <Notice text="Copiá los valores de la etiqueta. Se guardan como cargados por vos." />
               <Field label="Nombre" value={mf.name} onChangeText={(v) => setMf({ ...mf, name: v })} />
               <Seg options={[['g', 'Por gramos'], ['serving', 'Por porción']]} value={mf.unit} onChange={(v) => setMf({ ...mf, unit: v })} />
               {mf.unit === 'g' ? <Field label="Valores por (g)" value={mf.ref} onChangeText={(v) => setMf({ ...mf, ref: v })} keyboardType="decimal-pad" /> : null}
@@ -200,9 +210,9 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
                 </Pressable>
               ))}
               {query.trim().length >= 2 && !results.loading && (results.data ?? []).length === 0 ? (
-                <Empty icon={MagnifyingGlass} title="Sin resultados">El catálogo verificado aún no está disponible. Creá el alimento con los datos de la etiqueta.</Empty>
+                <Empty icon={MagnifyingGlass} title="Sin resultados">Probá con otra palabra, contalo arriba en «Contame qué comiste» o creá el alimento con los datos de la etiqueta.</Empty>
               ) : null}
-              {query.trim().length < 2 ? <Empty icon={ForkKnife} title="Buscá o creá un alimento">Escribí al menos 2 letras. Si no aparece, créalo con los valores de la etiqueta.</Empty> : null}
+              {query.trim().length < 2 ? <Empty icon={ForkKnife} title="Buscá o creá un alimento">Escribí al menos 2 letras. Si no aparece, crealo con los valores de la etiqueta.</Empty> : null}
               <Button variant="secondary" label="Crear alimento" icon={Plus} onPress={() => setManual(true)} />
             </>
           )}
