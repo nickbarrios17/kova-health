@@ -215,7 +215,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
         <Bicycle size={24} color={c.accent} />
       </Row>
 
-      <Seg options={[['tiempo', 'Por tiempo'], ['ab', 'A → B'], ['guardadas', 'Guardadas']]} value={mode}
+      <Seg stretch options={[['tiempo', 'Por tiempo'], ['ab', 'A → B'], ['guardadas', 'Guardadas']]} value={mode}
         onChange={(m) => { setMode(m); setPlan(null); setError(null); setNotice(null); stopRide(); }} />
 
       <View>
