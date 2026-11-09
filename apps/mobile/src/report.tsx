@@ -11,7 +11,7 @@ import { ReportSheet } from './ReportSheet';
 import { c } from './theme';
 
 interface Target { screen: ReportScreen; context?: ReportContext }
-interface Ctx { push: (t: Target) => () => void; setBottom: (n: number) => void }
+interface Ctx { push: (t: Target) => () => void; setBottom: (n: number) => void; open: () => void }
 const ReportCtx = createContext<Ctx | null>(null);
 
 /** Registers the current screen while it is mounted (the innermost mounted screen wins). */
@@ -25,6 +25,12 @@ export function useReportTarget(screen: ReportScreen, context?: ReportContext) {
 export function useReportButtonOffset(bottom: number) {
   const ctx = useContext(ReportCtx);
   useEffect(() => ctx?.setBottom(bottom), [bottom]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+/** Opens the report sheet from a button placed inside a screen (where the floating one would cover controls). */
+export function useOpenReport(): () => void {
+  const ctx = useContext(ReportCtx);
+  return () => ctx?.open();
 }
 
 export function ReportButton({ onPress, size = 20 }: { onPress: () => void; size?: number }) {
@@ -50,7 +56,7 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     };
   };
   return (
-    <ReportCtx.Provider value={{ push, setBottom }}>
+    <ReportCtx.Provider value={{ push, setBottom, open: () => setOpen(true) }}>
       <View style={{ flex: 1 }}>
         {children}
         {bottom >= 0 ? <View pointerEvents="box-none" style={{ position: 'absolute', right: 10, bottom }}>

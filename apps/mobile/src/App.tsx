@@ -97,7 +97,7 @@ function Shell() {
 
   // ⚠️ button: hidden until signed in and onboarded; above the tab bar on the tabbed screens.
   const tabbed = status === 'signedIn' && !!prefs?.onboarded && !summary && !(live && showLive) && !invite;
-  useReportButtonOffset(status !== 'signedIn' || !prefs?.onboarded ? -1 : tabbed ? (live ? 160 : 92) : live && showLive ? 150 : 24);
+  useReportButtonOffset(status !== 'signedIn' || !prefs?.onboarded ? -1 : tabbed ? (live ? 160 : 92) : live && showLive ? -1 : 24);
 
   if (status === 'signedIn' && !prefs && bootError) {
     return (
