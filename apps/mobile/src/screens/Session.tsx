@@ -12,7 +12,7 @@ import { MannequinView } from '../MannequinView';
 import { useAsync } from '../useAsync';
 import { ExerciseDetail } from './ExerciseDetail';
 import { addSet, elapsedS, fillForward, saveLive, summarize, toggleSet, transition, type LiveSession, type Summary } from '../workout';
-import { useReportTarget } from '../report';
+import { ReportButton, useOpenReport, useReportTarget } from '../report';
 
 const parseNum = (s: string) => {
   const v = Number(s.replace(',', '.'));
@@ -27,6 +27,8 @@ export function Session({ live, setLive, onClose, onFinished }: {
 }) {
   const { prefs, setUnit, deviceId } = useSession();
   const sync = useSync();
+  // In the session the floating ⚠️ would cover the set checks, so it lives in the top bar.
+  const openReport = useOpenReport();
   const units: WeightUnit = prefs!.weight_unit;
   const [now, setNow] = useState(Date.now());
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +97,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
           <T size={16} w="semibold" numberOfLines={1}>{live.name}</T>
           <T size={12} color={c.n400}>{clock(elapsedS(live, now))} · {doneSets} de {series(totalSets)} · {vol(volumeKg)}</T>
         </View>
+        <ReportButton onPress={openReport} />
         <Button variant="text" label="Terminar" onPress={() => setConfirming(true)} />
       </Row>
 
