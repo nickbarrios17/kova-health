@@ -20,6 +20,14 @@ export interface NewsDay {
 
 export const NEWS: NewsDay[] = [
   {
+    date: '2026-11-10',
+    items: [
+      { title: 'Contame qué comiste', body: 'En Comida, escribí o dictá lo que comiste («2 empanadas y una ensalada») o sacale una foto al plato, y te lo cargamos. Revisás cada cosa antes de guardar; lo que es estimado queda marcado así.' },
+      { title: 'Código de barras', body: 'Escaneá un producto y te mostramos sus calorías, los sellos de exceso y, si conocemos uno, una opción con menos sellos de la misma góndola. Si nadie lo cargó, sacale una foto a la etiqueta.' },
+      { title: 'Comidas argentinas', body: 'El buscador ya tiene más de 180 alimentos y platos típicos con porciones caseras, y te entiende aunque no pongas tildes.' },
+    ],
+  },
+  {
     date: '2026-11-09',
     items: [
       { title: 'Ciclismo', body: 'En Entrenar → Ciclismo: decí cuánto querés andar y te armamos recorridos, o buscá a dónde vas. Te mostramos cuánto va por bicisenda, calles o avenidas, qué parques cruzás y el tiempo estimado. Mirala en 3D, tocá Navegar para que te guíe con voz, y mirá qué zonas tienen más robos o choques.' },
