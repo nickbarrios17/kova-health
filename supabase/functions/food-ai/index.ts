@@ -325,6 +325,50 @@ async function swapMeal(sb: any, body: any) {
   return { item: fresh };
 }
 
+// ── Etapa 3: what is at home, from a supermarket receipt or a photo of the fridge ────────────────
+
+const PANTRY_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    items: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          name: { type: 'STRING', description: 'Nombre del alimento; si está en la lista de nombres, usá ese nombre exacto' },
+          grams: { type: 'NUMBER', description: 'Gramos o ml si se pueden saber (ticket: peso o tamaño del envase); 0 si no' },
+        },
+        required: ['name', 'grams'],
+      },
+    },
+    readable: { type: 'BOOLEAN' },
+  },
+  required: ['items', 'readable'],
+};
+
+async function readPantry(sb: any, body: any) {
+  const mime = str(body?.image?.mime, 40), data = typeof body?.image?.data === 'string' ? body.image.data : null;
+  if (!mime || !/^image\/(jpeg|png|webp|heic)$/.test(mime) || !data) throw invalid('image');
+  if (data.length * 0.75 > MAX_IMAGE_BYTES) throw invalid('image too large');
+  // The names the shopping list uses, so what is at home matches what is on the list.
+  const { data: foods } = await sb.from('foods').select('name, shop').is('owner_id', null).not('shop', 'is', null).limit(400);
+  const names = [...new Set((foods ?? []).filter((f: any) => !f.shop?.parts).map((f: any) => f.shop?.name ?? String(f.name).replace(/\s*\(.*\)\s*$/, '')))];
+  const prompt =
+    'Mirá esta foto: es un ticket de supermercado argentino o el interior de una heladera o alacena. ' +
+    'Listá los alimentos que la persona tiene en casa. En un ticket, usá el peso o el tamaño del envase para los gramos (1 kg = 1000, 1 l = 1000); ' +
+    'si es una heladera y no se puede saber cuánto hay, grams = 0. Ignorá productos de limpieza y cosas que no son comida. ' +
+    'Si no se ve nada claro, readable=false.\n\nNombres de la lista (usalos cuando corresponda):\n' + names.join(', ');
+  const raw = await geminiJson([{ text: prompt }, { inline_data: { mime_type: mime, data } }], PANTRY_SCHEMA, 0.1, 40000);
+  if (!raw?.readable) return { items: [] };
+  const items = (Array.isArray(raw.items) ? raw.items : []).slice(0, 60).flatMap((x: any) => {
+    const name = str(x?.name, 120);
+    if (!name) return [];
+    const g = num(x?.grams, 0, 100000);
+    return [{ name: name.charAt(0).toUpperCase() + name.slice(1), grams: g && g > 0 ? Math.round(g) : null }];
+  });
+  return { items };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return fail(405, 'INVALID_INPUT', 'POST only');
@@ -338,18 +382,18 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return fail(400, 'INVALID_INPUT', 'json body'); }
-  if (body?.mode === 'plan' || body?.mode === 'swap') {
+  if (body?.mode === 'plan' || body?.mode === 'swap' || body?.mode === 'pantry') {
     const since = new Date(Date.now() - 24 * 3600_000).toISOString();
     const { count } = await admin.from('ai_requests').select('id', { count: 'exact', head: true })
       .eq('user_id', who.user.id).gte('created_at', since);
     if ((count ?? 0) >= DAILY_CAP) return fail(429, 'RATE_LIMITED', 'daily AI limit');
     try {
-      const out = body.mode === 'plan' ? await buildPlan(sb, body) : await swapMeal(sb, body);
-      await admin.from('ai_requests').insert({ user_id: who.user.id, kind: 'plan', ok: true });
+      const out = body.mode === 'plan' ? await buildPlan(sb, body) : body.mode === 'swap' ? await swapMeal(sb, body) : await readPantry(sb, body);
+      await admin.from('ai_requests').insert({ user_id: who.user.id, kind: body.mode === 'pantry' ? 'pantry' : 'plan', ok: true });
       return json(200, out);
     } catch (e) {
       const code = (e as { code?: string }).code ?? 'UPSTREAM';
-      await admin.from('ai_requests').insert({ user_id: who.user.id, kind: 'plan', ok: false });
+      await admin.from('ai_requests').insert({ user_id: who.user.id, kind: body.mode === 'pantry' ? 'pantry' : 'plan', ok: false });
       if (code === 'INVALID_INPUT') return fail(400, 'INVALID_INPUT', String((e as Error).message));
       console.error('plan', code, String((e as Error).message).slice(0, 200));
       return fail(code === 'RATE_LIMITED' ? 429 : code === 'NOT_CONFIGURED' || code === 'BUSY' ? 503 : 502, code === 'UPSTREAM' ? 'INTERNAL' : code, 'ai');

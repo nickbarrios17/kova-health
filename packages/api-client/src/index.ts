@@ -49,7 +49,7 @@ export { withRetry } from './retry.js';
 export { inviteCode, type CoachRoutine } from './people.js';
 export * from './outbox.js';
 export type { MySafetyReport, Place, PlannedRoutes, SavedRoute } from './cycling.js';
-export type { Described, FoodPreferences, ImageInput, MealEvent, MealPlan, OffProduct, PlanMeal, ReadLabel } from './food.js';
+export type { Described, FoodPreferences, ImageInput, MealEvent, MealPlan, OffProduct, Pantry, PlanMeal, ReadLabel, ShoppingItem, ShoppingList } from './food.js';
 
 export interface KovaClientOptions {
   url: string;

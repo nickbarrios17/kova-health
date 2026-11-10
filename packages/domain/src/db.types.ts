@@ -488,6 +488,7 @@ export type Database = {
           ref_amount: number
           ref_unit: Database["public"]["Enums"]["food_unit"]
           serving_label: string | null
+          shop: Json | null
           source_ref: string | null
           updated_at: string
         }
@@ -509,6 +510,7 @@ export type Database = {
           ref_amount: number
           ref_unit: Database["public"]["Enums"]["food_unit"]
           serving_label?: string | null
+          shop?: Json | null
           source_ref?: string | null
           updated_at?: string
         }
@@ -530,6 +532,7 @@ export type Database = {
           ref_amount?: number
           ref_unit?: Database["public"]["Enums"]["food_unit"]
           serving_label?: string | null
+          shop?: Json | null
           source_ref?: string | null
           updated_at?: string
         }
@@ -1177,6 +1180,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pantry_items: {
+        Row: {
+          created_at: string
+          grams: number | null
+          id: string
+          name: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          grams?: number | null
+          id?: string
+          name: string
+          source?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          grams?: number | null
+          id?: string
+          name?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       people_invites: {
         Row: {
           code: string
@@ -1588,6 +1618,91 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      shopping_items: {
+        Row: {
+          aisle: string
+          checked_at: string | null
+          created_at: string
+          grams: number | null
+          id: string
+          list_id: string
+          name: string
+          package_label: string | null
+          packages: number | null
+          position: number
+          user_id: string
+        }
+        Insert: {
+          aisle?: string
+          checked_at?: string | null
+          created_at?: string
+          grams?: number | null
+          id?: string
+          list_id: string
+          name: string
+          package_label?: string | null
+          packages?: number | null
+          position?: number
+          user_id?: string
+        }
+        Update: {
+          aisle?: string
+          checked_at?: string | null
+          created_at?: string
+          grams?: number | null
+          id?: string
+          list_id?: string
+          name?: string
+          package_label?: string | null
+          packages?: number | null
+          position?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_items_list_id_user_id_fkey"
+            columns: ["list_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          plan_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          plan_id?: string | null
+          title: string
+          user_id?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          plan_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_lists_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shown_insights: {
         Row: {
@@ -2586,6 +2701,7 @@ export type Database = {
           ref_amount: number
           ref_unit: Database["public"]["Enums"]["food_unit"]
           serving_label: string | null
+          shop: Json | null
           source_ref: string | null
           updated_at: string
         }[]

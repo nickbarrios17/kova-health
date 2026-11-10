@@ -1,0 +1,256 @@
+-- Comidas, etapa 3 (docs/comidas.md): the shopping list. Generated in part by scripts/foods/build-shopping.py.
+-- foods.shop says how a catalog food is bought: góndola, the name on the list, a factor from plan grams
+-- to bought grams (cooked rice → raw), the usual package, or the ingredients of a typical dish.
+
+alter table public.foods add column shop jsonb;
+
+update public.foods f set shop = v.shop::jsonb
+from (values
+  ('Bife de chorizo (vacuno, crudo)', '{"aisle": "Carnicería"}'),
+  ('Lomo (vacuno, crudo)', '{"aisle": "Carnicería"}'),
+  ('Asado de tira (vacuno, crudo)', '{"aisle": "Carnicería"}'),
+  ('Carne picada común (cruda)', '{"aisle": "Carnicería"}'),
+  ('Cuadril (vacuno, cocido)', '{"aisle": "Carnicería", "name": "Cuadril", "factor": 1.4}'),
+  ('Nalga (vacuno, cocida)', '{"aisle": "Carnicería", "name": "Nalga", "factor": 1.4}'),
+  ('Vacío (vacuno, asado)', '{"aisle": "Carnicería", "name": "Vacío", "factor": 1.4}'),
+  ('Entraña (vacuno, asada)', '{"aisle": "Carnicería", "name": "Entraña", "factor": 1.4}'),
+  ('Hígado de vaca (cocido)', '{"aisle": "Carnicería", "name": "Hígado de vaca", "factor": 1.4}'),
+  ('Mondongo (cocido)', '{"aisle": "Carnicería", "name": "Mondongo", "factor": 1.4}'),
+  ('Bondiola de cerdo (cocida)', '{"aisle": "Carnicería", "name": "Bondiola de cerdo", "factor": 1.4}'),
+  ('Carré de cerdo (cocido)', '{"aisle": "Carnicería", "name": "Carré de cerdo", "factor": 1.4}'),
+  ('Matambre de cerdo (cocido)', '{"aisle": "Carnicería", "name": "Matambre de cerdo", "factor": 1.4}'),
+  ('Carne picada común (cocida)', '{"aisle": "Carnicería", "name": "Carne picada común", "factor": 1.4}'),
+  ('Carne picada especial (cocida)', '{"aisle": "Carnicería", "name": "Carne picada especial", "factor": 1.4}'),
+  ('Chorizo parrillero (cocido)', '{"aisle": "Carnicería", "name": "Chorizo parrillero", "factor": 1.15}'),
+  ('Morcilla', '{"aisle": "Carnicería"}'),
+  ('Pechuga de pollo (cocida, sin piel)', '{"aisle": "Pollería", "name": "Pechuga de pollo", "factor": 1.35}'),
+  ('Muslo de pollo (cocido, sin piel)', '{"aisle": "Pollería", "name": "Muslo de pollo", "factor": 1.35}'),
+  ('Pata muslo de pollo (cocida, con piel)', '{"aisle": "Pollería", "name": "Pata muslo de pollo", "factor": 1.6}'),
+  ('Alitas de pollo (cocidas)', '{"aisle": "Pollería", "name": "Alitas de pollo", "factor": 1.6}'),
+  ('Pavo, pechuga (cocida)', '{"aisle": "Pollería", "name": "Pechuga de pavo", "factor": 1.35}'),
+  ('Huevo entero (crudo)', '{"aisle": "Lácteos y huevos", "name": "Huevos", "package_g": 300, "package_label": "media docena"}'),
+  ('Huevo duro', '{"aisle": "Lácteos y huevos", "name": "Huevos", "package_g": 300, "package_label": "media docena"}'),
+  ('Huevo frito', '{"aisle": "Lácteos y huevos", "name": "Huevos", "package_g": 300, "package_label": "media docena"}'),
+  ('Huevos revueltos', '{"aisle": "Lácteos y huevos", "name": "Huevos", "package_g": 300, "package_label": "media docena"}'),
+  ('Clara de huevo', '{"aisle": "Lácteos y huevos", "name": "Huevos", "package_g": 300, "package_label": "media docena"}'),
+  ('Merluza / pescado blanco (cocido)', '{"aisle": "Pescadería", "name": "Filet de merluza", "factor": 1.3}'),
+  ('Salmón (cocido)', '{"aisle": "Pescadería", "name": "Salmón", "factor": 1.3}'),
+  ('Camarones (cocidos)', '{"aisle": "Congelados", "name": "Camarones", "factor": 1.2, "package_g": 400, "package_label": "bolsa de 400 g"}'),
+  ('Calamar (crudo)', '{"aisle": "Pescadería", "name": "Calamar"}'),
+  ('Atún en lata al natural', '{"aisle": "Almacén", "package_g": 120, "package_label": "lata (120 g escurrido)"}'),
+  ('Atún en lata en aceite', '{"aisle": "Almacén", "package_g": 120, "package_label": "lata (120 g escurrido)"}'),
+  ('Caballa en lata', '{"aisle": "Almacén", "package_g": 280, "package_label": "lata (280 g escurrido)"}'),
+  ('Sardinas en aceite', '{"aisle": "Almacén", "package_g": 85, "package_label": "lata (85 g escurrido)"}'),
+  ('Leche entera', '{"aisle": "Lácteos y huevos", "package_g": 1000, "package_label": "sachet de 1 l"}'),
+  ('Leche descremada', '{"aisle": "Lácteos y huevos", "package_g": 1000, "package_label": "sachet de 1 l"}'),
+  ('Leche semidescremada', '{"aisle": "Lácteos y huevos", "package_g": 1000, "package_label": "sachet de 1 l"}'),
+  ('Leche chocolatada', '{"aisle": "Lácteos y huevos", "package_g": 1000, "package_label": "caja de 1 l"}'),
+  ('Yogur natural entero', '{"aisle": "Lácteos y huevos", "package_g": 1000, "package_label": "sachet de 1 kg"}'),
+  ('Yogur natural descremado', '{"aisle": "Lácteos y huevos", "package_g": 1000, "package_label": "sachet de 1 kg"}'),
+  ('Yogur griego natural', '{"aisle": "Lácteos y huevos", "package_g": 160, "package_label": "pote de 160 g"}'),
+  ('Yogur bebible frutado', '{"aisle": "Lácteos y huevos", "package_g": 900, "package_label": "botella de 900 g"}'),
+  ('Queso cremoso (tipo Port Salut)', '{"aisle": "Fiambrería"}'),
+  ('Queso tybo / de máquina', '{"aisle": "Fiambrería"}'),
+  ('Queso mozzarella', '{"aisle": "Lácteos y huevos", "name": "Muzzarella", "package_g": 500, "package_label": "horma de 500 g"}'),
+  ('Queso rallado (tipo reggianito)', '{"aisle": "Lácteos y huevos", "package_g": 150, "package_label": "sobre de 150 g"}'),
+  ('Queso crema', '{"aisle": "Lácteos y huevos", "package_g": 290, "package_label": "pote de 290 g"}'),
+  ('Ricota', '{"aisle": "Lácteos y huevos", "package_g": 500, "package_label": "pote de 500 g"}'),
+  ('Queso cottage', '{"aisle": "Lácteos y huevos", "package_g": 300, "package_label": "pote de 300 g"}'),
+  ('Manteca', '{"aisle": "Lácteos y huevos", "package_g": 200, "package_label": "pan de 200 g"}'),
+  ('Crema de leche', '{"aisle": "Lácteos y huevos", "package_g": 200, "package_label": "pote de 200 ml"}'),
+  ('Dulce de leche', '{"aisle": "Lácteos y huevos", "package_g": 400, "package_label": "pote de 400 g"}'),
+  ('Leche en polvo entera', '{"aisle": "Almacén", "package_g": 800, "package_label": "bolsa de 800 g"}'),
+  ('Jamón cocido', '{"aisle": "Fiambrería"}'),
+  ('Salame', '{"aisle": "Fiambrería"}'),
+  ('Panceta (cocida)', '{"aisle": "Fiambrería", "name": "Panceta", "factor": 1.6}'),
+  ('Salchicha', '{"aisle": "Fiambrería", "name": "Salchichas", "package_g": 225, "package_label": "paquete de 6"}'),
+  ('Pan francés', '{"aisle": "Panadería"}'),
+  ('Pan lactal blanco', '{"aisle": "Panadería", "package_g": 550, "package_label": "paquete de 550 g"}'),
+  ('Pan integral', '{"aisle": "Panadería", "name": "Pan lactal integral", "package_g": 550, "package_label": "paquete de 550 g"}'),
+  ('Pan de centeno', '{"aisle": "Panadería", "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Pan árabe', '{"aisle": "Panadería", "package_g": 300, "package_label": "paquete de 5"}'),
+  ('Pan rallado', '{"aisle": "Almacén", "package_g": 500, "package_label": "paquete de 500 g"}'),
+  ('Pan de hamburguesa', '{"aisle": "Panadería", "name": "Pan de hamburguesa", "package_g": 260, "package_label": "paquete de 4"}'),
+  ('Medialuna / croissant', '{"aisle": "Panadería", "name": "Medialunas"}'),
+  ('Bizcochuelo', '{"aisle": "Panadería"}'),
+  ('Galletitas de agua', '{"aisle": "Almacén", "package_g": 200, "package_label": "paquete de 200 g"}'),
+  ('Galletitas dulces', '{"aisle": "Almacén", "package_g": 150, "package_label": "paquete de 150 g"}'),
+  ('Galletitas de arroz', '{"aisle": "Almacén", "package_g": 100, "package_label": "paquete de 100 g"}'),
+  ('Tostadas de pan', '{"aisle": "Almacén", "name": "Tostadas", "package_g": 200, "package_label": "paquete de 200 g"}'),
+  ('Arroz blanco (cocido)', '{"aisle": "Almacén", "name": "Arroz blanco", "factor": 0.36, "package_g": 1000, "package_label": "paquete de 1 kg"}'),
+  ('Arroz blanco (crudo)', '{"aisle": "Almacén", "name": "Arroz blanco", "package_g": 1000, "package_label": "paquete de 1 kg"}'),
+  ('Arroz integral (cocido)', '{"aisle": "Almacén", "name": "Arroz integral", "factor": 0.34, "package_g": 1000, "package_label": "paquete de 1 kg"}'),
+  ('Fideos secos (cocidos)', '{"aisle": "Almacén", "name": "Fideos secos", "factor": 0.43, "package_g": 500, "package_label": "paquete de 500 g"}'),
+  ('Fideos secos (crudos)', '{"aisle": "Almacén", "name": "Fideos secos", "package_g": 500, "package_label": "paquete de 500 g"}'),
+  ('Fideos integrales (cocidos)', '{"aisle": "Almacén", "name": "Fideos integrales", "factor": 0.43, "package_g": 500, "package_label": "paquete de 500 g"}'),
+  ('Fideos frescos (cocidos)', '{"aisle": "Lácteos y huevos", "name": "Fideos frescos", "factor": 0.75, "package_g": 500, "package_label": "paquete de 500 g"}'),
+  ('Avena arrollada', '{"aisle": "Almacén", "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Avena cocida (con agua)', '{"aisle": "Almacén", "name": "Avena arrollada", "factor": 0.19, "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Copos de maíz', '{"aisle": "Almacén", "package_g": 300, "package_label": "caja de 300 g"}'),
+  ('Granola', '{"aisle": "Almacén", "package_g": 400, "package_label": "bolsa de 400 g"}'),
+  ('Harina de trigo 000', '{"aisle": "Almacén", "name": "Harina 000", "package_g": 1000, "package_label": "paquete de 1 kg"}'),
+  ('Harina integral', '{"aisle": "Almacén", "package_g": 1000, "package_label": "paquete de 1 kg"}'),
+  ('Harina de maíz / polenta (seca)', '{"aisle": "Almacén", "name": "Polenta", "package_g": 500, "package_label": "paquete de 500 g"}'),
+  ('Quinoa (cocida)', '{"aisle": "Almacén", "name": "Quinoa", "factor": 0.33, "package_g": 500, "package_label": "paquete de 500 g"}'),
+  ('Tapas de empanada / masa de tarta', '{"aisle": "Lácteos y huevos", "name": "Tapas de empanada", "package_g": 400, "package_label": "paquete de 12"}'),
+  ('Tortilla de trigo (wrap)', '{"aisle": "Almacén", "name": "Tortillas de trigo", "package_g": 320, "package_label": "paquete de 8"}'),
+  ('Lentejas (cocidas)', '{"aisle": "Almacén", "name": "Lentejas secas", "factor": 0.4, "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Garbanzos (cocidos)', '{"aisle": "Almacén", "name": "Garbanzos secos", "factor": 0.4, "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Porotos negros (cocidos)', '{"aisle": "Almacén", "name": "Porotos negros secos", "factor": 0.4, "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Porotos alubia (cocidos)', '{"aisle": "Almacén", "name": "Porotos alubia secos", "factor": 0.4, "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Soja (cocida)', '{"aisle": "Almacén", "name": "Porotos de soja secos", "factor": 0.4, "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Arvejas (cocidas)', '{"aisle": "Congelados", "name": "Arvejas congeladas", "package_g": 300, "package_label": "bolsa de 300 g"}'),
+  ('Tofu', '{"aisle": "Verdulería", "package_g": 300, "package_label": "paquete de 300 g"}'),
+  ('Maní tostado', '{"aisle": "Almacén", "package_g": 200, "package_label": "bolsa de 200 g"}'),
+  ('Mantequilla de maní', '{"aisle": "Almacén", "package_g": 350, "package_label": "frasco de 350 g"}'),
+  ('Almendras', '{"aisle": "Almacén", "package_g": 200, "package_label": "bolsa de 200 g"}'),
+  ('Nueces', '{"aisle": "Almacén", "package_g": 200, "package_label": "bolsa de 200 g"}'),
+  ('Castañas de cajú', '{"aisle": "Almacén", "package_g": 200, "package_label": "bolsa de 200 g"}'),
+  ('Semillas de chía', '{"aisle": "Almacén", "package_g": 200, "package_label": "bolsa de 200 g"}'),
+  ('Semillas de girasol', '{"aisle": "Almacén", "package_g": 200, "package_label": "bolsa de 200 g"}'),
+  ('Semillas de lino', '{"aisle": "Almacén", "package_g": 200, "package_label": "bolsa de 200 g"}'),
+  ('Papa (hervida)', '{"aisle": "Verdulería", "name": "Papa", "factor": 1.05}'),
+  ('Papa (cruda)', '{"aisle": "Verdulería", "name": "Papa"}'),
+  ('Puré de papas', '{"aisle": "Verdulería", "name": "Papa", "factor": 0.9}'),
+  ('Batata (horneada)', '{"aisle": "Verdulería", "name": "Batata", "factor": 1.2}'),
+  ('Zapallo (hervido)', '{"aisle": "Verdulería", "name": "Zapallo", "factor": 1.1}'),
+  ('Espinaca (cocida)', '{"aisle": "Verdulería", "name": "Espinaca", "factor": 1.9}'),
+  ('Acelga (cocida)', '{"aisle": "Verdulería", "name": "Acelga", "factor": 1.9}'),
+  ('Brócoli (cocido)', '{"aisle": "Verdulería", "name": "Brócoli", "factor": 1.1}'),
+  ('Coliflor (cocida)', '{"aisle": "Verdulería", "name": "Coliflor", "factor": 1.1}'),
+  ('Choclo (cocido)', '{"aisle": "Verdulería", "name": "Choclo", "factor": 1.6}'),
+  ('Remolacha (cocida)', '{"aisle": "Verdulería", "name": "Remolacha", "factor": 1.1}'),
+  ('Berenjena (cocida)', '{"aisle": "Verdulería", "name": "Berenjena", "factor": 1.1}'),
+  ('Chauchas (cocidas)', '{"aisle": "Verdulería", "name": "Chauchas", "factor": 1.05}'),
+  ('Zapallito / zucchini', '{"aisle": "Verdulería"}'),
+  ('Tomate', '{"aisle": "Verdulería"}'),
+  ('Lechuga', '{"aisle": "Verdulería"}'),
+  ('Rúcula', '{"aisle": "Verdulería"}'),
+  ('Espinaca (cruda)', '{"aisle": "Verdulería"}'),
+  ('Zanahoria', '{"aisle": "Verdulería"}'),
+  ('Cebolla', '{"aisle": "Verdulería"}'),
+  ('Morrón rojo', '{"aisle": "Verdulería"}'),
+  ('Pepino', '{"aisle": "Verdulería"}'),
+  ('Champiñones', '{"aisle": "Verdulería"}'),
+  ('Repollo', '{"aisle": "Verdulería"}'),
+  ('Palta', '{"aisle": "Verdulería"}'),
+  ('Ajo', '{"aisle": "Verdulería"}'),
+  ('Banana', '{"aisle": "Verdulería"}'),
+  ('Manzana', '{"aisle": "Verdulería"}'),
+  ('Naranja', '{"aisle": "Verdulería"}'),
+  ('Mandarina', '{"aisle": "Verdulería"}'),
+  ('Pera', '{"aisle": "Verdulería"}'),
+  ('Durazno', '{"aisle": "Verdulería"}'),
+  ('Frutillas', '{"aisle": "Verdulería"}'),
+  ('Uvas', '{"aisle": "Verdulería"}'),
+  ('Kiwi', '{"aisle": "Verdulería"}'),
+  ('Ananá', '{"aisle": "Verdulería"}'),
+  ('Sandía', '{"aisle": "Verdulería"}'),
+  ('Melón', '{"aisle": "Verdulería"}'),
+  ('Arándanos', '{"aisle": "Verdulería"}'),
+  ('Ciruela', '{"aisle": "Verdulería"}'),
+  ('Mango', '{"aisle": "Verdulería"}'),
+  ('Limón (jugo)', '{"aisle": "Verdulería", "name": "Limones", "factor": 3}'),
+  ('Jugo de naranja exprimido', '{"aisle": "Verdulería", "name": "Naranjas para jugo", "factor": 2}'),
+  ('Papas fritas', '{"aisle": "Congelados", "name": "Papas fritas congeladas", "factor": 1.2, "package_g": 720, "package_label": "bolsa de 720 g"}'),
+  ('Choclo en lata', '{"aisle": "Almacén", "package_g": 300, "package_label": "lata de 300 g"}'),
+  ('Tomate triturado / puré de tomate', '{"aisle": "Almacén", "name": "Puré de tomate", "package_g": 520, "package_label": "caja de 520 g"}'),
+  ('Aceitunas verdes', '{"aisle": "Almacén", "package_g": 180, "package_label": "frasco de 180 g"}'),
+  ('Pasas de uva', '{"aisle": "Almacén", "package_g": 200, "package_label": "bolsa de 200 g"}'),
+  ('Duraznos en almíbar', '{"aisle": "Almacén", "package_g": 820, "package_label": "lata de 820 g"}'),
+  ('Aceite de girasol', '{"aisle": "Almacén", "package_g": 830, "package_label": "botella de 900 ml"}'),
+  ('Aceite de oliva', '{"aisle": "Almacén", "package_g": 460, "package_label": "botella de 500 ml"}'),
+  ('Mayonesa', '{"aisle": "Almacén", "package_g": 250, "package_label": "doypack de 250 g"}'),
+  ('Ketchup', '{"aisle": "Almacén", "package_g": 250, "package_label": "doypack de 250 g"}'),
+  ('Mostaza', '{"aisle": "Almacén", "package_g": 250, "package_label": "doypack de 250 g"}'),
+  ('Azúcar', '{"aisle": "Almacén", "package_g": 1000, "package_label": "paquete de 1 kg"}'),
+  ('Miel', '{"aisle": "Almacén", "package_g": 500, "package_label": "frasco de 500 g"}'),
+  ('Mermelada', '{"aisle": "Almacén", "package_g": 390, "package_label": "frasco de 390 g"}'),
+  ('Chocolate con leche', '{"aisle": "Almacén", "package_g": 100, "package_label": "tableta de 100 g"}'),
+  ('Chocolate amargo 70%', '{"aisle": "Almacén", "package_g": 100, "package_label": "tableta de 100 g"}'),
+  ('Cacao en polvo', '{"aisle": "Almacén", "package_g": 360, "package_label": "paquete de 360 g"}'),
+  ('Helado de crema', '{"aisle": "Congelados", "name": "Helado", "package_g": 500, "package_label": "pote de 1/2 kg"}'),
+  ('Alfajor / galletita bañada', '{"aisle": "Almacén", "name": "Alfajores", "package_g": 50, "package_label": "unidad"}'),
+  ('Papas fritas de paquete', '{"aisle": "Almacén", "package_g": 140, "package_label": "bolsa de 140 g"}'),
+  ('Pochoclo', '{"aisle": "Almacén", "name": "Maíz pisingallo", "package_g": 400, "package_label": "paquete de 400 g"}'),
+  ('Gaseosa cola', '{"aisle": "Bebidas", "package_g": 2250, "package_label": "botella de 2,25 l"}'),
+  ('Cerveza', '{"aisle": "Bebidas", "package_g": 1000, "package_label": "botella de 1 l"}'),
+  ('Vino tinto', '{"aisle": "Bebidas", "package_g": 750, "package_label": "botella de 750 ml"}'),
+  ('Café (preparado)', '{"aisle": "Almacén", "name": "Café molido", "factor": 0.06, "package_g": 250, "package_label": "paquete de 250 g"}'),
+  ('Bebida deportiva', '{"aisle": "Bebidas", "package_g": 500, "package_label": "botella de 500 ml"}'),
+  ('Milanesa de carne (frita)', '{"aisle": "Plato", "parts": [{"name": "Nalga (vacuno, cocida)", "share": 0.6667}, {"name": "Pan rallado", "share": 0.1667}, {"name": "Huevo entero (crudo)", "share": 0.1}, {"name": "Aceite de girasol", "share": 0.0667}]}'),
+  ('Milanesa de pollo (al horno)', '{"aisle": "Plato", "parts": [{"name": "Pechuga de pollo (cocida, sin piel)", "share": 0.7143}, {"name": "Pan rallado", "share": 0.1623}, {"name": "Huevo entero (crudo)", "share": 0.0974}, {"name": "Aceite de girasol", "share": 0.026}]}'),
+  ('Empanada de carne (al horno)', '{"aisle": "Plato", "parts": [{"name": "Tapas de empanada / masa de tarta", "share": 0.4118}, {"name": "Carne picada común (cocida)", "share": 0.3529}, {"name": "Cebolla", "share": 0.1765}, {"name": "Huevo duro", "share": 0.0588}]}'),
+  ('Empanada de jamón y queso (al horno)', '{"aisle": "Plato", "parts": [{"name": "Tapas de empanada / masa de tarta", "share": 0.4375}, {"name": "Jamón cocido", "share": 0.25}, {"name": "Queso mozzarella", "share": 0.3125}]}'),
+  ('Tarta de verdura (porción)', '{"aisle": "Plato", "parts": [{"name": "Tapas de empanada / masa de tarta", "share": 0.2857}, {"name": "Acelga (cocida)", "share": 0.5143}, {"name": "Huevo entero (crudo)", "share": 0.1429}, {"name": "Queso rallado (tipo reggianito)", "share": 0.0571}]}'),
+  ('Pizza muzzarella (porción)', '{"aisle": "Plato", "parts": [{"name": "Harina de trigo 000", "share": 0.4128}, {"name": "Queso mozzarella", "share": 0.367}, {"name": "Tomate triturado / puré de tomate", "share": 0.1835}, {"name": "Aceite de oliva", "share": 0.0367}]}'),
+  ('Choripán', '{"aisle": "Plato", "parts": [{"name": "Chorizo parrillero (cocido)", "share": 0.5294}, {"name": "Pan francés", "share": 0.4706}]}'),
+  ('Sándwich de milanesa', '{"aisle": "Plato", "parts": [{"name": "Nalga (vacuno, cocida)", "share": 0.339}, {"name": "Pan rallado", "share": 0.0847}, {"name": "Huevo entero (crudo)", "share": 0.0508}, {"name": "Aceite de girasol", "share": 0.0339}, {"name": "Pan francés", "share": 0.339}, {"name": "Lechuga", "share": 0.0508}, {"name": "Tomate", "share": 0.1017}]}'),
+  ('Fideos con tuco', '{"aisle": "Plato", "parts": [{"name": "Fideos secos (cocidos)", "share": 0.7289}, {"name": "Tomate triturado / puré de tomate", "share": 0.2332}, {"name": "Aceite de oliva", "share": 0.0146}, {"name": "Queso rallado (tipo reggianito)", "share": 0.0233}]}'),
+  ('Guiso de lentejas', '{"aisle": "Plato", "parts": [{"name": "Lentejas (cocidas)", "share": 0.4615}, {"name": "Papa (hervida)", "share": 0.2051}, {"name": "Chorizo parrillero (cocido)", "share": 0.0769}, {"name": "Zanahoria", "share": 0.0769}, {"name": "Cebolla", "share": 0.0769}, {"name": "Tomate triturado / puré de tomate", "share": 0.1026}]}'),
+  ('Café con leche', '{"aisle": "Plato", "parts": [{"name": "Café (preparado)", "share": 0.6}, {"name": "Leche entera", "share": 0.4}]}'),
+  ('Tostado de jamón y queso', '{"aisle": "Plato", "parts": [{"name": "Pan lactal blanco", "share": 0.48}, {"name": "Jamón cocido", "share": 0.24}, {"name": "Queso tybo / de máquina", "share": 0.24}, {"name": "Manteca", "share": 0.04}]}'),
+  ('Ensalada mixta', '{"aisle": "Plato", "parts": [{"name": "Lechuga", "share": 0.3571}, {"name": "Tomate", "share": 0.4762}, {"name": "Cebolla", "share": 0.119}, {"name": "Aceite de girasol", "share": 0.0476}]}')
+) as v(name, shop)
+where f.owner_id is null and f.name = v.name;
+
+-- ── lists and their items ──────────────────────────────────────────────────
+create table public.shopping_lists (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  plan_id uuid references public.meal_plans (id) on delete set null,
+  title text not null check (char_length(btrim(title)) between 1 and 80),
+  archived_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (id, user_id)
+);
+create index shopping_lists_user_idx on public.shopping_lists (user_id, created_at desc);
+create trigger shopping_lists_owner_immutable before update on public.shopping_lists
+  for each row execute function private.prevent_owner_change('user_id');
+
+create table public.shopping_items (
+  id uuid primary key default gen_random_uuid(),
+  list_id uuid not null,
+  user_id uuid not null default auth.uid(),
+  name text not null check (char_length(btrim(name)) between 1 and 120),
+  aisle text not null default 'Otros' check (char_length(aisle) <= 40),
+  grams numeric(8, 1) check (grams is null or grams between 0 and 100000),
+  packages smallint check (packages is null or packages between 1 and 500),
+  package_label text check (package_label is null or char_length(package_label) <= 60),
+  position smallint not null default 0,
+  checked_at timestamptz,
+  created_at timestamptz not null default now(),
+  foreign key (list_id, user_id) references public.shopping_lists (id, user_id) on delete cascade
+);
+create index shopping_items_list_idx on public.shopping_items (list_id, aisle, position);
+create trigger shopping_items_owner_immutable before update on public.shopping_items
+  for each row execute function private.prevent_owner_change('user_id');
+
+-- ── pantry: what is already at home ───────────────────────────────────────
+create table public.pantry_items (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name text not null check (char_length(btrim(name)) between 1 and 120),
+  grams numeric(8, 1) check (grams is null or grams between 0 and 100000),
+  source text not null default 'manual' check (source in ('manual', 'ticket', 'foto', 'lista')),
+  created_at timestamptz not null default now()
+);
+create index pantry_items_user_idx on public.pantry_items (user_id, created_at desc);
+create trigger pantry_items_owner_immutable before update on public.pantry_items
+  for each row execute function private.prevent_owner_change('user_id');
+
+alter table public.shopping_lists enable row level security;
+alter table public.shopping_items enable row level security;
+alter table public.pantry_items enable row level security;
+do $$
+declare t text;
+begin
+  foreach t in array array['shopping_lists', 'shopping_items', 'pantry_items'] loop
+    execute format('create policy %1$s_select_own on public.%1$I for select to authenticated using (user_id = (select auth.uid()))', t);
+    execute format('create policy %1$s_insert_own on public.%1$I for insert to authenticated with check (user_id = (select auth.uid()))', t);
+    execute format('create policy %1$s_update_own on public.%1$I for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()))', t);
+    execute format('create policy %1$s_delete_own on public.%1$I for delete to authenticated using (user_id = (select auth.uid()))', t);
+  end loop;
+end $$;
+revoke all on public.shopping_lists, public.shopping_items, public.pantry_items from anon, authenticated;
+grant select, insert, update, delete on public.shopping_lists, public.shopping_items, public.pantry_items to authenticated;
