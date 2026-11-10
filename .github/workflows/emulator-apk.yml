@@ -1,0 +1,46 @@
+# The test app «Kova Health Prueba» for an x86_64 Android emulator (the published APK is arm64 only).
+# Runs only on pushes to emulador/** branches; builds against the test Supabase project and keeps the
+# APK as a build artifact. It publishes nothing: no OTA update, no upload to the releases bucket.
+name: Emulator APK
+
+on:
+  push:
+    branches: ['emulador/**']
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      APP_VARIANT: prueba
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.STAGING_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Build the x86_64 APK
+        working-directory: apps/mobile
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KOVA_KEYSTORE_BASE64 || secrets.VIDA_KEYSTORE_BASE64 }}
+          KOVA_KEYSTORE_PASSWORD: ${{ secrets.KOVA_KEYSTORE_PASSWORD || secrets.VIDA_KEYSTORE_PASSWORD }}
+          KOVA_KEY_ALIAS: ${{ secrets.KOVA_KEY_ALIAS || secrets.VIDA_KEY_ALIAS }}
+          KOVA_KEY_PASSWORD: ${{ secrets.KOVA_KEY_PASSWORD || secrets.VIDA_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/kova-release.jks"
+          export KOVA_KEYSTORE_FILE="$RUNNER_TEMP/kova-release.jks" KOVA_VERSION_CODE=1
+          npx expo prebuild --platform android --clean --no-install
+          (cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=x86_64)
+          rm -f "$RUNNER_TEMP/kova-release.jks"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kova-health-prueba-x86_64
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 7
