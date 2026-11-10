@@ -420,3 +420,11 @@ verify_jwt = true
 [functions.bike-route]
 # Bike routes through OpenRouteService (docs/ciclismo.md); needs the secret ORS_API_KEY.
 verify_jwt = true
+
+[functions.food-ai]
+# Comidas (docs/comidas.md): describe a meal, a plate photo or a label with Gemini; needs GEMINI_API_KEY.
+verify_jwt = true
+
+[functions.food-barcode]
+# Comidas (docs/comidas.md): products by barcode from Open Food Facts, cached in off_products.
+verify_jwt = true

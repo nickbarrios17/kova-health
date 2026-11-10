@@ -34,6 +34,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_requests: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          ok: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          kind: string
+          ok?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          kind?: string
+          ok?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bike_routes: {
+        Row: {
+          ascent_m: number
+          created_at: string
+          deleted_at: string | null
+          distance_m: number
+          duration_s: number
+          id: string
+          kind: string
+          name: string
+          route: Json
+          summary: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ascent_m?: number
+          created_at?: string
+          deleted_at?: string | null
+          distance_m: number
+          duration_s: number
+          id?: string
+          kind: string
+          name: string
+          route: Json
+          summary?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          ascent_m?: number
+          created_at?: string
+          deleted_at?: string | null
+          distance_m?: number
+          duration_s?: number
+          id?: string
+          kind?: string
+          name?: string
+          route?: Json
+          summary?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       body_measurements: {
         Row: {
           created_at: string
@@ -286,6 +355,77 @@ export type Database = {
             columns: ["variation_of"]
             isOneToOne: false
             referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_reports: {
+        Row: {
+          admin_note: string | null
+          category: Database["public"]["Enums"]["report_category"]
+          context: Json
+          created_at: string
+          id: string
+          message: string
+          status: Database["public"]["Enums"]["report_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          category: Database["public"]["Enums"]["report_category"]
+          context?: Json
+          created_at?: string
+          id?: string
+          message: string
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          admin_note?: string | null
+          category?: Database["public"]["Enums"]["report_category"]
+          context?: Json
+          created_at?: string
+          id?: string
+          message?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      food_portions: {
+        Row: {
+          created_at: string
+          food_id: string
+          grams: number
+          id: string
+          label: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          food_id: string
+          grams: number
+          id?: string
+          label: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          food_id?: string
+          grams?: number
+          id?: string
+          label?: string
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_portions_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
             referencedColumns: ["id"]
           },
         ]
@@ -819,6 +959,135 @@ export type Database = {
         }
         Relationships: []
       }
+      off_products: {
+        Row: {
+          barcode: string
+          brand: string | null
+          carbs_100: number | null
+          category: string | null
+          fat_100: number | null
+          fetched_at: string
+          fiber_100: number | null
+          found: boolean
+          kcal_100: number | null
+          labels: string[]
+          liquid: boolean
+          name: string | null
+          protein_100: number | null
+          quantity_label: string | null
+          sat_fat_100: number | null
+          serving_g: number | null
+          sodium_mg_100: number | null
+          sugars_100: number | null
+        }
+        Insert: {
+          barcode: string
+          brand?: string | null
+          carbs_100?: number | null
+          category?: string | null
+          fat_100?: number | null
+          fetched_at?: string
+          fiber_100?: number | null
+          found: boolean
+          kcal_100?: number | null
+          labels?: string[]
+          liquid?: boolean
+          name?: string | null
+          protein_100?: number | null
+          quantity_label?: string | null
+          sat_fat_100?: number | null
+          serving_g?: number | null
+          sodium_mg_100?: number | null
+          sugars_100?: number | null
+        }
+        Update: {
+          barcode?: string
+          brand?: string | null
+          carbs_100?: number | null
+          category?: string | null
+          fat_100?: number | null
+          fetched_at?: string
+          fiber_100?: number | null
+          found?: boolean
+          kcal_100?: number | null
+          labels?: string[]
+          liquid?: boolean
+          name?: string | null
+          protein_100?: number | null
+          quantity_label?: string | null
+          sat_fat_100?: number | null
+          serving_g?: number | null
+          sodium_mg_100?: number | null
+          sugars_100?: number | null
+        }
+        Relationships: []
+      }
+      people_invites: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          inviter_id: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          inviter_id: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          inviter_id?: string
+          kind?: Database["public"]["Enums"]["link_kind"]
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      people_links: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          owner_id: string
+          share_body: boolean
+          share_health: boolean
+          share_nutrition: boolean
+          viewer_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          owner_id: string
+          share_body?: boolean
+          share_health?: boolean
+          share_nutrition?: boolean
+          viewer_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["link_kind"]
+          owner_id?: string
+          share_body?: boolean
+          share_health?: boolean
+          share_nutrition?: boolean
+          viewer_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: Database["public"]["Enums"]["activity_level"] | null
@@ -1021,6 +1290,7 @@ export type Database = {
       routines: {
         Row: {
           archived_at: string | null
+          assigned_by: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -1033,6 +1303,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          assigned_by?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -1045,6 +1316,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          assigned_by?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -1054,6 +1326,111 @@ export type Database = {
           updated_at?: string
           user_id?: string
           version?: number
+        }
+        Relationships: []
+      }
+      safety_cells: {
+        Row: {
+          cell: string
+          choque_level: number
+          choques: number
+          lat: number
+          lng: number
+          robo_level: number
+          robos: number
+          robos_noche: number
+        }
+        Insert: {
+          cell: string
+          choque_level?: number
+          choques?: number
+          lat: number
+          lng: number
+          robo_level?: number
+          robos?: number
+          robos_noche?: number
+        }
+        Update: {
+          cell?: string
+          choque_level?: number
+          choques?: number
+          lat?: number
+          lng?: number
+          robo_level?: number
+          robos?: number
+          robos_noche?: number
+        }
+        Relationships: []
+      }
+      safety_meta: {
+        Row: {
+          key: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      safety_partidos: {
+        Row: {
+          conurbano: boolean
+          id: string
+          level: number
+          name: string
+          robos_rate: number
+          year: number
+        }
+        Insert: {
+          conurbano?: boolean
+          id: string
+          level: number
+          name: string
+          robos_rate: number
+          year: number
+        }
+        Update: {
+          conurbano?: boolean
+          id?: string
+          level?: number
+          name?: string
+          robos_rate?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      safety_reports: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["safety_report_kind"]
+          lat: number
+          lng: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["safety_report_kind"]
+          lat: number
+          lng: number
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["safety_report_kind"]
+          lat?: number
+          lng?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -1561,6 +1938,125 @@ export type Database = {
       }
     }
     Functions: {
+      accept_invite: {
+        Args: { p_code: string }
+        Returns: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          owner_id: string
+          share_body: boolean
+          share_health: boolean
+          share_nutrition: boolean
+          viewer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "people_links"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_overview: { Args: never; Returns: Json }
+      admin_reports: {
+        Args: {
+          p_limit?: number
+          p_status?: Database["public"]["Enums"]["report_status"]
+        }
+        Returns: {
+          admin_note: string
+          category: Database["public"]["Enums"]["report_category"]
+          context: Json
+          created_at: string
+          id: string
+          message: string
+          reporter_name: string
+          status: Database["public"]["Enums"]["report_status"]
+        }[]
+      }
+      admin_set_admin: {
+        Args: { p_admin: boolean; p_user: string }
+        Returns: undefined
+      }
+      admin_set_report: {
+        Args: {
+          p_id: string
+          p_note?: string
+          p_status: Database["public"]["Enums"]["report_status"]
+        }
+        Returns: undefined
+      }
+      admin_set_suspended: {
+        Args: { p_suspended: boolean; p_user: string }
+        Returns: undefined
+      }
+      admin_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          has_coach: boolean
+          id: string
+          is_admin: boolean
+          last_seen_at: string
+          meals_7d: number
+          name: string
+          reports: number
+          students: number
+          suspended: boolean
+          workouts: number
+          workouts_7d: number
+        }[]
+      }
+      am_i_admin: { Args: never; Returns: boolean }
+      coach_create_exercise: {
+        Args: { p_id: string; p_name: string; p_owner: string; p_slug: string }
+        Returns: string
+      }
+      coach_delete_routine: {
+        Args: { p_id: string; p_owner: string }
+        Returns: undefined
+      }
+      coach_exercises: {
+        Args: { p_owner: string }
+        Returns: {
+          id: string
+          name: string
+          short_name: string
+        }[]
+      }
+      coach_routines: { Args: { p_owner: string }; Returns: Json }
+      coach_save_routine: {
+        Args: {
+          p_expected_version?: number
+          p_id: string
+          p_items: Json
+          p_name: string
+          p_notes?: string
+          p_owner: string
+          p_schedule_days?: number[]
+        }
+        Returns: {
+          archived_at: string | null
+          assigned_by: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          schedule_days: number[]
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "routines"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       complete_onboarding: {
         Args: {
           p_activity_level: Database["public"]["Enums"]["activity_level"]
@@ -1599,6 +2095,24 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_invite: {
+        Args: { p_kind: Database["public"]["Enums"]["link_kind"] }
+        Returns: {
+          code: string
+          created_at: string
+          expires_at: string
+          inviter_id: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          used_at: string | null
+          used_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "people_invites"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       daily_summaries: {
         Args: { p_from: string; p_to: string }
         Returns: {
@@ -1631,6 +2145,7 @@ export type Database = {
         Args: { p_name?: string; p_new_id: string; p_source_id: string }
         Returns: {
           archived_at: string | null
+          assigned_by: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -1648,6 +2163,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      end_link: { Args: { p_link_id: string }; Returns: undefined }
       export_my_data: { Args: never; Returns: Json }
       habit_days: {
         Args: { p_from: string; p_to: string }
@@ -1663,10 +2179,59 @@ export type Database = {
         }[]
       }
       has_entitlement: { Args: { p_code: string }; Returns: boolean }
+      invite_info: {
+        Args: { p_code: string }
+        Returns: {
+          inviter_name: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          valid: boolean
+        }[]
+      }
+      log_bike_ride: {
+        Args: {
+          p_distance_m: number
+          p_ended_at: string
+          p_id: string
+          p_moving_s: number
+          p_name: string
+          p_started_at: string
+          p_time_zone?: string
+        }
+        Returns: {
+          avg_hr: number | null
+          created_at: string
+          deleted_at: string | null
+          device_id: string | null
+          ended_at: string | null
+          energy_is_estimated: boolean
+          energy_kcal: number | null
+          id: string
+          local_date: string
+          name: string
+          notes: string | null
+          paused_at: string | null
+          routine_id: string | null
+          routine_version: number | null
+          started_at: string
+          status: Database["public"]["Enums"]["session_status"]
+          tags: string[]
+          time_zone: string
+          total_paused_s: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workout_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       log_food: {
         Args: {
           p_carbs_g?: number
           p_device_id?: string
+          p_estimated?: boolean
           p_fat_g?: number
           p_food_id?: string
           p_item_id: string
@@ -1706,6 +2271,22 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      my_links: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          last_session_at: string
+          person_id: string
+          person_name: string
+          role: string
+          sessions_7d: number
+          share_body: boolean
+          share_health: boolean
+          share_nutrition: boolean
+        }[]
       }
       record_body_measurements: { Args: { p_rows: Json }; Returns: number }
       record_observations: { Args: { p_rows: Json }; Returns: number }
@@ -1750,6 +2331,22 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      safety_reports_in: {
+        Args: {
+          p_east: number
+          p_north: number
+          p_south: number
+          p_west: number
+        }
+        Returns: {
+          day: string
+          id: string
+          kind: Database["public"]["Enums"]["safety_report_kind"]
+          lat: number
+          lng: number
+          mine: boolean
+        }[]
       }
       save_habit: {
         Args: {
@@ -1796,6 +2393,7 @@ export type Database = {
         }
         Returns: {
           archived_at: string | null
+          assigned_by: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -1809,6 +2407,61 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "routines"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      search_foods: {
+        Args: { p_limit?: number; p_q: string }
+        Returns: {
+          archived_at: string | null
+          barcode: string | null
+          brand: string | null
+          carbs_g: number
+          created_at: string
+          data_source: Database["public"]["Enums"]["nutrition_source"]
+          default_quantity: number | null
+          fat_g: number
+          fiber_g: number | null
+          id: string
+          kcal: number
+          name: string
+          owner_id: string | null
+          protein_g: number
+          ref_amount: number
+          ref_unit: Database["public"]["Enums"]["food_unit"]
+          serving_label: string | null
+          source_ref: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "foods"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      set_link_shares: {
+        Args: {
+          p_body: boolean
+          p_health: boolean
+          p_link_id: string
+          p_nutrition: boolean
+        }
+        Returns: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["link_kind"]
+          owner_id: string
+          share_body: boolean
+          share_health: boolean
+          share_nutrition: boolean
+          viewer_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "people_links"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1935,6 +2588,7 @@ export type Database = {
         | "active_minutes"
         | "mood"
         | "stress"
+      link_kind: "coach" | "friend"
       meal_slot: "breakfast" | "lunch" | "afternoon_snack" | "dinner" | "snack"
       measurement_type:
         | "weight_reps"
@@ -1944,6 +2598,15 @@ export type Database = {
       muscle_role: "primary" | "secondary"
       nutrition_source: "verified" | "label" | "user" | "estimated"
       onboarding_state: "new" | "profile" | "goals" | "done"
+      report_category:
+        | "exercise"
+        | "model3d"
+        | "interface"
+        | "bug"
+        | "idea"
+        | "other"
+      report_status: "new" | "seen" | "done" | "dismissed"
+      safety_report_kind: "robo" | "intento" | "insegura" | "peligrosa"
       session_status: "in_progress" | "paused" | "completed" | "abandoned"
       set_type: "warmup" | "working" | "drop" | "failure"
       weight_goal: "lose" | "maintain" | "gain" | "recomp"
@@ -2131,6 +2794,7 @@ export const Constants = {
         "mood",
         "stress",
       ],
+      link_kind: ["coach", "friend"],
       meal_slot: ["breakfast", "lunch", "afternoon_snack", "dinner", "snack"],
       measurement_type: [
         "weight_reps",
@@ -2141,6 +2805,16 @@ export const Constants = {
       muscle_role: ["primary", "secondary"],
       nutrition_source: ["verified", "label", "user", "estimated"],
       onboarding_state: ["new", "profile", "goals", "done"],
+      report_category: [
+        "exercise",
+        "model3d",
+        "interface",
+        "bug",
+        "idea",
+        "other",
+      ],
+      report_status: ["new", "seen", "done", "dismissed"],
+      safety_report_kind: ["robo", "intento", "insegura", "peligrosa"],
       session_status: ["in_progress", "paused", "completed", "abandoned"],
       set_type: ["warmup", "working", "drop", "failure"],
       weight_goal: ["lose", "maintain", "gain", "recomp"],

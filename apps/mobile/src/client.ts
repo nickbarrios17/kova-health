@@ -15,7 +15,9 @@ export const configured = Boolean(url && anonKey);
  */
 const fetchWithTimeout: typeof fetch = (input, init) => {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20_000);
+  // The meal assistant reads photos with an AI model: it gets more time than ordinary calls.
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
+  const timer = setTimeout(() => controller.abort(), /\/functions\/v1\/food-ai/.test(url) ? 60_000 : 20_000);
   init?.signal?.addEventListener?.('abort', () => controller.abort());
   return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
 };

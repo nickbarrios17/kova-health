@@ -59,6 +59,20 @@
           }
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Kova usa la cámara para leer códigos de barras y sacar fotos de tus comidas o etiquetas. Las fotos no se guardan.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Kova usa la cámara para sacar fotos de tus comidas o etiquetas. Las fotos no se guardan.",
+          "photosPermission": "Kova usa tus fotos solo si elegís una comida o una etiqueta de la galería."
+        }
+      ],
       "./plugins/withShortCxxDir",
       "./plugins/withReleaseSigning"
     ],

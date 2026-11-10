@@ -107,10 +107,20 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/kova-release.jks"
           export KOVA_KEYSTORE_FILE="$RUNNER_TEMP/kova-release.jks" KOVA_VERSION_CODE="$code"
           npx expo prebuild --platform android --clean --no-install
-          (cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a)
+          (cd android && ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a)
+          # 64-bit only: every phone sold in the last years is arm64, and the APK stays under the
+          # 50 MB storage upload limit (the camera libraries pushed the two-architecture build over it).
           rm -f "$RUNNER_TEMP/kova-release.jks"
           echo "code=$code" >> "$GITHUB_OUTPUT"
           echo "name=$(jq -r '.expo.version' app.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Keep the APK as a build artifact
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APK_PREFIX }}-android-${{ steps.build.outputs.code }}
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
 
       - name: Publish the APK to Supabase Storage
         if: steps.build.outcome == 'success'
@@ -123,7 +133,8 @@ jobs:
         run: |
           apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           base="$EXPO_PUBLIC_SUPABASE_URL/storage/v1/object"
-          up() { curl -sf -X POST "$base/releases/$1" -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
+          ls -l "$apk"
+          up() { curl -sS --fail-with-body -X POST "$base/releases/$1" -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
             -H "x-upsert: true" -H "Content-Type: $2" -H "Cache-Control: no-cache" --data-binary "@$3"; }
           up "android/$APK_PREFIX-$CODE.apk" application/vnd.android.package-archive "$apk"
           jq -n --argjson code "$CODE" --arg name "$NAME" --arg runtime "$RUNTIME" --arg notes "${MESSAGE%%$'\n'*}" \
@@ -131,11 +142,3 @@ jobs:
             '{versionCode: $code, versionName: $name, runtimeVersion: $runtime, url: $url, notes: $notes, publishedAt: $at}' > latest.json
           up android/latest.json application/json latest.json
           cat latest.json
-
-      - name: Keep the APK as a build artifact
-        if: steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APK_PREFIX }}-android-${{ steps.build.outputs.code }}
-          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
