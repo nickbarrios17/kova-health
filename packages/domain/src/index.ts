@@ -24,3 +24,4 @@ export * from './cyclingMap.js';
 export type { Database, Json, Tables, TablesInsert, TablesUpdate, Enums } from './db.types.js';
 export * from './foodAi.js';
 export * from './mealPlan.js';
+export * from './shopping.js';

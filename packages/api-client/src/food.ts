@@ -3,7 +3,7 @@
  * look up a barcode (food-barcode), and turn a product or a label into one of your own foods.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { KovaError, newId, type DescribedItem } from '@kova/domain';
+import { KovaError, newId, type DescribedItem, type ShopFood, type ShoppingLine } from '@kova/domain';
 
 export interface OffProduct {
   barcode: string;
@@ -70,6 +70,9 @@ export interface PlanMeal {
 }
 
 export interface MealPlan { id: string; week_start: string; targets: Array<Record<string, unknown>>; created_at: string; items: PlanMeal[] }
+export interface ShoppingItem { id: string; list_id: string; name: string; aisle: string; grams: number | null; packages: number | null; package_label: string | null; position: number; checked_at: string | null }
+export interface ShoppingList { id: string; title: string; plan_id: string | null; created_at: string; items: ShoppingItem[] }
+export interface Pantry { id: string; name: string; grams: number | null; source: string; created_at: string }
 export interface MealEvent { id: string; local_date: string; kind: 'asado' | 'salida' | 'cumple' | 'otro'; note: string | null }
 export interface ImageInput { mime: string; data: string }
 
@@ -147,6 +150,54 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
       /** Another meal of about the same calories for that slot; `wish`: «algo con pollo». */
       swap: async (itemId: string, wish?: string) => toMeal((await invoke<{ item: Record<string, unknown> }>('food-ai', { mode: 'swap', item_id: itemId, wish: wish?.slice(0, 200) })).item),
       markLogged: (itemId: string) => call(sb.from('meal_plan_items').update({ logged_at: new Date().toISOString() }).eq('id', itemId).select('id').single()),
+    },
+    /** How every catalog food is bought (for building the shopping list on the device). */
+    catalogShop: async () =>
+      ((await call(sb.from('foods').select('id, name, shop').is('owner_id', null).not('shop', 'is', null).limit(500))) as ShopFood[]),
+    shopping: {
+      /** The latest list that is not finished, with its items; null when there is none. */
+      current: async (): Promise<ShoppingList | null> => {
+        const list = (await call(sb.from('shopping_lists').select('id, title, plan_id, created_at').is('archived_at', null).order('created_at', { ascending: false }).limit(1).maybeSingle())) as Omit<ShoppingList, 'items'> | null;
+        if (!list) return null;
+        const items = (await call(sb.from('shopping_items').select('*').eq('list_id', list.id).order('position'))) as Array<Record<string, unknown>>;
+        return { ...list, items: items.map((i) => ({ ...(i as unknown as ShoppingItem), grams: i.grams == null ? null : Number(i.grams) })) };
+      },
+      /** A new list (the previous unfinished one is archived). */
+      create: async (title: string, lines: ShoppingLine[], planId: string | null) => {
+        await call(sb.from('shopping_lists').update({ archived_at: new Date().toISOString() }).is('archived_at', null).select('id'));
+        const id = newId();
+        await call(sb.from('shopping_lists').insert({ id, title: title.slice(0, 80), plan_id: planId }));
+        if (lines.length) {
+          await call(sb.from('shopping_items').insert(lines.slice(0, 300).map((l, position) => ({
+            list_id: id, name: l.name.slice(0, 120), aisle: l.aisle.slice(0, 40), grams: l.grams, packages: l.packages, package_label: l.package_label, position,
+          }))));
+        }
+        return id;
+      },
+      check: (itemId: string, checked: boolean) =>
+        call(sb.from('shopping_items').update({ checked_at: checked ? new Date().toISOString() : null }).eq('id', itemId).select('id').single()),
+      addItem: (listId: string, name: string, position: number) =>
+        call(sb.from('shopping_items').insert({ list_id: listId, name: name.slice(0, 120), aisle: 'Otros', position }).select('*').single()),
+      removeItem: (itemId: string) => call(sb.from('shopping_items').delete().eq('id', itemId)),
+      /** Done shopping: the list is archived and what was bought goes to the pantry. */
+      finish: async (list: ShoppingList) => {
+        const bought = list.items.filter((i) => i.checked_at);
+        if (bought.length) {
+          await call(sb.from('pantry_items').insert(bought.map((i) => ({ name: i.name, grams: i.grams, source: 'lista' }))));
+        }
+        return call(sb.from('shopping_lists').update({ archived_at: new Date().toISOString() }).eq('id', list.id).select('id').single());
+      },
+    },
+    pantry: {
+      list: () => call(sb.from('pantry_items').select('*').order('created_at', { ascending: false }).limit(300)) as Promise<Pantry[]>,
+      add: (items: Array<{ name: string; grams: number | null }>, source: 'manual' | 'ticket' | 'foto') =>
+        items.length
+          ? call(sb.from('pantry_items').insert(items.slice(0, 100).map((i) => ({ name: i.name.slice(0, 120), grams: i.grams, source }))))
+          : Promise.resolve(null),
+      remove: (id: string) => call(sb.from('pantry_items').delete().eq('id', id)),
+      clear: () => call(sb.from('pantry_items').delete().not('id', 'is', null)),
+      /** A receipt or a photo of the fridge → what is at home (names match the list). */
+      read: async (img: ImageInput) => (await invoke<{ items: Array<{ name: string; grams: number | null }> }>('food-ai', { mode: 'pantry', image: image(img) })).items,
     },
     /** Names of foods by id (plan ingredients). */
     foodsByIds: (ids: string[]) =>
