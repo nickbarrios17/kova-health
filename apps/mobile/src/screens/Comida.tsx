@@ -12,6 +12,7 @@ import { useAsync } from '../useAsync';
 import { Button, Card, Chip, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
 import { useReportTarget } from '../report';
 import { FoodAssistant } from './FoodAssistant';
+import { MealPlanCard } from './MealPlan';
 
 type Slot = (typeof MEAL_SLOTS)[number][0];
 interface Food { id: string; name: string; brand: string | null; ref_amount: number; ref_unit: 'g' | 'ml' | 'serving'; serving_label: string | null; default_quantity: number | null; kcal: number; protein_g: number; carbs_g: number; fat_g: number; data_source: NutritionSource }
@@ -54,6 +55,7 @@ export function Comida() {
           <Seg options={[[addDays(today, -1), 'Ayer'], [today, 'Hoy']]} value={day} onChange={setDay} />
         </Row>
         <FoodAssistant day={day} deviceId={deviceId} onLogged={q.reload} />
+        {day === today ? <MealPlanCard today={today} deviceId={deviceId} onLogged={q.reload} /> : null}
         {q.loading && !q.data ? <Loading /> : q.error ? <ErrorNote message={q.error} onRetry={q.reload} /> : (
           <>
             <Card>

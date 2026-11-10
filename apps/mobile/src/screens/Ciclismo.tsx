@@ -5,7 +5,7 @@
  * Each route says how much is bike lane, neighbourhood streets or avenues, which parks it crosses,
  * the estimated time at your speed, and what to watch out for. 2D/3D map and a 3D ride: a bike follows the route at the speed you pick.
  */
-import { KovaError, SAFETY_REPORT_KINDS, SPEEDS_KMH, analyzeRoute, formatKm, newId, routeScore, type Coord, type Park, type RawRoute, type RouteAnalysis, type SafetyReportKind, type SafetyZones } from '@kova/domain';
+import { KovaError, SAFETY_REPORT_KINDS, SPEEDS_KMH, analyzeRoute, formatKm, newId, nf, rideFuel, routeScore, type Coord, type Park, type RawRoute, type RouteAnalysis, type SafetyReportKind, type SafetyZones } from '@kova/domain';
 import type { MySafetyReport, Place, SavedRoute } from '@kova/api-client';
 import * as Location from 'expo-location';
 import { ArrowLeft, Bicycle, Crosshair, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, MegaphoneSimple, NavigationArrow, ShieldWarning, Pause, Play, Stop, Trash, Warning } from 'phosphor-react-native';
@@ -114,6 +114,8 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   const [removingReport, setRemovingReport] = useState<MySafetyReport | null>(null);
   const myReports = useAsync(() => (mode === 'guardadas' ? kova.cycling.myReports() : Promise.resolve([] as MySafetyReport[])), [mode]);
   const saved = useAsync(() => (mode === 'guardadas' ? kova.cycling.saved() : Promise.resolve([] as SavedRoute[])), [mode]);
+  // Weight for the ride's energy estimate (latest weighing); without it, a 75 kg reference.
+  const weight = useAsync(async () => Number(((await kova.body.history('weight_kg', 1)) as Array<{ value: unknown }>)[0]?.value ?? 0) || null, []);
 
   const from = start ?? me;
   const analyses = useMemo(() => (plan ? plan.routes.map((rt) => analyzeRoute(rt, plan.parks, speed)) : []), [plan, speed]);
@@ -352,6 +354,17 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
           {selected ? (
             <View style={{ gap: 10 }}>
               <Button large label="Navegar" icon={NavigationArrow} onPress={() => { stopRide(); setNavigating(true); }} />
+              {(() => {
+                const f = rideFuel(selected.a.distance_m, selected.a.duration_s, weight.data ?? 75);
+                return (
+                  <View style={{ padding: 12, borderRadius: rad.card, backgroundColor: c.raised, gap: 2 }}>
+                    <T size={14} w="semibold">Para esta vuelta</T>
+                    <T size={13} color={c.n400}>
+                      ≈ {nf(f.kcal, 0)} kcal{f.suggestion ? ' · llevá ' + f.suggestion : ' · no hace falta comer en el camino'} · agua ≈ {nf(f.waterMl, 0)} ml{weight.data ? '' : ' (calculado para 75 kg)'}.
+                    </T>
+                  </View>
+                );
+              })()}
               <View style={{ gap: 8 }}>
                 <T size={13} color={c.n300}>{riding ? (progress ? formatKm(progress.done) + ' de ' + formatKm(progress.total) : 'Preparando la bici…') : 'Velocidad del recorrido en 3D'}</T>
                 <Row style={{ flexWrap: 'wrap', gap: 8 }}>{RIDE_SPEEDS.map((o) => (

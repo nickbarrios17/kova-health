@@ -1,5 +1,5 @@
 /** "Hoy" — mobile home from design/prototypes/VIDA Health v2.dc.html, on real data only. */
-import { addDays, EVIDENCE_LABEL, headerDate, hm, isoWeekday, localDate, MOODS, nf, toDisplayWeight, type MetricKey } from '@kova/domain';
+import { addDays, EVIDENCE_LABEL, headerDate, workoutFuelTips, hm, isoWeekday, localDate, MOODS, nf, toDisplayWeight, type MetricKey } from '@kova/domain';
 import { Flame, ForkKnife, GearSix, Moon, Play, Plus, Scales, Smiley, SneakerMove, Barbell, Lightbulb, type Icon } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
@@ -123,6 +123,21 @@ export function Hoy({ live, onOpenLive, onStart, onCreateRoutine }: {
           <Button variant="secondary" label="Crear una rutina" icon={Plus} onPress={onCreateRoutine} />
         )}
       </View>
+
+      {plan && !live ? (() => {
+        const tips = workoutFuelTips({
+          routineName: plan.name,
+          weightKg: latestW ? Number(latestW.weight_kg) : null,
+          proteinLeftG: energy?.proteinG != null ? energy.proteinG - (num(t.protein_g) ?? 0) : null,
+        });
+        return (
+          <View style={{ padding: 16, borderRadius: rad.card, backgroundColor: c.surface, gap: 6 }}>
+            <Row style={{ gap: 8 }}><ForkKnife size={18} color={c.a400} /><T size={15} w="semibold">Comida y entreno</T></Row>
+            <T size={14} color={c.n400}>{tips.before}</T>
+            <T size={14} color={c.n400}>{tips.after}</T>
+          </View>
+        );
+      })() : null}
 
       {top ? (
         <View style={{ padding: 16, borderRadius: rad.card, backgroundColor: c.surface, gap: 8 }}>
