@@ -41,6 +41,36 @@ export interface ReadLabel {
 }
 
 export interface Described { items: DescribedItem[]; unclear: string | null }
+
+export interface FoodPreferences {
+  diet: 'omnivora' | 'vegetariana' | 'vegana' | 'sin_tacc';
+  dislikes: string[];
+  allergies: string[];
+  meals_per_day: number;
+  cook_minutes: number;
+  people: number;
+  budget_week_ars: number | null;
+  notes: string | null;
+}
+
+export interface PlanMeal {
+  id: string;
+  plan_id: string;
+  local_date: string;
+  slot: 'breakfast' | 'lunch' | 'afternoon_snack' | 'dinner' | 'snack';
+  title: string;
+  minutes: number | null;
+  steps: string | null;
+  ingredients: Array<{ food_id: string; grams: number }>;
+  kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  logged_at: string | null;
+}
+
+export interface MealPlan { id: string; week_start: string; targets: Array<Record<string, unknown>>; created_at: string; items: PlanMeal[] }
+export interface MealEvent { id: string; local_date: string; kind: 'asado' | 'salida' | 'cumple' | 'otro'; note: string | null }
 export interface ImageInput { mime: string; data: string }
 
 interface FoodDeps {
@@ -79,7 +109,48 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
   /** Up to 1600 px on the long side keeps photos small; the caller already compressed it. */
   const image = (img: ImageInput) => ({ mime: img.mime, data: img.data.replace(/^data:[^,]+,/, '') });
 
+  const num = (v: unknown) => Number(v);
+  const toMeal = (r: Record<string, unknown>): PlanMeal => ({
+    ...(r as unknown as PlanMeal), kcal: num(r.kcal), protein_g: num(r.protein_g), carbs_g: num(r.carbs_g), fat_g: num(r.fat_g),
+  });
+
   return {
+    preferences: {
+      get: async () => (await call(sb.from('food_preferences').select('*').maybeSingle())) as FoodPreferences | null,
+      save: async (p: FoodPreferences) => {
+        const row = {
+          diet: p.diet, dislikes: p.dislikes.slice(0, 30).map((x) => x.slice(0, 60)), allergies: p.allergies.slice(0, 20).map((x) => x.slice(0, 60)),
+          meals_per_day: Math.min(5, Math.max(3, Math.round(p.meals_per_day))), cook_minutes: Math.min(180, Math.max(5, Math.round(p.cook_minutes))),
+          people: Math.min(10, Math.max(1, Math.round(p.people))), budget_week_ars: p.budget_week_ars, notes: p.notes?.slice(0, 300) ?? null,
+        };
+        return call(sb.from('food_preferences').upsert(row, { onConflict: 'user_id' }).select('*').single()) as Promise<FoodPreferences>;
+      },
+    },
+    events: {
+      list: (from: string, to: string) =>
+        call(sb.from('meal_events').select('*').gte('local_date', from).lte('local_date', to).order('local_date')) as Promise<MealEvent[]>,
+      add: (localDate: string, kind: MealEvent['kind'], note?: string) =>
+        call(sb.from('meal_events').upsert({ local_date: localDate, kind, note: note?.slice(0, 120) ?? null }, { onConflict: 'user_id,local_date,kind' }).select('*').single()),
+      remove: (id: string) => call(sb.from('meal_events').delete().eq('id', id)),
+    },
+    plan: {
+      /** The active plan of a week (Monday), with its meals; null when there is none. */
+      get: async (weekStart: string): Promise<MealPlan | null> => {
+        const plan = (await call(sb.from('meal_plans').select('id, week_start, targets, created_at').eq('week_start', weekStart).is('archived_at', null).maybeSingle())) as Omit<MealPlan, 'items'> | null;
+        if (!plan) return null;
+        const items = (await call(sb.from('meal_plan_items').select('*').eq('plan_id', plan.id).order('local_date').order('slot'))) as Array<Record<string, unknown>>;
+        return { ...plan, items: items.map(toMeal) };
+      },
+      /** Builds the week with the AI around the day targets; replaces that week's plan. */
+      generate: (weekStart: string, days: Array<Record<string, unknown>>) =>
+        invoke<{ plan_id: string; meals: number }>('food-ai', { mode: 'plan', week_start: weekStart, days }),
+      /** Another meal of about the same calories for that slot; `wish`: «algo con pollo». */
+      swap: async (itemId: string, wish?: string) => toMeal((await invoke<{ item: Record<string, unknown> }>('food-ai', { mode: 'swap', item_id: itemId, wish: wish?.slice(0, 200) })).item),
+      markLogged: (itemId: string) => call(sb.from('meal_plan_items').update({ logged_at: new Date().toISOString() }).eq('id', itemId).select('id').single()),
+    },
+    /** Names of foods by id (plan ingredients). */
+    foodsByIds: (ids: string[]) =>
+      ids.length ? call(sb.from('foods').select('id, name').in('id', ids.slice(0, 50))) : Promise.resolve([]),
     /** «comí 2 empanadas de carne y una ensalada» → items with catalog candidates and an estimate range. */
     describe: (text: string) => invoke<Described>('food-ai', { mode: 'describe', text: text.trim().slice(0, 600) }),
     /** A photo of the plate; `text` can add context («era media porción»). */
