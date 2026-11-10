@@ -3,8 +3,8 @@
  * deletes with the same editor as one's own. Everything goes through kova.people (checked server-side).
  */
 import type { CoachRoutine } from '@kova/api-client';
-import { draftFromRoutine, emptyDraft, isoDays, type PersonLink, type RoutineDraft } from '@kova/domain';
-import { ArrowLeft, Barbell, PencilSimple, Plus } from 'phosphor-react-native';
+import { addDays, draftFromRoutine, emptyDraft, isoDays, isoWeekday, localDate, MEAL_SLOTS, nf, weekStartOf, type PersonLink, type RoutineDraft } from '@kova/domain';
+import { ArrowLeft, Barbell, Check, ForkKnife, PencilSimple, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useBack } from '../back';
@@ -32,6 +32,10 @@ export function Alumno({ link, onClose }: { link: PersonLink; onClose: () => voi
       .sort((a, b) => a.name.localeCompare(b.name));
     return { routines: routines as CoachRoutine[], exercises };
   }, [owner]);
+  const today = localDate(new Date(), prefs!.time_zone);
+  const weekStart = weekStartOf(today);
+  // The student's meal plan: [] when they do not share their nutrition (checked server-side).
+  const plan = useAsync(() => kova.people.mealPlan(owner, weekStart).catch(() => []), [owner, weekStart]);
 
   if (editing && q.data) {
     const names = Object.fromEntries(q.data.exercises.map((e) => [e.id, e.name]));
@@ -84,6 +88,50 @@ export function Alumno({ link, onClose }: { link: PersonLink; onClose: () => voi
           </View>
         </Card>
       ))}
+
+      <MealPlanSection name={link.person_name} today={today} weekStart={weekStart} meals={plan.data ?? null} shares={link.share_nutrition ?? null} />
     </ScrollView>
+  );
+}
+
+const SLOT_LABEL = Object.fromEntries(MEAL_SLOTS) as Record<string, string>;
+const DAY = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+/** What the student plans to eat this week and what they already ate from it. Read-only for the coach. */
+function MealPlanSection({ name, today, weekStart, meals, shares }: {
+  name: string; today: string; weekStart: string; shares: boolean | null;
+  meals: Array<{ local_date: string; slot: string; title: string; kcal: number; protein_g: number; logged_at: string | null }> | null;
+}) {
+  if (meals == null) return null;
+  const past = meals.filter((m) => m.local_date <= today);
+  const eaten = past.filter((m) => m.logged_at).length;
+  const days = [...new Set(meals.map((m) => m.local_date))].filter((d) => d >= today).slice(0, 3);
+  return (
+    <View style={{ gap: 10 }}>
+      <T size={18} w="medium">Plan de comidas</T>
+      {meals.length === 0 ? (
+        <Empty icon={ForkKnife} title={shares === false ? name + ' no comparte su alimentación' : name + ' no tiene plan esta semana'}>
+          {shares === false ? 'Si lo activa en Personas, acá ves su plan semanal y lo que fue comiendo.' : 'Cuando arme su semana en Comida, la ves acá.'}
+        </Empty>
+      ) : (
+        <Card style={{ gap: 10 }}>
+          <T size={13} color={c.n400}>
+            Semana del {Number(weekStart.slice(8))}/{Number(weekStart.slice(5, 7))} · comió {eaten} de {past.length} comidas planeadas hasta hoy
+          </T>
+          {days.map((d) => (
+            <View key={d} style={{ gap: 4 }}>
+              <T size={13} w="medium" color={c.n300}>{d === today ? 'Hoy' : d === addDays(today, 1) ? 'Mañana' : DAY[isoWeekday(d) - 1] + ' ' + Number(d.slice(8))}</T>
+              {meals.filter((m) => m.local_date === d).map((m) => (
+                <Row key={m.slot} style={{ justifyContent: 'space-between', gap: 8 }}>
+                  <T size={13} color={c.n300} style={{ flex: 1 }} numberOfLines={1}>{SLOT_LABEL[m.slot]}: {m.title}</T>
+                  {m.logged_at ? <Check size={14} color={c.accent} /> : null}
+                  <T size={12} color={c.n400}>{nf(m.kcal, 0)} kcal · {nf(m.protein_g, 0)} g prot</T>
+                </Row>
+              ))}
+            </View>
+          ))}
+        </Card>
+      )}
+    </View>
   );
 }

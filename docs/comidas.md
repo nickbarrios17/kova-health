@@ -135,6 +135,16 @@ Un asesor que arma lo que comés alrededor de **tu entrenamiento real, tu bolsil
 18. **Reloj:** aviso de comida antes de entrenar y registro rápido de agua.
 19. **Hidratación:** meta según entrenamiento, bici y temperatura del día.
 
+**Hecho en la etapa 5:**
+- Insights «Cena tarde ↔ sueño de esa noche» y «Poca proteína ↔ ánimo». Usan los mismos niveles de evidencia y nunca dicen «porque».
+- El coach ve el plan semanal del alumno y cuánto comió de lo planeado. Solo si el alumno comparte su alimentación (`person_meal_plan`). Por ahora no lo edita.
+- Agua: tarjeta en Comida con +1 vaso y Deshacer. Meta de ~35 ml/kg, más medio litro si entrenaste. Es privada: nadie más la ve.
+
+**Queda para después:**
+- Proteína ↔ récords y Bici ↔ hambre: necesitan más historia para no inventar.
+- Reloj: aviso antes de entrenar y agua desde la muñeca.
+- Temperatura en la meta de agua.
+
 ## Qué hace falta de tu lado
 
 1. **Clave de Gemini:**

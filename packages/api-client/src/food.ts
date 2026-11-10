@@ -118,6 +118,17 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
   });
 
   return {
+    /** Water through the day (a glass is 250 ml). Private: nobody else sees it. */
+    water: {
+      total: async (localDate: string) => {
+        const rows = (await call(sb.from('water_logs').select('id, ml').eq('local_date', localDate).order('created_at'))) as Array<{ id: string; ml: number }>;
+        return { ml: rows.reduce((a, r) => a + r.ml, 0), last_id: rows.at(-1)?.id ?? null };
+      },
+      add: (localDate: string, ml = 250) =>
+        call(sb.from('water_logs').insert({ local_date: localDate, ml: Math.min(3000, Math.max(50, Math.round(ml))) })),
+      /** Undo a glass logged by mistake. */
+      remove: (id: string) => call(sb.from('water_logs').delete().eq('id', id)),
+    },
     preferences: {
       get: async () => (await call(sb.from('food_preferences').select('*').maybeSingle())) as FoodPreferences | null,
       save: async (p: FoodPreferences) => {

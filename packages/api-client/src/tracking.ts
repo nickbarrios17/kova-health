@@ -268,11 +268,26 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
         rpc<HabitDayLite[]>('habit_days', { p_from: from, p_to: today }),
         insights.shownCounts(addDays(today, -13)),
       ]);
+      // When dinner was logged, in this device's local hour (late dinner ↔ that night's sleep).
+      const dinners = (await call(
+        sb.from('meal_items').select('logged_at, meals!inner(local_date, slot)')
+          .eq('meals.slot', 'dinner').gte('meals.local_date', from).is('deleted_at', null).limit(2000),
+      ).catch(() => [])) as Array<{ logged_at: string; meals: { local_date: string } | { local_date: string }[] }>;
+      const dinnerHour = new Map<string, number>();
+      for (const r of dinners) {
+        const day = Array.isArray(r.meals) ? r.meals[0]?.local_date : r.meals?.local_date;
+        if (!day) continue;
+        const t = new Date(r.logged_at);
+        let h = t.getHours() + t.getMinutes() / 60;
+        if (h < 5) h += 24; // after midnight still counts as that day's dinner
+        dinnerHour.set(day, Math.max(dinnerHour.get(day) ?? 0, h));
+      }
       const num = (v: unknown) => (v == null ? null : Number(v));
       const summaries: DaySummary[] = days.map((d) => ({
         local_date: String(d.local_date), workouts_completed: Number(d.workouts_completed ?? 0), kcal: num(d.kcal),
         protein_g: num(d.protein_g), protein_goal_g: num(d.protein_goal_g), weight_kg: num(d.weight_kg),
         steps: num(d.steps), sleep_min: num(d.sleep_min), mood: num(d.mood),
+        dinner_hour: dinnerHour.get(String(d.local_date)) ?? null,
       }));
       const list = generateInsights(summaries, habitDays, shown, limit);
       await insights.markShown(list.map((i) => ({ key: i.key, kind: i.kind })), today).catch(() => undefined);

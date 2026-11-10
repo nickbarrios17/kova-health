@@ -50,6 +50,22 @@ describe('generateInsights', () => {
     expect(strong.detail).toMatch(/no una causa/);
   });
 
+  it('links late dinners with the sleep of that night', () => {
+    const days = series(20, '2026-09-01', (_d, i) => ({ dinner_hour: i % 2 ? 23.5 : 20.5, sleep_min: i % 2 ? 450 : 380 }));
+    const x = generateInsights(days, [], {}, 20).find((y) => y.key === 'late-dinner-sleep')!;
+    expect(x.kind).toBe('pattern');
+    expect(x.title).toMatch(/dormiste 70 min menos/);
+    expect(x.detail).toMatch(/no una causa/);
+    expect(generateInsights(series(20), [], {}, 20).find((y) => y.key === 'late-dinner-sleep')).toBeUndefined();
+  });
+
+  it('links low protein days with mood', () => {
+    const days = series(20, '2026-09-01', (_d, i) => ({ protein_goal_g: 150, protein_g: i % 2 ? 60 : 145, mood: i % 2 ? 2 : 4 }));
+    const x = generateInsights(days, [], {}, 20).find((y) => y.key === 'protein-mood')!;
+    expect(x.kind).toBe('pattern');
+    expect(x.title).toMatch(/más bajo/);
+  });
+
   it('projects weight with its assumption stated', () => {
     const days = series(21, '2026-09-01', (_d, i) => (i % 3 === 0 ? { weight_kg: 80 - i * 0.05 } : {}));
     const w = generateInsights(days).find((x) => x.key === 'weight-trend')!;
