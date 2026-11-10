@@ -2,7 +2,7 @@
 -- estimates, the Open Food Facts cache and the AI call log.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(16);
 
 insert into auth.users (id, instance_id, aud, role, email) values
   ('11111111-1111-4111-8111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@test.local'),
@@ -21,6 +21,9 @@ select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-1111111
 select ok((select count(*) from public.search_foods('pure de papas')) >= 1, 'search ignores accents (pure → Puré)');
 select is((select name from public.search_foods('empanada carne') limit 1), 'Empanada de carne (al horno)', 'every word counts, in any order');
 select is((select count(*)::int from public.search_foods('')), 0, 'an empty search returns nothing');
+select is((select name from public.search_foods('medialuna de manteca') limit 1), 'Medialuna / croissant',
+  'the first word names the dish: medialuna before manteca');
+select is((select name from public.search_foods('cafe con leche') limit 1), 'Café con leche', 'little words do not count');
 
 -- A confirmed AI estimate is saved as 'estimated'; a manual entry stays 'user'.
 select is((public.log_food('a1000000-0000-4000-8000-000000000001', '2026-11-10', 'lunch', 1,
