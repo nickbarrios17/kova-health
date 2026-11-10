@@ -216,16 +216,40 @@ const prefsText = (p: any) =>
   ].filter(Boolean).join(' ');
 
 /** Nutrients of a meal from the catalog, with grams scaled so the meal lands on its kcal target. */
-function cookMeal(raw: any, list: Food[], targetKcal: number | null) {
+/**
+ * Factors for the protein-rich ingredients (a) and the rest (b) so the meal lands on both its kcal and its
+ * protein target: a·p1 + b·p2 = P, a·k1 + b·k2 = K. Falls back to one factor for kcal when the meal has
+ * only one kind of ingredient or the system has no sensible answer. Factors stay between 0.5 and 1.8.
+ */
+function scaleFactors(p1: number, k1: number, p2: number, k2: number, kcal: number | null, protein: number | null) {
+  const total = k1 + k2;
+  const single = kcal && total > 0 ? Math.min(1.5, Math.max(0.6, kcal / total)) : 1;
+  if (!kcal || !protein || k1 <= 0 || k2 <= 0) return { a: single, b: single };
+  const det = p1 * k2 - p2 * k1;
+  if (Math.abs(det) < 1e-6) return { a: single, b: single };
+  const a = (protein * k2 - p2 * kcal) / det;
+  const b = (p1 * kcal - protein * k1) / det;
+  if (!Number.isFinite(a) || !Number.isFinite(b) || a <= 0 || b <= 0) return { a: single, b: single };
+  const clamp = (x: number) => Math.min(1.8, Math.max(0.5, x));
+  return { a: clamp(a), b: clamp(b) };
+}
+
+function cookMeal(raw: any, list: Food[], targetKcal: number | null, targetProtein: number | null = null) {
   const ings = (Array.isArray(raw?.ingredients) ? raw.ingredients : []).flatMap((x: any) => {
     const f = Number.isInteger(x?.food) ? list[x.food] : undefined;
     const g = num(x?.grams, 1, 1500);
     return f && g != null ? [{ f, g }] : [];
   }).slice(0, 12);
   if (!ings.length) return null;
-  const raw0 = ings.reduce((a: number, x: any) => a + (x.f.kcal * x.g) / x.f.ref_amount, 0);
-  const scale = targetKcal && raw0 > 0 ? Math.min(1.5, Math.max(0.6, targetKcal / raw0)) : 1;
-  const ingredients = ings.map((x: any) => ({ food_id: x.f.id as string, grams: Math.max(5, Math.round((x.g * scale) / 5) * 5), f: x.f as Food }));
+  // Protein-rich: more than 30 % of its calories from protein (meat, fish, eggs, cheese, legumes…).
+  const rich = (f: Food) => f.kcal > 0 && (f.protein_g * 4) / f.kcal > 0.3;
+  const tot = (pick: (f: Food) => boolean, key: 'kcal' | 'protein_g') =>
+    ings.filter((x: any) => pick(x.f)).reduce((a: number, x: any) => a + (x.f[key] * x.g) / x.f.ref_amount, 0);
+  const { a: fa, b: fb } = scaleFactors(tot(rich, 'protein_g'), tot(rich, 'kcal'), tot((f) => !rich(f), 'protein_g'), tot((f) => !rich(f), 'kcal'), targetKcal, targetProtein);
+  const ingredients = ings.map((x: any) => {
+    const scale = rich(x.f) ? fa : fb;
+    return { food_id: x.f.id as string, grams: Math.max(5, Math.round((x.g * scale) / 5) * 5), f: x.f as Food };
+  });
   const r1 = (n: number) => Math.round(n * 10) / 10;
   const k = (key: 'kcal' | 'protein_g' | 'carbs_g' | 'fat_g') => r1(ingredients.reduce((a: number, x) => a + (x.f[key] * x.grams) / x.f.ref_amount, 0));
   return {
@@ -252,7 +276,8 @@ async function buildPlan(sb: any, body: any) {
     'Usá SOLO alimentos de la lista (por su número) con gramos según diga el nombre (crudo o cocido). ' +
     'Cada día tiene estas comidas: ' + slots.map((s) => SLOT_ES[s]).join(', ') + '. ' +
     'Acercate a las kcal y proteínas de cada día (después afinamos las cantidades). Repetí ingredientes entre días para que la compra sea simple ' +
-    'y aprovechá sobras (lo que sobra de una cena puede ser el almuerzo del día siguiente). Los días de fuerza, más carbohidratos. ' +
+    'y aprovechá sobras (lo que sobra de una cena puede ser el almuerzo del día siguiente; el primer día no hay sobras). ' +
+    'Repartí la proteína entre las comidas. Los días de fuerza, más carbohidratos. ' +
     'Los días de evento, comidas livianas fuera del evento. ' + prefsText(p) + '\n\nDías:\n' +
     days.map((d) => d.date + ' (' + d.kind + '): ' + d.kcal + ' kcal, ' + d.proteinG + ' g proteína' + (d.note ? ', ' + d.note : '')).join('\n') +
     '\n\nAlimentos (número|nombre|por 100 g):\n' + catalogText(list);
@@ -263,7 +288,7 @@ async function buildPlan(sb: any, body: any) {
     const rd = (raw?.days ?? []).find((x: any) => x?.date === d.date) ?? (raw?.days ?? [])[idx];
     for (const slot of slots) {
       const m = (rd?.meals ?? []).find((x: any) => x?.slot === slot);
-      const cooked = m ? cookMeal(m, list, (d.kcal * DAY_SHARE[slot]!) / total) : null;
+      const cooked = m ? cookMeal(m, list, (d.kcal * DAY_SHARE[slot]!) / total, (d.proteinG * DAY_SHARE[slot]!) / total) : null;
       if (cooked) items.push({ local_date: d.date, slot, ...cooked });
     }
   });
@@ -283,13 +308,15 @@ async function swapMeal(sb: any, body: any) {
   if (!item) throw invalid('item');
   const { list, p } = await catalogAndPrefs(sb);
   const wish = str(body.wish, 200);
+  const { data: sameDay } = await sb.from('meal_plan_items').select('title').eq('plan_id', item.plan_id).eq('local_date', item.local_date).neq('id', item.id);
+  const others = (sameDay ?? []).map((r: any) => r.title).join(', ');
   const prompt =
     'Sos un nutricionista argentino. Proponé UNA comida casera argentina para ' + SLOT_ES[item.slot] + ' que reemplace «' + item.title + '», ' +
-    'distinta a esa, de unas ' + Math.round(Number(item.kcal)) + ' kcal y ' + Math.round(Number(item.protein_g)) + ' g de proteína. ' +
+    'distinta a esa' + (others ? ' y a las otras comidas del día (' + others + ')' : '') + ', de unas ' + Math.round(Number(item.kcal)) + ' kcal y ' + Math.round(Number(item.protein_g)) + ' g de proteína. ' +
     (wish ? 'La persona pidió: ' + wish + '. ' : '') + 'Usá SOLO alimentos de la lista por su número. ' + prefsText(p) +
     '\n\nAlimentos (número|nombre|por 100 g):\n' + catalogText(list);
   const raw = await geminiJson([{ text: prompt }], MEAL_SCHEMA, 0.9, 40000);
-  const cooked = cookMeal(raw, list, Number(item.kcal));
+  const cooked = cookMeal(raw, list, Number(item.kcal), Number(item.protein_g));
   if (!cooked) throw upstream('no meal');
   await sb.from('meal_plan_items').delete().eq('id', item.id);
   const { data: fresh, error } = await sb.from('meal_plan_items')
