@@ -96,19 +96,19 @@ function ListModal({ list: initial, onClose }: { list: ShoppingList; onClose: ()
   const [extra, setExtra] = useState('');
   const [busy, setBusy] = useState(false);
   const toggle = async (id: string) => {
-    const it = list.items.find((i) => i.id === id)!;
-    const checked = !it.checked_at;
-    setList({ ...list, items: list.items.map((i) => (i.id === id ? { ...i, checked_at: checked ? new Date().toISOString() : null } : i)) });
+    // Functional update: quick taps on different items must not overwrite each other.
+    const checked = !list.items.find((i) => i.id === id)?.checked_at;
+    setList((cur) => ({ ...cur, items: cur.items.map((i) => (i.id === id ? { ...i, checked_at: checked ? new Date().toISOString() : null } : i)) }));
     kova.food.shopping.check(id, checked).catch(() => undefined);
   };
   const add = async () => {
     if (!extra.trim()) return;
     const row = (await kova.food.shopping.addItem(list.id, extra.trim(), list.items.length).catch(() => null)) as ShoppingList['items'][number] | null;
-    if (row) setList({ ...list, items: [...list.items, row] });
+    if (row) setList((cur) => ({ ...cur, items: [...cur.items, row] }));
     setExtra('');
   };
   const remove = async (id: string) => {
-    setList({ ...list, items: list.items.filter((i) => i.id !== id) });
+    setList((cur) => ({ ...cur, items: cur.items.filter((i) => i.id !== id) }));
     kova.food.shopping.removeItem(id).catch(() => undefined);
   };
   const finish = async () => {
