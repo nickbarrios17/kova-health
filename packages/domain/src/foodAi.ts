@@ -126,3 +126,15 @@ export function betterAlternative<T extends PackagedProduct & { barcode: string;
     .sort((a, b) => a.n - b.n || (a.o.kcal_100 ?? 0) - (b.o.kcal_100 ?? 0));
   return pool[0]?.o ?? null;
 }
+
+const PLURAL: Record<string, string> = {
+  unidad: 'unidades', porcion: 'porciones', taza: 'tazas', cucharada: 'cucharadas', vaso: 'vasos', plato: 'platos', rebanada: 'rebanadas',
+};
+const ACCENT: Record<string, string> = { porcion: 'porción', porciones: 'porciones' };
+
+/** «2 unidades», «1 porción», «150 g»: what the person said, in plain Spanish. */
+export function amountLabel(amount: number, unit: string): string {
+  const n = Math.round(amount * 10) / 10;
+  const u = unit === 'g' || unit === 'ml' ? unit : n === 1 ? (ACCENT[unit] ?? unit) : (ACCENT[PLURAL[unit] ?? ''] ?? PLURAL[unit] ?? unit);
+  return `${n.toLocaleString('es-AR')} ${u}`;
+}

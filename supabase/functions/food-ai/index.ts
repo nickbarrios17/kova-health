@@ -14,7 +14,13 @@ const json = (status: number, body: unknown) =>
 const fail = (status: number, code: string, message: string) => json(status, { code, message });
 
 const DAILY_CAP = Number(Deno.env.get('AI_DAILY_CAP') ?? '40');
-const MODELS = [Deno.env.get('GEMINI_MODEL'), 'gemini-2.5-flash', 'gemini-2.0-flash'].filter(Boolean) as string[];
+// Google retires model names often: an explicit GEMINI_MODEL wins, then the rolling Flash alias, then
+// known names; if none exists any more, the function asks the API which Flash models it has.
+// Flash-Lite first: answers in a few seconds and is enough to split a meal or read a label.
+const MODELS = [Deno.env.get('GEMINI_MODEL'), 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-flash-latest', 'gemini-3.8-flash']
+  .filter(Boolean) as string[];
+let discovered: string | null = null;
+const BUSY = Symbol('busy');
 const MAX_IMAGE_BYTES = 4_000_000;
 
 type Mode = 'describe' | 'photo' | 'label';
@@ -79,20 +85,54 @@ async function gemini(mode: Mode, text: string | null, image: { mime: string; da
   const parts: unknown[] = [{ text: PROMPT[mode] }];
   if (text) parts.push({ text: 'Lo que contó la persona: ' + text });
   if (image) parts.push({ inline_data: { mime_type: image.mime, data: image.data } });
-  const body = JSON.stringify({
-    contents: [{ role: 'user', parts }],
-    generationConfig: { responseMimeType: 'application/json', responseSchema: mode === 'label' ? LABEL_SCHEMA : ITEMS_SCHEMA, temperature: 0.2 },
-  });
-  for (const model of MODELS) {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body, signal: AbortSignal.timeout(30000),
+  const config = {
+    responseMimeType: 'application/json', responseSchema: mode === 'label' ? LABEL_SCHEMA : ITEMS_SCHEMA, temperature: 0.2,
+  };
+  const call = (model: string, think: boolean) =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, signal: AbortSignal.timeout(40000),
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts }],
+        // Least "thinking": answers in seconds; the task does not need long reasoning.
+        generationConfig: think ? { ...config, thinkingConfig: { thinkingBudget: 0 } } : config,
+      }),
     });
-    if (res.status === 404) { console.warn('gemini model not found', model); continue; }
+
+  const tryModel = async (model: string) => {
+    let res = await call(model, true);
+    // Models that do not accept a zero thinking budget answer 400: ask again without it.
+    if (res.status === 400) res = await call(model, false);
+    if (res.status === 404) { console.warn('gemini model not found', model); return undefined; }
     if (res.status === 429) throw Object.assign(new Error('gemini rate limited'), { code: 'RATE_LIMITED' });
-    if (!res.ok) { console.error('gemini', res.status, (await res.text()).slice(0, 300)); throw Object.assign(new Error('gemini failed'), { code: 'UPSTREAM' }); }
+    // Overloaded or failing right now ("high demand"): try the next model instead of giving up.
+    if (res.status >= 500) { console.warn('gemini busy', model, res.status); return BUSY; }
+    if (!res.ok) { console.error('gemini', model, res.status, (await res.text()).slice(0, 300)); throw Object.assign(new Error('gemini failed'), { code: 'UPSTREAM' }); }
     const out = await res.json();
     const raw = out?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
     try { return JSON.parse(raw); } catch { throw Object.assign(new Error('bad json'), { code: 'UPSTREAM' }); }
+  };
+
+  const order = discovered ? [discovered, ...MODELS.filter((m) => m !== discovered)] : MODELS;
+  let busy = false;
+  for (const model of order) {
+    const t0 = Date.now();
+    const r = await tryModel(model);
+    console.log('gemini', model, r === undefined ? 'missing' : r === BUSY ? 'busy' : 'ok', Date.now() - t0, 'ms');
+    if (r === BUSY) { busy = true; continue; }
+    if (r !== undefined) { discovered = model; return r; }
+  }
+  if (busy) throw Object.assign(new Error('gemini busy'), { code: 'BUSY' });
+  // None of the known names exists: pick the newest Flash model the API lists.
+  const list = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': key } })
+    .then((r) => r.json()).catch(() => null);
+  const flash = (list?.models ?? [])
+    .filter((m: any) => /flash/.test(m.name) && !/image|tts|live|audio|embedding|preview/.test(m.name) && (m.supportedGenerationMethods ?? []).includes('generateContent'))
+    .map((m: any) => String(m.name).replace(/^models\//, ''))
+    .sort().reverse();
+  console.warn('gemini discovered flash models', flash.slice(0, 5).join(','));
+  for (const model of flash.slice(0, 3)) {
+    const r = await tryModel(model);
+    if (r !== undefined && r !== BUSY) { discovered = model; return r; }
   }
   throw Object.assign(new Error('no gemini model available'), { code: 'UPSTREAM' });
 }
@@ -109,7 +149,7 @@ function cleanItems(raw: any) {
     const p = num(it.protein_g, 0, 500), c = num(it.carbs_g, 0, 800), f = num(it.fat_g, 0, 400);
     if (!name || grams == null || lo == null || hi == null || p == null || c == null || f == null) return [];
     return [{
-      name, search: str(it.search, 80) ?? name, amount: num(it.amount, 0, 1000) ?? 1,
+      name: name.charAt(0).toUpperCase() + name.slice(1), search: str(it.search, 80) ?? name, amount: num(it.amount, 0, 1000) ?? 1,
       unit: str(it.unit, 20) ?? 'porcion', grams, kcal_low: Math.min(lo, hi), kcal_high: Math.max(lo, hi),
       protein_g: p, carbs_g: c, fat_g: f,
     }];
@@ -151,7 +191,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const code = (e as { code?: string }).code ?? 'UPSTREAM';
     await admin.from('ai_requests').insert({ user_id: who.user.id, kind: mode, ok: false });
-    return fail(code === 'RATE_LIMITED' ? 429 : code === 'NOT_CONFIGURED' ? 503 : 502, code === 'UPSTREAM' ? 'INTERNAL' : code, 'ai');
+    return fail(code === 'RATE_LIMITED' ? 429 : code === 'NOT_CONFIGURED' || code === 'BUSY' ? 503 : 502, code === 'UPSTREAM' ? 'INTERNAL' : code, 'ai');
   }
   await admin.from('ai_requests').insert({ user_id: who.user.id, kind: mode, ok: true });
 
@@ -171,7 +211,13 @@ Deno.serve(async (req) => {
   // Match every item against the catalog the person can see; the client shows both.
   const items = cleanItems(raw);
   const matched = await Promise.all(items.map(async (it: ReturnType<typeof cleanItems>[number]) => {
-    const { data } = await sb.rpc('search_foods', { p_q: it.search, p_limit: 3 });
+    // The AI's search words can be too many («ensalada mixta lechuga tomate»): fall back to the
+    // name, then to its first two words, until the catalog answers.
+    let data: any[] | null = null;
+    for (const q of [it.search, it.name, it.name.split(/\s+/).slice(0, 2).join(' ')]) {
+      ({ data } = await sb.rpc('search_foods', { p_q: q, p_limit: 3 }));
+      if (data?.length) break;
+    }
     const candidates = (data ?? []).map((f: any) => ({
       id: f.id, name: f.name, ref_amount: Number(f.ref_amount), ref_unit: f.ref_unit, data_source: f.data_source,
       kcal: Number(f.kcal), protein_g: Number(f.protein_g), carbs_g: Number(f.carbs_g), fat_g: Number(f.fat_g),
