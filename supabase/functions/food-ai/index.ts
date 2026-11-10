@@ -20,6 +20,7 @@ const DAILY_CAP = Number(Deno.env.get('AI_DAILY_CAP') ?? '40');
 const MODELS = [Deno.env.get('GEMINI_MODEL'), 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-flash-latest', 'gemini-3.8-flash']
   .filter(Boolean) as string[];
 let discovered: string | null = null;
+const BUSY = Symbol('busy');
 const MAX_IMAGE_BYTES = 4_000_000;
 
 type Mode = 'describe' | 'photo' | 'label';
@@ -103,18 +104,24 @@ async function gemini(mode: Mode, text: string | null, image: { mime: string; da
     if (res.status === 400) res = await call(model, false);
     if (res.status === 404) { console.warn('gemini model not found', model); return undefined; }
     if (res.status === 429) throw Object.assign(new Error('gemini rate limited'), { code: 'RATE_LIMITED' });
+    // Overloaded or failing right now ("high demand"): try the next model instead of giving up.
+    if (res.status >= 500) { console.warn('gemini busy', model, res.status); return BUSY; }
     if (!res.ok) { console.error('gemini', model, res.status, (await res.text()).slice(0, 300)); throw Object.assign(new Error('gemini failed'), { code: 'UPSTREAM' }); }
     const out = await res.json();
     const raw = out?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
     try { return JSON.parse(raw); } catch { throw Object.assign(new Error('bad json'), { code: 'UPSTREAM' }); }
   };
 
-  for (const model of discovered ? [discovered] : MODELS) {
+  const order = discovered ? [discovered, ...MODELS.filter((m) => m !== discovered)] : MODELS;
+  let busy = false;
+  for (const model of order) {
     const t0 = Date.now();
     const r = await tryModel(model);
-    console.log('gemini', model, r === undefined ? 'missing' : 'ok', Date.now() - t0, 'ms');
+    console.log('gemini', model, r === undefined ? 'missing' : r === BUSY ? 'busy' : 'ok', Date.now() - t0, 'ms');
+    if (r === BUSY) { busy = true; continue; }
     if (r !== undefined) { discovered = model; return r; }
   }
+  if (busy) throw Object.assign(new Error('gemini busy'), { code: 'BUSY' });
   // None of the known names exists: pick the newest Flash model the API lists.
   const list = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': key } })
     .then((r) => r.json()).catch(() => null);
@@ -125,7 +132,7 @@ async function gemini(mode: Mode, text: string | null, image: { mime: string; da
   console.warn('gemini discovered flash models', flash.slice(0, 5).join(','));
   for (const model of flash.slice(0, 3)) {
     const r = await tryModel(model);
-    if (r !== undefined) { discovered = model; return r; }
+    if (r !== undefined && r !== BUSY) { discovered = model; return r; }
   }
   throw Object.assign(new Error('no gemini model available'), { code: 'UPSTREAM' });
 }
@@ -184,7 +191,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const code = (e as { code?: string }).code ?? 'UPSTREAM';
     await admin.from('ai_requests').insert({ user_id: who.user.id, kind: mode, ok: false });
-    return fail(code === 'RATE_LIMITED' ? 429 : code === 'NOT_CONFIGURED' ? 503 : 502, code === 'UPSTREAM' ? 'INTERNAL' : code, 'ai');
+    return fail(code === 'RATE_LIMITED' ? 429 : code === 'NOT_CONFIGURED' || code === 'BUSY' ? 503 : 502, code === 'UPSTREAM' ? 'INTERNAL' : code, 'ai');
   }
   await admin.from('ai_requests').insert({ user_id: who.user.id, kind: mode, ok: true });
 

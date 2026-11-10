@@ -54,6 +54,7 @@ const MESSAGES: Record<string, string> = {
   NOT_CONFIGURED: 'El asistente de comidas todavía no está activado.',
   INVALID_INPUT: 'No pudimos leer eso. Probá con otra foto o escribilo.',
   NETWORK: 'No pudimos consultar el código. Revisá tu conexión.',
+  BUSY: 'El asistente está con mucha demanda. Probá de nuevo en un momento.',
 };
 
 export function createFood({ sb, call, toKovaError }: FoodDeps) {
@@ -65,7 +66,7 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
       try { payload = ctx && typeof ctx.json === 'function' ? await ctx.clone().json() : null; } catch { /* not JSON */ }
       const code = payload?.code;
       if (code && MESSAGES[code]) {
-        throw new KovaError(code === 'NOT_CONFIGURED' ? 'INTERNAL' : (code as 'RATE_LIMITED' | 'INVALID_INPUT' | 'NETWORK'), MESSAGES[code]);
+        throw new KovaError(code === 'NOT_CONFIGURED' || code === 'BUSY' ? 'INTERNAL' : (code as 'RATE_LIMITED' | 'INVALID_INPUT' | 'NETWORK'), MESSAGES[code]);
       }
       const e = toKovaError(error, ctx?.status);
       // Say what failed: the assistant, not the whole app.
