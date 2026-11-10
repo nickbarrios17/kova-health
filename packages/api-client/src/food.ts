@@ -67,7 +67,10 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
       if (code && MESSAGES[code]) {
         throw new KovaError(code === 'NOT_CONFIGURED' ? 'INTERNAL' : (code as 'RATE_LIMITED' | 'INVALID_INPUT' | 'NETWORK'), MESSAGES[code]);
       }
-      throw toKovaError(error, ctx?.status);
+      const e = toKovaError(error, ctx?.status);
+      // Say what failed: the assistant, not the whole app.
+      if (e.code === 'NETWORK') throw new KovaError('NETWORK', fn === 'food-ai' ? 'No pudimos hablar con el asistente. Revisá tu conexión y probá de nuevo.' : MESSAGES.NETWORK);
+      throw e;
     }
     return data as T;
   };

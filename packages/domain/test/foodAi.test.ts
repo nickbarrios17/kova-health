@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { argentineSeals, betterAlternative, estimateMidpoint, kcalRange, macrosConsistent, scaleFood, usableCandidate, type DescribedItem } from '../src/foodAi.js';
+import { amountLabel, argentineSeals, betterAlternative, estimateMidpoint, kcalRange, macrosConsistent, scaleFood, usableCandidate, type DescribedItem } from '../src/foodAi.js';
 
 const item = (over: Partial<DescribedItem> = {}): DescribedItem => ({
   name: 'Empanada de carne', search: 'empanada carne', amount: 2, unit: 'unidad', grams: 170,
@@ -46,5 +46,12 @@ describe('food AI helpers', () => {
     const c = { ...base, barcode: '3', kcal_100: 400, fat_100: 10, sat_fat_100: 2, sugars_100: 30, sodium_mg_100: 100, category: 'en:chips' };
     expect(betterAlternative(a, [a, b, c])?.barcode).toBe('2');
     expect(betterAlternative(b, [a, b])).toBeNull();
+  });
+
+  it('says the amount in plain Spanish', () => {
+    expect(amountLabel(2, 'unidad')).toBe('2 unidades');
+    expect(amountLabel(1, 'porcion')).toBe('1 porción');
+    expect(amountLabel(2, 'porcion')).toBe('2 porciones');
+    expect(amountLabel(150, 'g')).toBe('150 g');
   });
 });

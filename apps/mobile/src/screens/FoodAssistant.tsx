@@ -4,7 +4,7 @@
  * win when the food is there; otherwise the estimate is saved as 'estimated'.
  */
 import {
-  argentineSeals, betterAlternative, estimateMidpoint, kcalRange, MEAL_SLOTS, newId, nf, scaleFood, SEAL_LABEL,
+  amountLabel, argentineSeals, betterAlternative, estimateMidpoint, kcalRange, MEAL_SLOTS, newId, nf, scaleFood, SEAL_LABEL,
   usableCandidate, KovaError, type CatalogFood, type DescribedItem,
 } from '@kova/domain';
 import type { OffProduct, ReadLabel } from '@kova/api-client';
@@ -173,7 +173,7 @@ function Review({ items, unclear, day, deviceId, onClose, onSaved }: {
                       onChangeText={(t) => set(i, { grams: Math.max(0, Math.min(3000, Number(t.replace(/\D/g, '')) || 0)) })} />
                   </View>
                   <T size={12} color={c.n500} style={{ flex: 1, marginTop: 18 }}>
-                    {nf(r.item.amount, 0)} {r.item.unit} según lo que contaste
+                    {amountLabel(r.item.amount, r.item.unit)} según lo que contaste
                   </T>
                 </Row>
                 {r.item.candidates.filter((x) => x.ref_unit !== 'serving').length ? (
