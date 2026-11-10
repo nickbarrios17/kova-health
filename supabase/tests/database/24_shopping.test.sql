@@ -20,7 +20,7 @@ select lives_ok($$ insert into public.pantry_items (name, grams, source) values 
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
 select is((select count(*)::int from public.shopping_items) + (select count(*)::int from public.pantry_items), 0, 'B sees none of it');
 select throws_ok($$ insert into public.shopping_items (list_id, name) values ('a3000000-0000-4000-8000-000000000001', 'Intruso') $$,
-  '23503', null, 'B cannot add to A''s list');
+  '42501', null, 'B cannot add to A''s list');
 
 select * from finish();
 rollback;

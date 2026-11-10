@@ -10,7 +10,7 @@ import {
 import type { OffProduct, ReadLabel } from '@kova/api-client';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { Barcode, Camera, Check, PaperPlaneRight, X } from 'phosphor-react-native';
+import { Barcode, Camera, Check, ForkKnife, PaperPlaneRight, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { kova, outbox } from '../client';
@@ -44,7 +44,31 @@ async function pickImage(fromCamera: boolean) {
 
 export function FoodAssistant({ day, deviceId, onLogged }: { day: string; deviceId: string | null; onLogged: () => void }) {
   const [text, setText] = useState('');
-  const [busy, setBusy] = useState<null | 'text' | 'photo'>(null);
+  const [busy, setBusy] = useState<null | 'text' | 'photo' | 'menu'>(null);
+  const [menu, setMenu] = useState<MenuOption[] | null>(null);
+
+  const runMenu = async () => {
+    setError(null);
+    try {
+      const img = await pickImage(true);
+      if (!img) return;
+      setBusy('menu');
+      // What is left of today, so the suggestions fit it.
+      const [energy, sum] = await Promise.all([kova.energy.today(day).catch(() => null), kova.summaries.daily(day, day).catch(() => [])]);
+      const s = (sum[0] ?? {}) as Record<string, unknown>;
+      const left = {
+        kcal: energy?.kcal != null ? Math.max(0, energy.kcal - Number(s.kcal ?? 0)) : null,
+        proteinG: energy?.proteinG != null ? Math.max(0, energy.proteinG - Number(s.protein_g ?? 0)) : null,
+      };
+      const options = await kova.food.menu(img, left);
+      if (!options.length) setError('No pudimos leer la carta. Probá con más luz y la carta derecha.');
+      else setMenu(options);
+    } catch (e) {
+      setError(msg(e));
+    } finally {
+      setBusy(null);
+    }
+  };
   const [error, setError] = useState<string | null>(null);
   const [review, setReview] = useState<{ items: DescribedItem[]; unclear: string | null } | null>(null);
   const [scan, setScan] = useState(false);
@@ -86,7 +110,9 @@ export function FoodAssistant({ day, deviceId, onLogged }: { day: string; device
         <Button variant="secondary" label="Foto" icon={Camera} onPress={() => run('photo')} busy={busy === 'photo'} disabled={!!busy} accessibilityLabel="Sacar una foto del plato" />
         <Button variant="secondary" label="Código" icon={Barcode} onPress={() => setScan(true)} disabled={!!busy} accessibilityLabel="Escanear un código de barras" />
       </Row>
+      <Button variant="text" label="¿Comés afuera? Sacale una foto a la carta" icon={ForkKnife} onPress={() => runMenu()} busy={busy === 'menu'} disabled={!!busy} style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} />
       <T size={11} color={c.n500}>Las estimaciones se marcan como estimadas. Las fotos no se guardan.</T>
+      {menu ? <MenuSheet options={menu} day={day} deviceId={deviceId} onClose={() => setMenu(null)} onSaved={() => { setMenu(null); onLogged(); }} /> : null}
       {review ? (
         <Review items={review.items} unclear={review.unclear} day={day} deviceId={deviceId}
           onClose={() => setReview(null)} onSaved={() => { setReview(null); setText(''); onLogged(); }} />
@@ -363,3 +389,51 @@ function BarcodeFlow({ day, deviceId, onClose, onSaved }: { day: string; deviceI
   );
 }
 
+
+type MenuOption = { name: string; why: string; kcal_low: number; kcal_high: number; protein_g: number };
+
+function MenuSheet({ options, day, deviceId, onClose, onSaved }: { options: MenuOption[]; day: string; deviceId: string | null; onClose: () => void; onSaved: () => void }) {
+  const [busy, setBusy] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const save = async (o: MenuOption, k: number) => {
+    setBusy(k);
+    setError(null);
+    try {
+      const kcal = Math.round((o.kcal_low + o.kcal_high) / 2);
+      // Restaurant dishes are estimates: carbs and fat split the rest of the calories evenly.
+      const rest = Math.max(0, kcal - o.protein_g * 4);
+      await outbox.enqueue({ kind: 'log_food', input: {
+        id: newId(), local_date: day, slot: slotNow(), quantity: 1, name: o.name.slice(0, 120), kcal, protein_g: o.protein_g,
+        carbs_g: Math.round(rest / 2 / 4), fat_g: Math.round(rest / 2 / 9), estimated: true, device_id: deviceId,
+      } });
+      await outbox.flush().catch(() => undefined);
+      onSaved();
+    } catch (e) {
+      setError(msg(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <Modal animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: c.bg }}>
+        <Row style={{ padding: 12 }}>
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
+          <T size={17} w="semibold" style={{ flex: 1 }}>Lo que mejor te queda hoy</T>
+        </Row>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }}>
+          {options.map((o, k) => (
+            <View key={k} style={{ padding: 14, borderRadius: rad.card, backgroundColor: c.surface, gap: 6 }}>
+              <T size={16} w="semibold">{o.name}</T>
+              <T size={13} color={c.n400}>{kcalRange(o.kcal_low, o.kcal_high)} · ≈ {nf(o.protein_g, 0)} g proteína (estimado)</T>
+              <T size={14}>{o.why}</T>
+              <Button label="Lo pedí: registrarlo" icon={Check} onPress={() => save(o, k)} busy={busy === k} disabled={busy != null && busy !== k} />
+            </View>
+          ))}
+          {error ? <Banner tone="crit" text={error} /> : null}
+          <T size={11} color={c.n500}>Las porciones de restaurante varían: se guarda como estimado.</T>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}

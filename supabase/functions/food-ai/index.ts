@@ -369,6 +369,48 @@ async function readPantry(sb: any, body: any) {
   return { items };
 }
 
+// ── Etapa 4: eating out, from a photo of the menu ──────────────────────────────────────────────
+
+const MENU_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    readable: { type: 'BOOLEAN' },
+    options: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          name: { type: 'STRING', description: 'El plato tal como figura en la carta' },
+          why: { type: 'STRING', description: 'Por qué encaja, en una frase corta en voseo' },
+          kcal_low: { type: 'NUMBER' }, kcal_high: { type: 'NUMBER' }, protein_g: { type: 'NUMBER' },
+        },
+        required: ['name', 'why', 'kcal_low', 'kcal_high', 'protein_g'],
+      },
+    },
+  },
+  required: ['readable', 'options'],
+};
+
+async function readMenu(body: any) {
+  const mime = str(body?.image?.mime, 40), data = typeof body?.image?.data === 'string' ? body.image.data : null;
+  if (!mime || !/^image\/(jpeg|png|webp|heic)$/.test(mime) || !data) throw invalid('image');
+  if (data.length * 0.75 > MAX_IMAGE_BYTES) throw invalid('image too large');
+  const kcal = num(body?.kcal_left, 0, 6000), protein = num(body?.protein_left, 0, 400);
+  const prompt =
+    'Esta es la carta de un restaurante en Argentina. Elegí los 3 platos que mejor encajan con lo que le queda a la persona hoy' +
+    (kcal != null ? ': unas ' + Math.round(kcal) + ' kcal' : '') + (protein != null ? ' y ' + Math.round(protein) + ' g de proteína' : '') + '. ' +
+    'Preferí platos con buena proteína y verduras; si conviene, sugerí un cambio simple (ej. «con ensalada en vez de papas fritas») en el motivo. ' +
+    'Dá un rango honesto de kcal por porción de restaurante. No inventes platos que no están en la carta. Si no se puede leer, readable=false.';
+  const raw = await geminiJson([{ text: prompt }, { inline_data: { mime_type: mime, data } }], MENU_SCHEMA, 0.3, 40000);
+  if (!raw?.readable) return { options: [] };
+  const options = (Array.isArray(raw.options) ? raw.options : []).slice(0, 3).flatMap((o: any) => {
+    const name = str(o?.name, 120), why = str(o?.why, 200);
+    const lo = num(o?.kcal_low, 0, 4000), hi = num(o?.kcal_high, 0, 4000), p = num(o?.protein_g, 0, 300);
+    return name && why && lo != null && hi != null && p != null ? [{ name, why, kcal_low: Math.min(lo, hi), kcal_high: Math.max(lo, hi), protein_g: p }] : [];
+  });
+  return { options };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return fail(405, 'INVALID_INPUT', 'POST only');
@@ -382,18 +424,18 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return fail(400, 'INVALID_INPUT', 'json body'); }
-  if (body?.mode === 'plan' || body?.mode === 'swap' || body?.mode === 'pantry') {
+  if (body?.mode === 'plan' || body?.mode === 'swap' || body?.mode === 'pantry' || body?.mode === 'menu') {
     const since = new Date(Date.now() - 24 * 3600_000).toISOString();
     const { count } = await admin.from('ai_requests').select('id', { count: 'exact', head: true })
       .eq('user_id', who.user.id).gte('created_at', since);
     if ((count ?? 0) >= DAILY_CAP) return fail(429, 'RATE_LIMITED', 'daily AI limit');
     try {
-      const out = body.mode === 'plan' ? await buildPlan(sb, body) : body.mode === 'swap' ? await swapMeal(sb, body) : await readPantry(sb, body);
-      await admin.from('ai_requests').insert({ user_id: who.user.id, kind: body.mode === 'pantry' ? 'pantry' : 'plan', ok: true });
+      const out = body.mode === 'plan' ? await buildPlan(sb, body) : body.mode === 'swap' ? await swapMeal(sb, body) : body.mode === 'menu' ? await readMenu(body) : await readPantry(sb, body);
+      await admin.from('ai_requests').insert({ user_id: who.user.id, kind: body.mode === 'pantry' || body.mode === 'menu' ? body.mode : 'plan', ok: true });
       return json(200, out);
     } catch (e) {
       const code = (e as { code?: string }).code ?? 'UPSTREAM';
-      await admin.from('ai_requests').insert({ user_id: who.user.id, kind: body.mode === 'pantry' ? 'pantry' : 'plan', ok: false });
+      await admin.from('ai_requests').insert({ user_id: who.user.id, kind: body.mode === 'pantry' || body.mode === 'menu' ? body.mode : 'plan', ok: false });
       if (code === 'INVALID_INPUT') return fail(400, 'INVALID_INPUT', String((e as Error).message));
       console.error('plan', code, String((e as Error).message).slice(0, 200));
       return fail(code === 'RATE_LIMITED' ? 429 : code === 'NOT_CONFIGURED' || code === 'BUSY' ? 503 : 502, code === 'UPSTREAM' ? 'INTERNAL' : code, 'ai');

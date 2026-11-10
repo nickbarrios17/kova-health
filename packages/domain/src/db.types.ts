@@ -809,6 +809,56 @@ export type Database = {
           },
         ]
       }
+      household_members: {
+        Row: {
+          household_id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          household_id: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          household_id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      households: {
+        Row: {
+          code: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       meal_events: {
         Row: {
           created_at: string
@@ -1661,11 +1711,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "shopping_items_list_id_user_id_fkey"
-            columns: ["list_id", "user_id"]
+            foreignKeyName: "shopping_items_list_fkey"
+            columns: ["list_id"]
             isOneToOne: false
             referencedRelation: "shopping_lists"
-            referencedColumns: ["id", "user_id"]
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1673,6 +1723,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           created_at: string
+          household_id: string | null
           id: string
           plan_id: string | null
           title: string
@@ -1681,6 +1732,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           created_at?: string
+          household_id?: string | null
           id?: string
           plan_id?: string | null
           title: string
@@ -1689,12 +1741,20 @@ export type Database = {
         Update: {
           archived_at?: string | null
           created_at?: string
+          household_id?: string | null
           id?: string
           plan_id?: string | null
           title?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shopping_lists_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shopping_lists_plan_id_fkey"
             columns: ["plan_id"]
@@ -2365,6 +2425,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_household: {
+        Args: { p_name: string }
+        Returns: {
+          code: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "households"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_invite: {
         Args: { p_kind: Database["public"]["Enums"]["link_kind"] }
         Returns: {
@@ -2449,6 +2525,14 @@ export type Database = {
         }[]
       }
       has_entitlement: { Args: { p_code: string }; Returns: boolean }
+      household_people: {
+        Args: never
+        Returns: {
+          me: boolean
+          name: string
+          user_id: string
+        }[]
+      }
       invite_info: {
         Args: { p_code: string }
         Returns: {
@@ -2457,6 +2541,23 @@ export type Database = {
           valid: boolean
         }[]
       }
+      join_household: {
+        Args: { p_code: string }
+        Returns: {
+          code: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "households"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      leave_household: { Args: never; Returns: undefined }
       log_bike_ride: {
         Args: {
           p_distance_m: number
