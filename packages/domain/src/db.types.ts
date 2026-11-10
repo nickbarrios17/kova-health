@@ -430,6 +430,45 @@ export type Database = {
           },
         ]
       }
+      food_preferences: {
+        Row: {
+          allergies: string[]
+          budget_week_ars: number | null
+          cook_minutes: number
+          diet: Database["public"]["Enums"]["diet_style"]
+          dislikes: string[]
+          meals_per_day: number
+          notes: string | null
+          people: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: string[]
+          budget_week_ars?: number | null
+          cook_minutes?: number
+          diet?: Database["public"]["Enums"]["diet_style"]
+          dislikes?: string[]
+          meals_per_day?: number
+          notes?: string | null
+          people?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          allergies?: string[]
+          budget_week_ars?: number | null
+          cook_minutes?: number
+          diet?: Database["public"]["Enums"]["diet_style"]
+          dislikes?: string[]
+          meals_per_day?: number
+          notes?: string | null
+          people?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       foods: {
         Row: {
           archived_at: string | null
@@ -767,6 +806,33 @@ export type Database = {
           },
         ]
       }
+      meal_events: {
+        Row: {
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["meal_event_kind"]
+          local_date: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["meal_event_kind"]
+          local_date: string
+          note?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["meal_event_kind"]
+          local_date?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_items: {
         Row: {
           carbs_g: number
@@ -868,6 +934,95 @@ export type Database = {
             referencedColumns: ["id", "user_id"]
           },
         ]
+      }
+      meal_plan_items: {
+        Row: {
+          carbs_g: number
+          created_at: string
+          fat_g: number
+          id: string
+          ingredients: Json
+          kcal: number
+          local_date: string
+          logged_at: string | null
+          minutes: number | null
+          plan_id: string
+          protein_g: number
+          slot: Database["public"]["Enums"]["meal_slot"]
+          steps: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          carbs_g: number
+          created_at?: string
+          fat_g: number
+          id?: string
+          ingredients: Json
+          kcal: number
+          local_date: string
+          logged_at?: string | null
+          minutes?: number | null
+          plan_id: string
+          protein_g: number
+          slot: Database["public"]["Enums"]["meal_slot"]
+          steps?: string | null
+          title: string
+          user_id?: string
+        }
+        Update: {
+          carbs_g?: number
+          created_at?: string
+          fat_g?: number
+          id?: string
+          ingredients?: Json
+          kcal?: number
+          local_date?: string
+          logged_at?: string | null
+          minutes?: number | null
+          plan_id?: string
+          protein_g?: number
+          slot?: Database["public"]["Enums"]["meal_slot"]
+          steps?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_items_plan_id_user_id_fkey"
+            columns: ["plan_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      meal_plans: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          targets: Json
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          targets?: Json
+          user_id?: string
+          week_start: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          targets?: Json
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
       }
       meals: {
         Row: {
@@ -2560,6 +2715,7 @@ export type Database = {
         | "wear_os"
         | "import"
       device_kind: "web" | "mobile" | "watch"
+      diet_style: "omnivora" | "vegetariana" | "vegana" | "sin_tacc"
       exercise_category:
         | "strength"
         | "cardio"
@@ -2589,6 +2745,7 @@ export type Database = {
         | "mood"
         | "stress"
       link_kind: "coach" | "friend"
+      meal_event_kind: "asado" | "salida" | "cumple" | "otro"
       meal_slot: "breakfast" | "lunch" | "afternoon_snack" | "dinner" | "snack"
       measurement_type:
         | "weight_reps"
@@ -2763,6 +2920,7 @@ export const Constants = {
         "import",
       ],
       device_kind: ["web", "mobile", "watch"],
+      diet_style: ["omnivora", "vegetariana", "vegana", "sin_tacc"],
       exercise_category: [
         "strength",
         "cardio",
@@ -2795,6 +2953,7 @@ export const Constants = {
         "stress",
       ],
       link_kind: ["coach", "friend"],
+      meal_event_kind: ["asado", "salida", "cumple", "otro"],
       meal_slot: ["breakfast", "lunch", "afternoon_snack", "dinner", "snack"],
       measurement_type: [
         "weight_reps",
