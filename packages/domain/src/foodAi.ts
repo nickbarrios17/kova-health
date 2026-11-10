@@ -39,9 +39,18 @@ export function scaleFood(f: Pick<CatalogFood, 'ref_amount' | 'kcal' | 'protein_
   return { kcal: Math.round(f.kcal * k), protein_g: r1(f.protein_g * k), carbs_g: r1(f.carbs_g * k), fat_g: r1(f.fat_g * k) };
 }
 
-/** A catalog candidate is used only when it is measured by weight or volume (grams are comparable). */
+/**
+ * The catalog food picked by default: measured by weight or volume, and with calories for those grams
+ * close to the AI estimate (within 1.6 times either way, or 100 kcal). A far-off match («Manteca» for
+ * «2 medialunas») is still offered as an option, but never chosen on its own.
+ */
 export function usableCandidate(item: DescribedItem): CatalogFood | null {
-  return item.candidates.find((c) => c.ref_unit === 'g' || c.ref_unit === 'ml') ?? null;
+  const mid = (item.kcal_low + item.kcal_high) / 2;
+  return item.candidates.find((c) => {
+    if (c.ref_unit !== 'g' && c.ref_unit !== 'ml') return false;
+    const kcal = (c.kcal * item.grams) / c.ref_amount;
+    return Math.abs(kcal - mid) <= 100 || (kcal >= mid / 1.6 && kcal <= mid * 1.6);
+  }) ?? null;
 }
 
 /** «≈ 550–700 kcal», rounded to tens, or a single number when the range is tight. */

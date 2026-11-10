@@ -12,10 +12,19 @@ describe('food AI helpers', () => {
       .toEqual({ kcal: 248, protein_g: 46.5, carbs_g: 0, fat_g: 5.4 });
   });
 
-  it('uses only weight-based candidates', () => {
-    const c = { id: 'a', name: 'X', ref_amount: 1, ref_unit: 'serving' as const, data_source: 'user' as const, kcal: 1, protein_g: 0, carbs_g: 0, fat_g: 0 };
-    expect(usableCandidate(item({ candidates: [c] }))).toBeNull();
-    expect(usableCandidate(item({ candidates: [c, { ...c, id: 'b', ref_unit: 'g', ref_amount: 100 }] }))?.id).toBe('b');
+  it('picks a weight-based candidate whose calories match the estimate', () => {
+    const base = { ref_amount: 100, data_source: 'verified' as const, protein_g: 0, carbs_g: 0, fat_g: 0 };
+    const serving = { ...base, id: 'a', name: 'X', ref_amount: 1, ref_unit: 'serving' as const, kcal: 300 };
+    const empanada = { ...base, id: 'b', name: 'Empanada de carne', ref_unit: 'g' as const, kcal: 300 };
+    expect(usableCandidate(item({ candidates: [serving] }))).toBeNull();
+    // 170 g × 3 kcal/g = 510 kcal, inside the 480–620 estimate.
+    expect(usableCandidate(item({ candidates: [serving, empanada] }))?.id).toBe('b');
+    // «2 medialunas» (≈ 100 g, 330–420 kcal) must not become 100 g of butter (717 kcal).
+    const manteca = { ...base, id: 'm', name: 'Manteca', ref_unit: 'g' as const, kcal: 717 };
+    const medialuna = { ...base, id: 'c', name: 'Medialuna / croissant', ref_unit: 'g' as const, kcal: 406 };
+    const medialunas = item({ name: 'Medialunas', grams: 100, kcal_low: 330, kcal_high: 420, candidates: [manteca, medialuna] });
+    expect(usableCandidate(medialunas)?.id).toBe('c');
+    expect(usableCandidate({ ...medialunas, candidates: [manteca] })).toBeNull();
   });
 
   it('shows the estimate as a range, and its middle when saved', () => {
