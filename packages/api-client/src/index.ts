@@ -39,6 +39,7 @@ import { withRetry, type RetryOptions } from './retry.js';
 import { createAdmin } from './admin.js';
 import { createFeedback } from './feedback.js';
 import { createCycling } from './cycling.js';
+import { createFood } from './food.js';
 import { createPeople } from './people.js';
 import { createTracking } from './tracking.js';
 export type { EnergyToday } from './tracking.js';
@@ -48,6 +49,7 @@ export { withRetry } from './retry.js';
 export { inviteCode, type CoachRoutine } from './people.js';
 export * from './outbox.js';
 export type { MySafetyReport, Place, PlannedRoutes, SavedRoute } from './cycling.js';
+export type { Described, ImageInput, OffProduct, ReadLabel } from './food.js';
 
 export interface KovaClientOptions {
   url: string;
@@ -354,6 +356,7 @@ export function createKovaClient(opts: KovaClientOptions) {
   const tracking = createTracking({ sb, call, rpc, idempotent, parse, uid });
   const feedback = createFeedback({ sb, rpc, call });
   const cycling = createCycling({ sb, call, toKovaError });
+  const food = createFood({ sb, call, toKovaError });
   const admin = createAdmin({ rpc });
   const people = createPeople({ rpc });
 
@@ -398,6 +401,7 @@ export function createKovaClient(opts: KovaClientOptions) {
     ...tracking,
     feedback,
     cycling,
+    food,
     admin,
     people,
     sync,

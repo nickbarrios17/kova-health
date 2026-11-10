@@ -70,10 +70,13 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
   const nutrition = {
     /** Catalog + own foods, by name. Each row carries `data_source` so the UI can label estimates. */
     searchFoods: (q: string, limit = 30) =>
-      call(
-        sb.from('foods').select('*').is('archived_at', null)
-          .ilike('name', `%${escapeLike(q.trim().slice(0, 80))}%`).order('name').limit(Math.min(limit, 100)),
-      ),
+      // Accent- and typo-tolerant ("pure" finds "Puré"), own foods first (search_foods).
+      rpc<Array<any>>('search_foods', { p_q: q.trim().slice(0, 80), p_limit: Math.min(limit, 100) }),
+    /** Household portions of these foods («1 taza», «1 empanada») with their grams. */
+    portions: (foodIds: string[]) =>
+      foodIds.length
+        ? call(sb.from('food_portions').select('food_id, label, grams').in('food_id', foodIds.slice(0, 100)).order('grams'))
+        : Promise.resolve([]),
     /** Idempotent on input.id. */
     createFood: async (input: FoodCreate) => {
       const f = parse(FoodCreateSchema, input);
@@ -91,6 +94,7 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
           p_food_id: l.food_id ?? null, p_recipe_id: l.recipe_id ?? null, p_name: l.name ?? null,
           p_kcal: l.kcal ?? null, p_protein_g: l.protein_g ?? null, p_carbs_g: l.carbs_g ?? null,
           p_fat_g: l.fat_g ?? null, p_logged_at: l.logged_at ?? null, p_device_id: l.device_id ?? null,
+          p_estimated: l.estimated ?? false,
         }),
       );
     },

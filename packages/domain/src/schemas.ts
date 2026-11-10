@@ -273,6 +273,8 @@ export const LogFoodSchema = z
     fat_g: grams.nullish(),
     logged_at: isoTs.nullish(),
     device_id: uuid.nullish(),
+    /** Manual entry that is an AI estimate the person confirmed (saved as 'estimated'). */
+    estimated: z.boolean().optional(),
   })
   .refine((l) => [l.food_id, l.recipe_id, l.name].filter((x) => x != null).length === 1, {
     message: 'Give exactly one of food_id, recipe_id or a manual entry',
