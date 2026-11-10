@@ -5,9 +5,9 @@
 import { AISLE_ORDER, buildShoppingList, lineAmount, weekStartOf, KovaError } from '@kova/domain';
 import type { Pantry, ShoppingList } from '@kova/api-client';
 import * as ImagePicker from 'expo-image-picker';
-import { Basket, Camera, Check, House, Plus, ShoppingCart, Trash, X } from 'phosphor-react-native';
+import { Basket, Camera, Check, House, Plus, ShareNetwork, ShoppingCart, Trash, UsersThree, X } from 'phosphor-react-native';
 import { useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Share, View } from 'react-native';
 import { kova } from '../client';
 import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
@@ -32,9 +32,12 @@ export function ShoppingCard({ today }: { today: string }) {
   const [pantryOpen, setPantryOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [houseOpen, setHouseOpen] = useState(false);
   const q = useAsync(async () => {
-    const [list, plan, pantry] = await Promise.all([kova.food.shopping.current(), kova.food.plan.get(weekStart), kova.food.pantry.list()]);
-    return { list, plan, pantry };
+    const [list, plan, pantry, house] = await Promise.all([
+      kova.food.shopping.current(), kova.food.plan.get(weekStart), kova.food.pantry.list(), kova.food.household.get().catch(() => null),
+    ]);
+    return { list, plan, pantry, house };
   }, [weekStart]);
 
   const build = async () => {
@@ -43,9 +46,11 @@ export function ShoppingCard({ today }: { today: string }) {
     try {
       const plan = q.data?.plan;
       if (!plan) throw new KovaError('INVALID_INPUT', 'Primero armá tu semana.');
-      const foods = await kova.food.catalogShop();
-      // From today to the end of the week, without the meals already eaten.
-      const ingredients = plan.items.filter((m) => m.local_date >= today && !m.logged_at).flatMap((m) => m.ingredients);
+      const [foods, prefs] = await Promise.all([kova.food.catalogShop(), kova.food.preferences.get()]);
+      // From today to the end of the week, without the meals already eaten; portions for everyone at home.
+      const people = prefs?.people ?? 1;
+      const ingredients = plan.items.filter((m) => m.local_date >= today && !m.logged_at).flatMap((m) => m.ingredients)
+        .map((i) => ({ ...i, grams: i.grams * people }));
       const lines = buildShoppingList(ingredients, foods, (q.data?.pantry ?? []).map((p) => ({ name: p.name, grams: p.grams })));
       await kova.food.shopping.create('Compras de la semana', lines, plan.id);
       q.reload();
@@ -58,15 +63,20 @@ export function ShoppingCard({ today }: { today: string }) {
   };
 
   if (q.loading && !q.data) return <Skeleton height={120} radius={rad.sheet} />;
-  const { list, plan, pantry } = q.data ?? { list: null, plan: null, pantry: [] as Pantry[] };
+  const { list, plan, pantry, house } = q.data ?? { list: null, plan: null, pantry: [] as Pantry[], house: null };
+  const others = house?.people.filter((p) => !p.me).map((p) => p.name) ?? [];
   const done = list?.items.filter((i) => i.checked_at).length ?? 0;
 
   return (
     <View style={{ padding: 16, borderRadius: rad.sheet, backgroundColor: c.surface, gap: 10 }}>
       <Row style={{ justifyContent: 'space-between' }}>
         <T size={17} w="semibold" accessibilityRole="header">Compras</T>
-        <Button variant="text" label={'En casa' + (pantry.length ? ' (' + pantry.length + ')' : '')} icon={House} onPress={() => setPantryOpen(true)} />
+        <Row style={{ gap: 0 }}>
+          <Button variant="text" label={'En casa' + (pantry.length ? ' (' + pantry.length + ')' : '')} icon={House} onPress={() => setPantryOpen(true)} />
+          <Button variant="text" label="" icon={UsersThree} onPress={() => setHouseOpen(true)} accessibilityLabel="Compartir la lista con tu casa" />
+        </Row>
       </Row>
+      {others.length ? <T size={12} color={c.n400}>Compartida con {others.join(', ')}</T> : null}
       {list ? (
         <>
           <T size={14} color={c.n400}>{list.items.length} cosas por comprar · {done} en el carrito</T>
@@ -87,6 +97,7 @@ export function ShoppingCard({ today }: { today: string }) {
       {error ? <Banner tone="crit" text={error} /> : null}
       {open && list ? <ListModal list={list} onClose={() => { setOpen(false); q.reload(); }} /> : null}
       {pantryOpen ? <PantrySheet items={pantry} onClose={() => setPantryOpen(false)} onChanged={q.reload} /> : null}
+      {houseOpen ? <HouseSheet house={house} onClose={() => setHouseOpen(false)} onChanged={q.reload} /> : null}
     </View>
   );
 }
@@ -244,6 +255,46 @@ function PantrySheet({ items, onClose, onChanged }: { items: Pantry[]; onClose: 
         )}
         {error ? <Banner tone="warn" text={error} /> : null}
       </ScrollView>
+    </Sheet>
+  );
+}
+
+type House = { id: string; name: string; code: string; people: Array<{ user_id: string; name: string; me: boolean }> } | null;
+
+function HouseSheet({ house, onClose, onChanged }: { house: House; onClose: () => void; onChanged: () => void }) {
+  const [name, setName] = useState('Mi casa');
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const run = async (fn: () => Promise<unknown>) => {
+    setBusy(true);
+    setError(null);
+    try { await fn(); onChanged(); } catch (e) { setError(msg(e)); } finally { setBusy(false); }
+  };
+  return (
+    <Sheet visible onClose={onClose} title="Tu casa">
+      <T size={14} color={c.n400}>Con tu casa comparten la lista de compras: cualquiera la ve, tilda y agrega. El resto de tus datos sigue siendo tuyo.</T>
+      {house ? (
+        <View style={{ gap: 10 }}>
+          <T size={15} w="semibold">{house.name}</T>
+          {house.people.map((p) => <T key={p.user_id} size={14}>· {p.name}{p.me ? ' (vos)' : ''}</T>)}
+          <View style={{ padding: 12, borderRadius: rad.card, backgroundColor: c.raised, gap: 4 }}>
+            <T size={13} color={c.n400}>Código para sumar a alguien (se usa una vez)</T>
+            <T size={24} w="semibold" style={{ letterSpacing: 4 }}>{house.code}</T>
+          </View>
+          <Button label="Compartir el código" icon={ShareNetwork} onPress={() => Share.share({ message: 'Sumate a mi casa en Kova Health con este código: ' + house.code })} />
+          <Button variant="danger" label="Salir de la casa" onPress={() => run(() => kova.food.household.leave())} busy={busy} />
+        </View>
+      ) : (
+        <View style={{ gap: 10 }}>
+          <Field label="Nombre de la casa" value={name} onChangeText={setName} />
+          <Button large label="Crear mi casa" icon={House} onPress={() => run(() => kova.food.household.create(name))} busy={busy} />
+          <T size={13} color={c.n400} style={{ textAlign: 'center' }}>o</T>
+          <Field label="Tengo un código" value={code} onChangeText={(t) => setCode(t.toUpperCase().slice(0, 6))} autoCapitalize="characters" placeholder="Ej.: K7MQ2X" />
+          <Button variant="secondary" label="Sumarme" onPress={() => run(() => kova.food.household.join(code))} busy={busy} disabled={code.length !== 6} />
+        </View>
+      )}
+      {error ? <Banner tone="crit" text={error} /> : null}
     </Sheet>
   );
 }

@@ -4,9 +4,9 @@
  */
 import { addDays, isoWeekday, MEAL_SLOTS, newId, nf, weekStartOf, weekTargets, KovaError, type DayTarget } from '@kova/domain';
 import type { FoodPreferences, MealEvent, MealPlan, PlanMeal } from '@kova/api-client';
-import { ArrowsClockwise, CalendarPlus, Check, ForkKnife, GearSix, Sparkle } from 'phosphor-react-native';
-import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ArrowsClockwise, CalendarPlus, Check, CookingPot, ForkKnife, GearSix, Pause, Play, Sparkle, X } from 'phosphor-react-native';
+import { useEffect, useState } from 'react';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { kova, outbox } from '../client';
 import { c, rad } from '../theme';
 import { loadTraining } from '../training';
@@ -42,6 +42,7 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [eventOpen, setEventOpen] = useState(false);
   const [open, setOpen] = useState<PlanMeal | null>(null);
+  const [cook, setCook] = useState(false);
 
   const q = useAsync(async () => {
     const [prefs, plan, events] = await Promise.all([
@@ -151,7 +152,10 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
               ) : null}
             </View>
           ))}
-          <Button variant="text" label="Rehacer la semana" icon={Sparkle} onPress={generate} busy={busy === 'plan'} style={{ alignSelf: 'flex-start' }} />
+          <Row style={{ gap: 4, flexWrap: 'wrap' }}>
+            <Button variant="secondary" label="Cocinar para varios días" icon={CookingPot} onPress={() => setCook(true)} />
+            <Button variant="text" label="Rehacer la semana" icon={Sparkle} onPress={generate} busy={busy === 'plan'} />
+          </Row>
         </>
       )}
       {error ? <Banner tone="crit" text={error} /> : null}
@@ -159,6 +163,7 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
 
       {prefsOpen ? <PrefsSheet initial={prefs ?? DEFAULT_PREFS} onClose={() => setPrefsOpen(false)} onSaved={() => { setPrefsOpen(false); q.reload(); }} /> : null}
       {eventOpen ? <EventSheet weekStart={weekStart} today={today} events={events} onClose={() => setEventOpen(false)} onChanged={() => q.reload()} hasPlan={!!plan} onRedo={() => { setEventOpen(false); generate(); }} /> : null}
+      {cook && plan ? <CookSession plan={plan} today={today} onClose={() => setCook(false)} /> : null}
       <Sheet visible={!!open} onClose={() => setOpen(null)} title={open?.title ?? ''}>
         {open ? <MealDetail meal={open} /> : null}
       </Sheet>
@@ -275,5 +280,79 @@ function EventSheet({ weekStart, today, events, onClose, onChanged, hasPlan, onR
         <Button large label="Agregar" icon={CalendarPlus} onPress={add} busy={busy} disabled={!days.length} />
       )}
     </Sheet>
+  );
+}
+
+/**
+ * «Cocinar para varios días»: the lunches and dinners of the next days, the ingredients all together,
+ * a timer per dish and, at the end, which container goes to which day.
+ */
+function CookSession({ plan, today, onClose }: { plan: MealPlan; today: string; onClose: () => void }) {
+  const [days, setDays] = useState(3);
+  const [done, setDone] = useState<Record<string, boolean>>({});
+  const [timer, setTimer] = useState<{ id: string; left: number; running: boolean } | null>(null);
+  const meals = plan.items
+    .filter((m) => m.local_date >= today && m.local_date < addDays(today, days) && (m.slot === 'lunch' || m.slot === 'dinner') && !m.logged_at)
+    .sort((a, b) => a.local_date.localeCompare(b.local_date) || (a.slot === 'lunch' ? 0 : 1) - (b.slot === 'lunch' ? 0 : 1));
+  const names = useAsync(async () => {
+    const ids = [...new Set(meals.flatMap((m) => m.ingredients.map((i) => i.food_id)))];
+    return new Map(((await kova.food.foodsByIds(ids)) as Array<{ id: string; name: string }>).map((r) => [r.id, r.name]));
+  }, [days, plan.id]);
+  const totals = new Map<string, number>();
+  for (const m of meals) for (const i of m.ingredients) totals.set(i.food_id, (totals.get(i.food_id) ?? 0) + i.grams);
+
+  useEffect(() => {
+    if (!timer?.running) return;
+    const iv = setInterval(() => setTimer((t) => (t && t.running ? (t.left <= 1 ? { ...t, left: 0, running: false } : { ...t, left: t.left - 1 }) : t)), 1000);
+    return () => clearInterval(iv);
+  }, [timer?.running]);
+  const clock = (s: number) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  const allDone = meals.length > 0 && meals.every((m) => done[m.id]);
+
+  return (
+    <Modal animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: c.bg }}>
+        <Row style={{ padding: 12 }}>
+          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
+          <T size={17} w="semibold" style={{ flex: 1 }}>Cocinar para varios días</T>
+        </Row>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14 }}>
+          <Row style={{ gap: 6, flexWrap: 'wrap' }}>
+            {[2, 3, 4, 5].map((n) => <Chip key={n} label={n + ' días'} selected={days === n} onPress={() => setDays(n)} />)}
+          </Row>
+          {!meals.length ? <T size={14} color={c.n400}>No quedan almuerzos ni cenas para esos días.</T> : null}
+          {meals.length ? (
+            <View style={{ padding: 14, borderRadius: rad.card, backgroundColor: c.surface, gap: 4 }}>
+              <T size={15} w="semibold">Todo junto</T>
+              {[...totals.entries()].map(([id, g]) => <T key={id} size={14} color={c.n400}>· {names.data?.get(id) ?? 'Ingrediente'}: {nf(g, 0)} g</T>)}
+            </View>
+          ) : null}
+          {meals.map((m) => (
+            <View key={m.id} style={{ padding: 14, borderRadius: rad.card, backgroundColor: c.surface, gap: 6, opacity: done[m.id] ? 0.6 : 1 }}>
+              <T size={12} color={c.n400}>{DAY_LETTER[isoWeekday(m.local_date) - 1]} {Number(m.local_date.slice(8))} · {SLOT_LABEL[m.slot]}{m.minutes ? ' · ' + m.minutes + ' min' : ''}</T>
+              <T size={15} w="semibold">{m.title}</T>
+              {m.steps ? <T size={13} color={c.n400}>{m.steps}</T> : null}
+              <Row style={{ gap: 8 }}>
+                {m.minutes ? (
+                  timer?.id === m.id ? (
+                    <Button variant="secondary" label={(timer.left === 0 ? '¡Listo! ' : '') + clock(timer.left)} icon={timer.running ? Pause : Play}
+                      onPress={() => setTimer({ ...timer, running: !timer.running && timer.left > 0 })} accessibilityLabel={'Temporizador ' + clock(timer.left)} />
+                  ) : (
+                    <Button variant="secondary" label={'Temporizador ' + m.minutes + ' min'} icon={Play} onPress={() => setTimer({ id: m.id, left: (m.minutes ?? 0) * 60, running: true })} />
+                  )
+                ) : null}
+                <Button label={done[m.id] ? 'Hecho' : 'Listo'} icon={Check} variant={done[m.id] ? 'secondary' : 'primary'} onPress={() => setDone((cur) => ({ ...cur, [m.id]: !cur[m.id] }))} />
+              </Row>
+            </View>
+          ))}
+          {allDone ? (
+            <View style={{ padding: 14, borderRadius: rad.card, backgroundColor: c.okSoft, gap: 4 }}>
+              <T size={15} w="semibold" color={c.ok}>✓ Repartí en táperes</T>
+              {meals.map((m, k) => <T key={m.id} size={14}>Táper {k + 1}: {DAY_LETTER[isoWeekday(m.local_date) - 1]} {Number(m.local_date.slice(8))}, {SLOT_LABEL[m.slot].toLowerCase()} · {m.title}</T>)}
+            </View>
+          ) : null}
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
