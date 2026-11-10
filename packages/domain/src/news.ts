@@ -20,6 +20,14 @@ export interface NewsDay {
 
 export const NEWS: NewsDay[] = [
   {
+    date: '2026-11-11',
+    items: [
+      { title: 'Tu semana de comidas', body: 'En Comida, Kova te arma las comidas de la semana con platos caseros, alrededor de tus entrenamientos: más carbohidratos los días de fuerza. Tocá «Lo comí» para registrarla o «Cambiar» si no te tienta.' },
+      { title: 'Modo asado', body: '¿Tenés un asado o una salida? Marcalo en «Tu semana»: ese día suma lo que suele traer y el resto de la semana lo compensa un poco, sin pasarse.' },
+      { title: 'Comida para entrenar y para la bici', body: 'En Hoy te decimos qué comer antes y después de tu rutina. En Ciclismo, cuánto gasta la vuelta, qué llevar y cuánta agua.' },
+    ],
+  },
+  {
     date: '2026-11-10',
     items: [
       { title: 'Contame qué comiste', body: 'En Comida, escribí o dictá lo que comiste («2 empanadas y una ensalada») o sacale una foto al plato, y te lo cargamos. Revisás cada cosa antes de guardar; lo que es estimado queda marcado así.' },
