@@ -1877,6 +1877,30 @@ export type Database = {
         }
         Relationships: []
       }
+      water_logs: {
+        Row: {
+          created_at: string
+          id: string
+          local_date: string
+          ml: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          local_date: string
+          ml: number
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          local_date?: string
+          ml?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       workout_session_exercises: {
         Row: {
           created_at: string
@@ -2657,6 +2681,17 @@ export type Database = {
           share_body: boolean
           share_health: boolean
           share_nutrition: boolean
+        }[]
+      }
+      person_meal_plan: {
+        Args: { p_owner: string; p_week_start: string }
+        Returns: {
+          kcal: number
+          local_date: string
+          logged_at: string
+          protein_g: number
+          slot: Database["public"]["Enums"]["meal_slot"]
+          title: string
         }[]
       }
       record_body_measurements: { Args: { p_rows: Json }; Returns: number }

@@ -63,5 +63,10 @@ export function createPeople({ rpc }: PeopleDeps) {
       });
     },
     deleteRoutine: (ownerId: string, routineId: string) => rpc<null>('coach_delete_routine', { p_owner: ownerId, p_id: routineId }),
+    /** The student's meal plan for a week ([] unless they share their nutrition with you). */
+    mealPlan: async (ownerId: string, weekStart: string) =>
+      (await rpc<Array<{ local_date: string; slot: string; title: string; kcal: number; protein_g: number; logged_at: string | null }>>(
+        'person_meal_plan', { p_owner: ownerId, p_week_start: weekStart },
+      )).map((r) => ({ ...r, kcal: Number(r.kcal), protein_g: Number(r.protein_g) })),
   };
 }

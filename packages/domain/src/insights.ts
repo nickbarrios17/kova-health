@@ -40,6 +40,8 @@ export interface DaySummary {
   steps: number | null;
   sleep_min: number | null;
   mood: number | null;
+  /** Hour (0–24, local) of the last food logged at dinner, when there is one. */
+  dinner_hour?: number | null;
 }
 
 export interface HabitDayLite {
@@ -121,6 +123,56 @@ function sleepMood(days: DaySummary[]): Insight | null {
       : `Dormir poco podría estar relacionado con tu ánimo: ${es(mean(short))} frente a ${es(mean(good))} sobre 5, con pocos días todavía.`,
     detail: `Comparación de ${short.length} días con poco sueño y ${good.length} con 7 h o más. Es una asociación en tus datos, no una causa.`,
     severity: 1, actionable: false, support: { shortN: short.length, goodN: good.length, shortMood: r1(mean(short)), goodMood: r1(mean(good)) }, score: 0,
+  };
+}
+
+/** Pattern: late dinners and the sleep of that night (sleep is recorded on the next day's row). */
+function lateDinnerSleep(days: DaySummary[]): Insight | null {
+  const late: number[] = [], early: number[] = [];
+  days.forEach((d, i) => {
+    const next = days[i + 1];
+    if (d.dinner_hour == null || !next || next.sleep_min == null) return;
+    if (d.dinner_hour >= 23) late.push(next.sleep_min);
+    else if (d.dinner_hour < 21.5) early.push(next.sleep_min);
+  });
+  const n = Math.min(late.length, early.length);
+  if (n < 3) return null;
+  const diff = mean(early) - mean(late);
+  const ev = evidenceFor(n, diff, 20);
+  if (ev === 'insufficient') return null;
+  const kind: InsightKind = ev === 'weak' ? 'hypothesis' : 'pattern';
+  const mins = Math.round(Math.abs(diff));
+  return {
+    key: 'late-dinner-sleep', kind, evidence: ev, domains: ['nutrition', 'sleep'],
+    title: kind === 'pattern'
+      ? `Las noches que cenaste después de las 23, dormiste ${mins} min ${diff > 0 ? 'menos' : 'más'} que cuando cenaste antes de las 21:30.`
+      : `Cenar tarde podría estar relacionado con cuánto dormís: ${mins} min de diferencia, con pocas noches todavía.`,
+    detail: `Comparación de ${late.length} cenas tarde y ${early.length} temprano con el sueño de esa noche. Es una asociación en tus datos, no una causa.`,
+    severity: 1, actionable: true, support: { lateN: late.length, earlyN: early.length, lateSleep: Math.round(mean(late)), earlySleep: Math.round(mean(early)) }, score: 0,
+  };
+}
+
+/** Pattern: days with little protein (under 60 % of the goal) and the mood of those days. */
+function lowProteinMood(days: DaySummary[]): Insight | null {
+  const low: number[] = [], ok: number[] = [];
+  for (const d of days) {
+    if (d.protein_g == null || !d.protein_goal_g || d.mood == null) continue;
+    if (d.protein_g < d.protein_goal_g * 0.6) low.push(d.mood);
+    else if (d.protein_g >= d.protein_goal_g * 0.9) ok.push(d.mood);
+  }
+  const n = Math.min(low.length, ok.length);
+  if (n < 3) return null;
+  const diff = mean(ok) - mean(low);
+  const ev = evidenceFor(n, diff, 0.5);
+  if (ev === 'insufficient') return null;
+  const kind: InsightKind = ev === 'weak' ? 'hypothesis' : 'pattern';
+  return {
+    key: 'protein-mood', kind, evidence: ev, domains: ['nutrition', 'mood'],
+    title: kind === 'pattern'
+      ? `Los días que comiste poca proteína, tu ánimo fue ${diff > 0 ? 'más bajo' : 'más alto'} (${es(mean(low))} frente a ${es(mean(ok))} sobre 5).`
+      : `Comer poca proteína podría estar relacionado con tu ánimo: ${es(mean(low))} frente a ${es(mean(ok))} sobre 5, con pocos días todavía.`,
+    detail: `Comparación de ${low.length} días con menos del 60 % de tu proteína y ${ok.length} cerca de tu meta. Es una asociación en tus datos, no una causa.`,
+    severity: 1, actionable: false, support: { lowN: low.length, okN: ok.length, lowMood: r1(mean(low)), okMood: r1(mean(ok)) }, score: 0,
   };
 }
 
@@ -210,7 +262,7 @@ export function generateInsights(
   shownCounts: Record<string, number> = {},
   limit = 5,
 ): Insight[] {
-  const found = [trainingWeek(days), proteinGoal(days), sleepMood(days), weakWeekday(habitDays), weightTrend(days), missingSleep(days)]
+  const found = [trainingWeek(days), proteinGoal(days), sleepMood(days), weakWeekday(habitDays), weightTrend(days), missingSleep(days), lateDinnerSleep(days), lowProteinMood(days)]
     .filter((x): x is Insight => x != null && x.evidence !== 'insufficient');
   return found
     .map((i) => ({ ...i, score: Math.round(scoreInsight(i, shownCounts[i.key] ?? 0) * 100) / 100 }))
