@@ -6,6 +6,7 @@ import {
 import { useState } from 'react';
 import { EmptyState, ErrorNotice, Loading } from '@/components/EmptyState';
 import { FoodAssistant } from '@/components/FoodAssistant';
+import { MealWeek } from '@/components/MealWeek';
 import { kova } from '@/lib/client';
 import { seg } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -56,6 +57,7 @@ export default function ComidaPage() {
         ))}
       </div>
       <FoodAssistant day={day} onLogged={q.reload} />
+      {day === today && <MealWeek today={today} onLogged={q.reload} />}
       <div style={{ padding: '18px 20px', borderRadius: 'var(--kova-radius-xl)', background: 'var(--color-surface)', display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
           <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-neutral-300)' }}>Calorías</span>
