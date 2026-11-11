@@ -35,11 +35,46 @@ const fold = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,
 /** «Pan francés» from «Pan francés», «Papa» from «Papa (cruda)». */
 const baseName = (f: ShopFood) => f.shop?.name ?? f.name.replace(/\s*\(.*\)\s*$/, '');
 
+const stemEq = (a: string, b: string) => a === b || (a.startsWith(b) && a.length - b.length <= 2) || (b.startsWith(a) && b.length - a.length <= 2);
+const nameWords = (x: string) => fold(x).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 2 || /^(aji|te|ajo)$/.test(w));
+
+/**
+ * What you wrote you have at home is this list line: the same name, or the same words allowing plurals
+ * and a missing detail («pechugas de pollo» ↔ «Pechuga de pollo», «morrón» ↔ «Morrón rojo»), always
+ * starting with the same food word («Leche» is not «Dulce de leche»).
+ */
+export function pantryMatches(pantryName: string, lineName: string): boolean {
+  if (fold(pantryName) === fold(lineName)) return true;
+  const pw = nameWords(pantryName), lw = nameWords(lineName);
+  if (!pw.length || !lw.length || !stemEq(pw[0]!, lw[0]!)) return false;
+  return pw.every((w) => lw.some((x) => stemEq(w, x))) && lw.length - pw.length <= 1;
+}
+
+export interface ShoppingPlan {
+  lines: ShoppingLine[];
+  /** What you have at home that the week uses (by the name you gave it). */
+  fromHome: string[];
+  /** What you have at home that this week does not use. */
+  unused: string[];
+}
+
+/** The list for the week, and which of the things at home it uses. */
+export function shoppingFromPlan(ingredients: PlanIngredient[], foods: ShopFood[], pantry: PantryItem[] = []): ShoppingPlan {
+  const used = new Set<number>();
+  const lines = listLines(ingredients, foods, pantry, used);
+  return { lines, fromHome: pantry.filter((_, k) => used.has(k)).map((p) => p.name), unused: pantry.filter((_, k) => !used.has(k)).map((p) => p.name) };
+}
+
 /**
  * Lines of the list. Foods without shopping info go to «Otros» by their name. A pantry entry with grams
- * subtracts them; without grams it means «tengo» and the line goes away.
+ * subtracts them; without grams it means «tengo» and the line goes away. Having a dish at home
+ * («milanesas») covers the dish: its ingredients are not added.
  */
 export function buildShoppingList(ingredients: PlanIngredient[], foods: ShopFood[], pantry: PantryItem[] = []): ShoppingLine[] {
+  return listLines(ingredients, foods, pantry, new Set());
+}
+
+function listLines(ingredients: PlanIngredient[], foods: ShopFood[], pantry: PantryItem[], used: Set<number>): ShoppingLine[] {
   const byId = new Map(foods.map((f) => [f.id, f]));
   const byName = new Map(foods.map((f) => [f.name, f]));
   const acc = new Map<string, { name: string; aisle: string; grams: number; pkg?: number; label?: string }>();
@@ -47,6 +82,8 @@ export function buildShoppingList(ingredients: PlanIngredient[], foods: ShopFood
   const add = (f: ShopFood, grams: number, depth = 0) => {
     const s = f.shop;
     if (s?.parts && depth < 2) {
+      const have = pantry.findIndex((p) => pantryMatches(p.name, f.name) || pantryMatches(p.name, baseName(f)));
+      if (have >= 0) { used.add(have); return; }
       for (const p of s.parts) {
         const part = byName.get(p.name);
         if (part) add(part, grams * p.share, depth + 1);
@@ -64,12 +101,14 @@ export function buildShoppingList(ingredients: PlanIngredient[], foods: ShopFood
     if (f && ing.grams > 0) add(f, ing.grams);
   }
 
-  for (const p of pantry) {
-    const cur = acc.get(fold(p.name));
-    if (!cur) continue;
-    if (p.grams == null) acc.delete(fold(p.name));
+  pantry.forEach((p, k) => {
+    const key = acc.has(fold(p.name)) ? fold(p.name) : [...acc.keys()].find((x) => pantryMatches(p.name, acc.get(x)!.name));
+    if (!key) return;
+    used.add(k);
+    const cur = acc.get(key)!;
+    if (p.grams == null) acc.delete(key);
     else cur.grams = Math.max(0, cur.grams - p.grams);
-  }
+  });
 
   return [...acc.values()]
     .filter((x) => x.grams >= 5)
@@ -139,4 +178,10 @@ export function reviewReceipt(items: ReceiptItem[], listNames: string[]): Receip
   }
   out.missing = listNames.filter((n) => !used.has(n));
   return out;
+}
+
+/** «milanesas, cebolla, morrón y 6 huevos» → ['Milanesas', 'Cebolla', 'Morrón', '6 huevos']. */
+export function splitFoods(text: string): string[] {
+  return [...new Set(text.split(/[,;\n]+|\s+y\s+|\s+e\s+/i).map((x) => x.trim().replace(/[.]+$/, '')).filter((x) => x.length >= 2)
+    .map((x) => x.charAt(0).toUpperCase() + x.slice(1)).slice(0, 30))];
 }

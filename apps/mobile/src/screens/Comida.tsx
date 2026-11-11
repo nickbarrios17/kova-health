@@ -28,6 +28,8 @@ export function Comida() {
   const today = localDate(new Date(), prefs!.time_zone);
   const [day, setDay] = useState(today);
   const [adding, setAdding] = useState<Slot | null>(null);
+  // A new week plan refreshes the shopping card (what you have vs. what is missing).
+  const [planRev, setPlanRev] = useState(0);
   useReportTarget('comida');
 
   const q = useAsync(async () => {
@@ -57,8 +59,8 @@ export function Comida() {
           <Seg options={[[addDays(today, -1), 'Ayer'], [today, 'Hoy']]} value={day} onChange={setDay} />
         </Row>
         <FoodAssistant day={day} deviceId={deviceId} onLogged={q.reload} />
-        {day === today ? <MealPlanCard today={today} deviceId={deviceId} onLogged={q.reload} /> : null}
-        {day === today ? <ShoppingCard today={today} /> : null}
+        {day === today ? <MealPlanCard today={today} deviceId={deviceId} onLogged={q.reload} onPlanChanged={() => setPlanRev((n) => n + 1)} /> : null}
+        {day === today ? <ShoppingCard key={planRev} today={today} /> : null}
         {day === today ? <WaterCard today={today} /> : null}
         {q.loading && !q.data ? <Loading /> : q.error ? <ErrorNote message={q.error} onRetry={q.reload} /> : (
           <>
