@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildShoppingList, lineAmount, type ShopFood } from '../src/shopping.js';
+import { buildShoppingList, lineAmount, reviewReceipt, sameFood, type ShopFood } from '../src/shopping.js';
 
 const foods: ShopFood[] = [
   { id: 'arroz', name: 'Arroz blanco (cocido)', shop: { aisle: 'Almacén', name: 'Arroz blanco', factor: 0.36, package_g: 1000, package_label: 'paquete de 1 kg' } },
@@ -46,5 +46,29 @@ describe('shopping list', () => {
     expect(lineAmount({ grams: 1200, packages: null, package_label: null })).toBe('1,2 kg');
     expect(lineAmount({ grams: 300, packages: null, package_label: null })).toBe('300 g');
     expect(lineAmount({ grams: 900, packages: 2, package_label: 'paquete de 500 g' })).toBe('2 × paquete de 500 g');
+  });
+});
+
+describe('receipt review', () => {
+  it('matches receipt lines to the list, flags what is outside the plan and what is missing', () => {
+    const r = reviewReceipt([
+      { name: 'Leche entera La Serenísima 1 l', grams: 1000, kind: 'comida' },
+      { name: 'Pechugas de pollo', grams: 1200, kind: 'comida' },
+      { name: 'Alfajor triple', grams: 70, kind: 'snack' },
+      { name: 'Coca-Cola 2,25 l', grams: 2250, kind: 'bebida_azucarada' },
+      { name: 'Queso cremoso', grams: 500, kind: 'comida' },
+      { name: 'Lavandina', grams: 1000, kind: 'no_comida' },
+    ], ['Leche', 'Pechuga de pollo', 'Arroz blanco']);
+    expect(r.onList.map((x) => x.listName)).toEqual(['Leche', 'Pechuga de pollo']);
+    expect(r.offPlan.map((x) => x.name)).toEqual(['Alfajor triple', 'Coca-Cola 2,25 l']);
+    expect(r.offList.map((x) => x.name)).toEqual(['Queso cremoso']);
+    expect(r.missing).toEqual(['Arroz blanco']);
+    expect(r.other).toHaveLength(1);
+  });
+
+  it('does not match unrelated foods by a shared minor word', () => {
+    expect(sameFood('Arroz con leche', 'Leche')).toBe(false);
+    expect(sameFood('Bananas', 'Banana')).toBe(true);
+    expect(sameFood('Huevos blancos x12', 'Huevos')).toBe(true);
   });
 });

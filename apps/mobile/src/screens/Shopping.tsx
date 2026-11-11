@@ -2,10 +2,10 @@
  * Comidas, etapa 3 (docs/comidas.md): the shopping list from «Tu semana» (by aisle, real packages, minus
  * what is at home) and the pantry, filled by hand, from a receipt or from a photo of the fridge.
  */
-import { AISLE_ORDER, buildShoppingList, lineAmount, weekStartOf, KovaError } from '@kova/domain';
+import { AISLE_ORDER, buildShoppingList, lineAmount, nf, RECEIPT_KIND_LABEL, reviewReceipt, weekStartOf, KovaError, type ReceiptItem } from '@kova/domain';
 import type { Pantry, ShoppingList } from '@kova/api-client';
 import * as ImagePicker from 'expo-image-picker';
-import { Basket, Camera, Check, House, Plus, ShareNetwork, ShoppingCart, Trash, UsersThree, X } from 'phosphor-react-native';
+import { Basket, Camera, Check, House, Plus, Receipt, ShareNetwork, ShoppingCart, Trash, UsersThree, Warning, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, Share, View } from 'react-native';
 import { kova } from '../client';
@@ -84,6 +84,7 @@ export function ShoppingCard({ today }: { today: string }) {
             <View style={{ height: 6, width: `${list.items.length ? (done / list.items.length) * 100 : 0}%`, backgroundColor: c.accent }} />
           </View>
           <Button large label="Ver la lista" icon={ShoppingCart} onPress={() => setOpen(true)} />
+          <Button variant="secondary" label="Revisar el ticket" icon={Receipt} onPress={() => setPantryOpen(true)} />
           {plan ? <Button variant="text" label="Rehacer la lista con el plan" onPress={build} busy={busy} style={{ alignSelf: 'flex-start' }} /> : null}
         </>
       ) : (
@@ -96,7 +97,7 @@ export function ShoppingCard({ today }: { today: string }) {
       )}
       {error ? <Banner tone="crit" text={error} /> : null}
       {open && list ? <ListModal list={list} onClose={() => { setOpen(false); q.reload(); }} /> : null}
-      {pantryOpen ? <PantrySheet items={pantry} onClose={() => setPantryOpen(false)} onChanged={q.reload} /> : null}
+      {pantryOpen ? <PantrySheet items={pantry} list={list} onClose={() => setPantryOpen(false)} onChanged={q.reload} /> : null}
       {houseOpen ? <HouseSheet house={house} onClose={() => setHouseOpen(false)} onChanged={q.reload} /> : null}
     </View>
   );
@@ -178,20 +179,24 @@ function ListModal({ list: initial, onClose }: { list: ShoppingList; onClose: ()
   );
 }
 
-function PantrySheet({ items, onClose, onChanged }: { items: Pantry[]; onClose: () => void; onChanged: () => void }) {
+function PantrySheet({ items, list, onClose, onChanged }: { items: Pantry[]; list: ShoppingList | null; onClose: () => void; onChanged: () => void }) {
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
-  const [read, setRead] = useState<Array<{ name: string; grams: number | null; on: boolean }> | null>(null);
+  const [read, setRead] = useState<Array<ReceiptItem & { on: boolean }> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Only what is still unticked on the list is compared with the receipt.
+  const open = list?.items.filter((i) => !i.checked_at) ?? [];
+  const review = read && (open.length || read.some((r) => r.kind !== 'comida')) ? reviewReceipt(read, open.map((i) => i.name)) : null;
   const scan = async () => {
     setError(null);
     try {
       const img = await photo();
       if (!img) return;
       setBusy(true);
-      const found = await kova.food.pantry.read(img);
+      const found = await kova.food.pantry.read(img, open.map((i) => i.name));
       if (!found.length) setError('No encontramos alimentos en la foto. Probá con más luz o el ticket derecho.');
-      else setRead(found.map((f) => ({ ...f, on: true })));
+      // Cleaning products and the like are shown in the review but never go to «En casa».
+      else setRead(found.map((f) => ({ ...f, on: f.kind !== 'no_comida' })));
     } catch (e) {
       setError(msg(e));
     } finally {
@@ -202,7 +207,9 @@ function PantrySheet({ items, onClose, onChanged }: { items: Pantry[]; onClose: 
     if (!read) return;
     setBusy(true);
     try {
-      await kova.food.pantry.add(read.filter((r) => r.on).map(({ name: n, grams }) => ({ name: n, grams })), 'ticket');
+      await kova.food.pantry.add(read.filter((r) => r.on && r.kind !== 'no_comida').map(({ name: n, grams }) => ({ name: n, grams })), 'ticket');
+      // What the receipt shows was bought gets ticked on the list.
+      if (review) await Promise.all(review.onList.flatMap((x) => open.filter((i) => i.name === x.listName).map((i) => kova.food.shopping.check(i.id, true)))).catch(() => undefined);
       setRead(null);
       onChanged();
     } finally {
@@ -221,8 +228,9 @@ function PantrySheet({ items, onClose, onChanged }: { items: Pantry[]; onClose: 
         <T size={14} color={c.n400}>Lo que tenés en casa no entra en la lista de compras.</T>
         {read ? (
           <View style={{ gap: 6 }}>
-            <T size={13} w="semibold" color={c.n400}>Encontramos esto. Destildá lo que no va.</T>
-            {read.map((r, k) => (
+            {review ? <ReceiptSummary review={review} withList={open.length > 0} /> : null}
+            <T size={13} w="semibold" color={c.n400}>Esto va a «En casa». Destildá lo que no va.</T>
+            {read.map((r, k) => r.kind === 'no_comida' ? null : (
               <Pressable key={k} onPress={() => setRead(read.map((x, j) => (j === k ? { ...x, on: !x.on } : x)))} accessibilityRole="checkbox" accessibilityState={{ checked: r.on }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
                 <View style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: r.on ? c.a700 : c.borderStrong, backgroundColor: r.on ? c.a700 : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
@@ -231,12 +239,13 @@ function PantrySheet({ items, onClose, onChanged }: { items: Pantry[]; onClose: 
                 <T size={14} style={{ flex: 1 }}>{r.name}{r.grams ? ' · ' + (r.grams >= 1000 ? r.grams / 1000 + ' kg' : r.grams + ' g') : ''}</T>
               </Pressable>
             ))}
-            <Button large label="Guardar en «En casa»" icon={Check} onPress={saveRead} busy={busy} />
+            <Button large label={review?.onList.length ? 'Guardar y tildar en la lista' : 'Guardar en «En casa»'} icon={Check} onPress={saveRead} busy={busy} />
             <Button variant="text" label="Cancelar" onPress={() => setRead(null)} />
           </View>
         ) : (
           <>
             <Button large label="Foto del ticket o la heladera" icon={Camera} onPress={scan} busy={busy} />
+            {open.length ? <T size={12} color={c.n500}>Con el ticket te muestro qué compraste de la lista, qué te faltó y qué quedó fuera del plan.</T> : null}
             <Row style={{ gap: 8, alignItems: 'flex-end' }}>
               <View style={{ flex: 1 }}><Field label="Agregar a mano" value={name} onChangeText={setName} placeholder="Ej.: Arroz blanco" onSubmitEditing={addOne} /></View>
               <Button label="Agregar" icon={Plus} onPress={addOne} disabled={!name.trim()} />
@@ -296,5 +305,46 @@ function HouseSheet({ house, onClose, onChanged }: { house: House; onClose: () =
       )}
       {error ? <Banner tone="crit" text={error} /> : null}
     </Sheet>
+  );
+}
+
+/** The receipt against the list and the plan. Plain facts, no scolding: the person decides. */
+function ReceiptSummary({ review, withList }: { review: ReturnType<typeof reviewReceipt>; withList: boolean }) {
+  const offPlanSpent = review.offPlan.reduce((a, x) => a + (x.price ?? 0), 0);
+  const group = (title: string, color: string, rows: Array<{ key: string; text: string; note?: string }>) => rows.length ? (
+    <View style={{ gap: 4 }}>
+      <T size={13} w="semibold" color={color}>{title}</T>
+      {rows.map((r) => (
+        <Row key={r.key} style={{ justifyContent: 'space-between', gap: 8 }}>
+          <T size={14} style={{ flex: 1 }}>{r.text}</T>
+          {r.note ? <T size={12} color={c.n400}>{r.note}</T> : null}
+        </Row>
+      ))}
+    </View>
+  ) : null;
+  return (
+    <View style={{ gap: 12, padding: 12, borderRadius: rad.card, backgroundColor: c.bg }}>
+      <Row style={{ gap: 8 }}>
+        <Receipt size={18} color={c.accent} />
+        <T size={15} w="semibold">Tu ticket</T>
+      </Row>
+      {withList ? (
+        <T size={13} color={c.n400}>
+          {review.onList.length} de {review.onList.length + review.missing.length} cosas de la lista
+          {review.offPlan.length ? ' · ' + review.offPlan.length + ' fuera del plan' : ''}
+          {offPlanSpent ? ' ($ ' + nf(offPlanSpent, 0) + ')' : ''}
+        </T>
+      ) : null}
+      {group('Fuera del plan', c.warn, review.offPlan.map((x, k) => ({ key: 'p' + k, text: x.name, note: RECEIPT_KIND_LABEL[x.kind as keyof typeof RECEIPT_KIND_LABEL] + (x.price ? ' · $ ' + nf(x.price, 0) : '') })))}
+      {withList ? group('Te faltó', c.n300, review.missing.map((n, k) => ({ key: 'm' + k, text: n }))) : null}
+      {withList ? group('No estaba en la lista', c.n300, review.offList.map((x, k) => ({ key: 'o' + k, text: x.name, note: x.price ? '$ ' + nf(x.price, 0) : undefined }))) : null}
+      {withList ? group('De la lista', c.accent, review.onList.map((x, k) => ({ key: 'l' + k, text: x.listName }))) : null}
+      {review.offPlan.length ? (
+        <Row style={{ gap: 6, alignItems: 'flex-start' }}>
+          <Warning size={14} color={c.n500} />
+          <T size={12} color={c.n500} style={{ flex: 1 }}>«Fuera del plan» no es un reto: tu semana no cuenta con eso. Si lo comés, anotalo y ajusto el resto.</T>
+        </Row>
+      ) : null}
+    </View>
   );
 }

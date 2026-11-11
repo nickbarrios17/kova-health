@@ -3,7 +3,7 @@
  * look up a barcode (food-barcode), and turn a product or a label into one of your own foods.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { KovaError, newId, type DescribedItem, type ShopFood, type ShoppingLine } from '@kova/domain';
+import { KovaError, newId, type DescribedItem, type ReceiptItem, type ShopFood, type ShoppingLine } from '@kova/domain';
 
 export interface OffProduct {
   barcode: string;
@@ -226,7 +226,10 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
       remove: (id: string) => call(sb.from('pantry_items').delete().eq('id', id)),
       clear: () => call(sb.from('pantry_items').delete().not('id', 'is', null)),
       /** A receipt or a photo of the fridge → what is at home (names match the list). */
-      read: async (img: ImageInput) => (await invoke<{ items: Array<{ name: string; grams: number | null }> }>('food-ai', { mode: 'pantry', image: image(img) })).items,
+      /** Reads a receipt or a fridge photo. With `list` (the shopping list's names) receipt lines are named like the list. */
+      read: async (img: ImageInput, list: string[] = []) =>
+        (await invoke<{ items: ReceiptItem[] }>('food-ai', { mode: 'pantry', image: image(img), list: list.slice(0, 80) })).items
+          .map((i) => ({ ...i, kind: i.kind ?? 'comida', price: i.price ?? null })),
     },
     /** Names of foods by id (plan ingredients). */
     foodsByIds: (ids: string[]) =>

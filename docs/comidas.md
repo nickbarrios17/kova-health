@@ -140,6 +140,14 @@ Un asesor que arma lo que comés alrededor de **tu entrenamiento real, tu bolsil
 - El coach ve el plan semanal del alumno y cuánto comió de lo planeado. Solo si el alumno comparte su alimentación (`person_meal_plan`). Por ahora no lo edita.
 - Agua: tarjeta en Comida con +1 vaso y Deshacer. Meta de ~35 ml/kg, más medio litro si entrenaste. Es privada: nadie más la ve.
 
+**Ticket contra la lista y el plan:** en Compras, «Revisar el ticket» lee la foto del ticket y muestra:
+- Qué compraste de la lista.
+- Qué te faltó.
+- Qué no estaba en la lista.
+- Qué queda fuera del plan (snacks, bebidas con azúcar, alcohol, ultraprocesados), con lo que gastaste en eso.
+
+Al guardar, tilda en la lista lo comprado y lo pasa a «En casa». Lo que no es comida (limpieza, perfumería) no entra.
+
 **Queda para después:**
 - Proteína ↔ récords y Bici ↔ hambre: necesitan más historia para no inventar.
 - Reloj: aviso antes de entrenar y agua desde la muñeca.
