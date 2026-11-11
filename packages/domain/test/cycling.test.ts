@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeRoute, distanceM, estimateDurationS, insideRing, loopLengthM, routeScore, type Coord, type Park, type RawRoute } from '../src/cycling.js';
+import { analyzeRoute, distanceM, estimateDurationS, insideRing, loopLengthM, paceLabel, routeScore, type Coord, type Park, type RawRoute } from '../src/cycling.js';
 
 // A straight line east along the equator-ish; ~111 m per 0.001° of longitude at lat 0.
 const line = (n: number): Coord[] => Array.from({ length: n + 1 }, (_, i) => [i * 0.001, 0] as Coord);
@@ -73,5 +73,31 @@ describe('cycling', () => {
     const a = analyzeRoute(route(), []);
     expect(a.risk_share).toBe(0);
     expect(a.warnings.join(' ')).not.toMatch(/robos|choques|avisos/);
+  });
+});
+
+describe('on foot', () => {
+  it('times a run at its pace, with less penalty per metre climbed than walking', () => {
+    const len = loopLengthM(30, 10, 'run');
+    expect(Math.abs(estimateDurationS(len, 0, 10, 'run') - 1800)).toBeLessThan(2);
+    expect(estimateDurationS(5000, 100, 10, 'run') - estimateDurationS(5000, 0, 10, 'run')).toBe(300);
+    expect(estimateDurationS(5000, 100, 5, 'walk') - estimateDurationS(5000, 0, 5, 'walk')).toBe(600);
+  });
+
+  it('says pace in min/km', () => {
+    expect(paceLabel(9.5, 'run')).toBe('6:19 min/km');
+    expect(paceLabel(5, 'walk')).toBe('12:00 min/km');
+    expect(paceLabel(18, 'bike')).toBe('18 km/h');
+  });
+
+  it('values paths and parks, not bike lanes; avenues are «junto a»', () => {
+    const park: Park = { name: 'Parque Centenario', rings: [[[0.0025, -1], [0.0095, -1], [0.0095, 1], [0.0025, 1], [0.0025, -1]]] };
+    const a = analyzeRoute(route({ waytype: [[0, 2, 1], [2, 10, 5]] }), [park], 9.5, 'run');
+    expect(a.tags).toContain('Mayormente por parques');
+    expect(a.tags).toContain('80 % por senderos y caminos peatonales');
+    expect(a.tags.some((t) => /bicisenda/.test(t))).toBe(false);
+    const b = analyzeRoute(route({ waytype: [[0, 10, 1]] }), [], 9.5, 'run');
+    expect(b.warnings).toContain('1,1 km junto a avenidas');
+    expect(routeScore(a, 'run')).toBeGreaterThan(routeScore(b, 'run'));
   });
 });

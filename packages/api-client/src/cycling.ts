@@ -1,6 +1,6 @@
 /** Ciclismo (docs/ciclismo.md): routes through the `bike-route` Edge Function, saved routes in bike_routes. */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { KovaError, type Coord, type Park, type RawRoute, type RouteAnalysis, type SafetyReportKind, type SafetyZones } from '@kova/domain';
+import { KovaError, type Coord, type Park, type RawRoute, type RouteAnalysis, type SafetyReportKind, type SafetyZones, type Sport } from '@kova/domain';
 
 export interface Place { name: string; label: string; coord: [number, number] }
 export interface PlannedRoutes { routes: RawRoute[]; parks: Park[]; zones?: SafetyZones | null }
@@ -9,6 +9,7 @@ export interface SavedRoute {
   id: string;
   name: string;
   kind: 'ab' | 'loop';
+  sport: Sport;
   distance_m: number;
   ascent_m: number;
   duration_s: number;
@@ -40,24 +41,28 @@ export function createCycling({ sb, call, toKovaError }: CyclingDeps) {
   return {
     /** Places in Argentina, nearest to `near` first. */
     search: (text: string, near?: Coord) => invoke<{ places: Place[] }>({ action: 'search', text, near: near ? pt(near) : undefined }).then((r) => r.places.filter((p) => p.coord)),
-    /** A → (stops) → B. */
-    route: (points: Coord[]) => invoke<PlannedRoutes>({ action: 'route', points: points.map(pt) }),
+    /** A → (stops) → B, by bike or on foot (run and walk use the pedestrian profile). */
+    route: (points: Coord[], sport: Sport = 'bike') => invoke<PlannedRoutes>({ action: 'route', points: points.map(pt), sport }),
     /** Up to 3 different loops of about `length_m` from `start`. */
-    loops: (start: Coord, length_m: number) => invoke<PlannedRoutes>({ action: 'loop', start: pt(start), length_m: Math.round(length_m), options: 3 }),
+    loops: (start: Coord, length_m: number, sport: Sport = 'bike') =>
+      invoke<PlannedRoutes>({ action: 'loop', start: pt(start), length_m: Math.round(length_m), options: 3, sport }),
 
-    saved: () => call(sb.from('bike_routes').select('id, name, kind, distance_m, ascent_m, duration_s, summary, created_at')
-      .is('deleted_at', null).order('created_at', { ascending: false }).limit(100)) as Promise<SavedRoute[]>,
+    /** Saved routes; `sport` 'foot' lists the run and walk ones together. */
+    saved: (sport: Sport | 'foot' = 'bike') => {
+      const q = sb.from('bike_routes').select('id, name, kind, sport, distance_m, ascent_m, duration_s, summary, created_at').is('deleted_at', null);
+      return call((sport === 'foot' ? q.in('sport', ['run', 'walk']) : q.eq('sport', sport)).order('created_at', { ascending: false }).limit(100)) as Promise<SavedRoute[]>;
+    },
     get: async (id: string) => {
-      const rows = await call(sb.from('bike_routes').select('id, name, kind, route').eq('id', id).limit(1)) as Array<{ id: string; name: string; kind: 'ab' | 'loop'; route: RawRoute }>;
+      const rows = await call(sb.from('bike_routes').select('id, name, kind, sport, route').eq('id', id).limit(1)) as Array<{ id: string; name: string; kind: 'ab' | 'loop'; sport: Sport; route: RawRoute }>;
       if (!rows[0]) throw new KovaError('NOT_FOUND', 'Esa ruta ya no está.');
       return rows[0];
     },
     /** Idempotent on `id`. */
-    save: async (r: { id: string; name: string; kind: 'ab' | 'loop'; route: RawRoute; analysis: RouteAnalysis }) => {
+    save: async (r: { id: string; name: string; kind: 'ab' | 'loop'; route: RawRoute; analysis: RouteAnalysis; sport?: Sport }) => {
       const name = r.name.trim().slice(0, 80) || 'Mi ruta';
       const { tags, warnings, parks, shares, park_share } = r.analysis;
       await call(sb.from('bike_routes').upsert({
-        id: r.id, name, kind: r.kind, route: r.route,
+        id: r.id, name, kind: r.kind, route: r.route, sport: r.sport ?? 'bike',
         distance_m: r.analysis.distance_m, ascent_m: r.analysis.ascent_m, duration_s: r.analysis.duration_s,
         summary: { tags, warnings, parks, shares, park_share },
       }, { onConflict: 'id', ignoreDuplicates: true }));
@@ -78,6 +83,14 @@ export function createCycling({ sb, call, toKovaError }: CyclingDeps) {
     logRide: async (r: { id: string; name: string; startedAt: Date; endedAt: Date; movingS: number; distanceM: number; timeZone?: string }) => {
       await call(sb.rpc('log_bike_ride', {
         p_id: r.id, p_name: r.name.trim().slice(0, 120) || 'Salida en bici',
+        p_started_at: r.startedAt.toISOString(), p_ended_at: r.endedAt.toISOString(),
+        p_moving_s: Math.round(r.movingS), p_distance_m: Math.round(r.distanceM * 10) / 10, p_time_zone: r.timeZone ?? null,
+      }));
+    },
+    /** A navigated run or walk, saved as a completed workout (Correr / Caminata). Idempotent on `id`. */
+    logFoot: async (r: { id: string; sport: 'run' | 'walk'; name: string; startedAt: Date; endedAt: Date; movingS: number; distanceM: number; timeZone?: string }) => {
+      await call(sb.rpc('log_foot_activity', {
+        p_id: r.id, p_sport: r.sport, p_name: r.name.trim().slice(0, 120) || (r.sport === 'run' ? 'Salida a correr' : 'Caminata'),
         p_started_at: r.startedAt.toISOString(), p_ended_at: r.endedAt.toISOString(),
         p_moving_s: Math.round(r.movingS), p_distance_m: Math.round(r.distanceM * 10) / 10, p_time_zone: r.timeZone ?? null,
       }));
