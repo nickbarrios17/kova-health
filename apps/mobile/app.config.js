@@ -6,6 +6,15 @@
 // The web build (docs/web-celular.md) is served under /m/ of the web app: EXPO_WEB_BASE_URL=/m.
 module.exports = ({ config }) => {
   if (process.env.EXPO_WEB_BASE_URL) config = { ...config, experiments: { ...config.experiments, baseUrl: process.env.EXPO_WEB_BASE_URL } };
+  // Emulator build against the local Supabase (branch emulador/*): plain http to 10.0.2.2 and no OTA.
+  if (process.env.KOVA_EMULATOR_LOCAL === '1') {
+    config = {
+      ...config,
+      updates: { ...config.updates, enabled: false },
+      plugins: (config.plugins ?? []).map((pl) => (Array.isArray(pl) && pl[0] === 'expo-build-properties'
+        ? [pl[0], { ...pl[1], android: { ...pl[1].android, usesCleartextTraffic: true } }] : pl)),
+    };
+  }
   if (process.env.APP_VARIANT !== 'prueba') return config;
   return {
     ...config,
