@@ -3,7 +3,7 @@
  * look up a barcode (food-barcode), and turn a product or a label into one of your own foods.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { KovaError, newId, type DescribedItem } from '@kova/domain';
+import { KovaError, newId, type DescribedItem, type ShopFood, type ShoppingLine } from '@kova/domain';
 
 export interface OffProduct {
   barcode: string;
@@ -70,6 +70,9 @@ export interface PlanMeal {
 }
 
 export interface MealPlan { id: string; week_start: string; targets: Array<Record<string, unknown>>; created_at: string; items: PlanMeal[] }
+export interface ShoppingItem { id: string; list_id: string; name: string; aisle: string; grams: number | null; packages: number | null; package_label: string | null; position: number; checked_at: string | null }
+export interface ShoppingList { id: string; title: string; plan_id: string | null; created_at: string; items: ShoppingItem[] }
+export interface Pantry { id: string; name: string; grams: number | null; source: string; created_at: string }
 export interface MealEvent { id: string; local_date: string; kind: 'asado' | 'salida' | 'cumple' | 'otro'; note: string | null }
 export interface ImageInput { mime: string; data: string }
 
@@ -115,6 +118,17 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
   });
 
   return {
+    /** Water through the day (a glass is 250 ml). Private: nobody else sees it. */
+    water: {
+      total: async (localDate: string) => {
+        const rows = (await call(sb.from('water_logs').select('id, ml').eq('local_date', localDate).order('created_at'))) as Array<{ id: string; ml: number }>;
+        return { ml: rows.reduce((a, r) => a + r.ml, 0), last_id: rows.at(-1)?.id ?? null };
+      },
+      add: (localDate: string, ml = 250) =>
+        call(sb.from('water_logs').insert({ local_date: localDate, ml: Math.min(3000, Math.max(50, Math.round(ml))) })),
+      /** Undo a glass logged by mistake. */
+      remove: (id: string) => call(sb.from('water_logs').delete().eq('id', id)),
+    },
     preferences: {
       get: async () => (await call(sb.from('food_preferences').select('*').maybeSingle())) as FoodPreferences | null,
       save: async (p: FoodPreferences) => {
@@ -147,6 +161,72 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
       /** Another meal of about the same calories for that slot; `wish`: «algo con pollo». */
       swap: async (itemId: string, wish?: string) => toMeal((await invoke<{ item: Record<string, unknown> }>('food-ai', { mode: 'swap', item_id: itemId, wish: wish?.slice(0, 200) })).item),
       markLogged: (itemId: string) => call(sb.from('meal_plan_items').update({ logged_at: new Date().toISOString() }).eq('id', itemId).select('id').single()),
+    },
+    /** How every catalog food is bought (for building the shopping list on the device). */
+    catalogShop: async () =>
+      ((await call(sb.from('foods').select('id, name, shop').is('owner_id', null).not('shop', 'is', null).limit(500))) as ShopFood[]),
+    shopping: {
+      /** The latest list that is not finished, with its items; null when there is none. */
+      current: async (): Promise<ShoppingList | null> => {
+        const list = (await call(sb.from('shopping_lists').select('id, title, plan_id, created_at').is('archived_at', null).order('created_at', { ascending: false }).limit(1).maybeSingle())) as Omit<ShoppingList, 'items'> | null;
+        if (!list) return null;
+        const items = (await call(sb.from('shopping_items').select('*').eq('list_id', list.id).order('position'))) as Array<Record<string, unknown>>;
+        return { ...list, items: items.map((i) => ({ ...(i as unknown as ShoppingItem), grams: i.grams == null ? null : Number(i.grams) })) };
+      },
+      /** A new list (the previous unfinished one is archived); shared with the household when there is one. */
+      create: async (title: string, lines: ShoppingLine[], planId: string | null) => {
+        await call(sb.from('shopping_lists').update({ archived_at: new Date().toISOString() }).is('archived_at', null).select('id'));
+        const house = (await call(sb.from('household_members').select('household_id').limit(1).maybeSingle())) as { household_id: string } | null;
+        const id = newId();
+        await call(sb.from('shopping_lists').insert({ id, title: title.slice(0, 80), plan_id: planId, household_id: house?.household_id ?? null }));
+        if (lines.length) {
+          await call(sb.from('shopping_items').insert(lines.slice(0, 300).map((l, position) => ({
+            list_id: id, name: l.name.slice(0, 120), aisle: l.aisle.slice(0, 40), grams: l.grams, packages: l.packages, package_label: l.package_label, position,
+          }))));
+        }
+        return id;
+      },
+      check: (itemId: string, checked: boolean) =>
+        call(sb.from('shopping_items').update({ checked_at: checked ? new Date().toISOString() : null }).eq('id', itemId).select('id').single()),
+      addItem: (listId: string, name: string, position: number) =>
+        call(sb.from('shopping_items').insert({ list_id: listId, name: name.slice(0, 120), aisle: 'Otros', position }).select('*').single()),
+      removeItem: (itemId: string) => call(sb.from('shopping_items').delete().eq('id', itemId)),
+      /** Done shopping: the list is archived and what was bought goes to the pantry. */
+      finish: async (list: ShoppingList) => {
+        const bought = list.items.filter((i) => i.checked_at);
+        if (bought.length) {
+          await call(sb.from('pantry_items').insert(bought.map((i) => ({ name: i.name, grams: i.grams, source: 'lista' }))));
+        }
+        return call(sb.from('shopping_lists').update({ archived_at: new Date().toISOString() }).eq('id', list.id).select('id').single());
+      },
+    },
+    household: {
+      /** The household (with its invite code) and who is in it; null when not in one. */
+      get: async () => {
+        const h = (await call(sb.from('households').select('id, name, code').limit(1).maybeSingle())) as { id: string; name: string; code: string } | null;
+        if (!h) return null;
+        const people = (await call(sb.rpc('household_people'))) as Array<{ user_id: string; name: string; me: boolean }>;
+        return { ...h, people };
+      },
+      create: (name: string) => call(sb.rpc('create_household', { p_name: name.slice(0, 60) })),
+      join: (code: string) => call(sb.rpc('join_household', { p_code: code.trim().toUpperCase() })),
+      leave: () => call(sb.rpc('leave_household')),
+    },
+    /** A photo of a restaurant menu → the dishes that best fit what is left of the day. */
+    menu: async (img: ImageInput, left: { kcal: number | null; proteinG: number | null }) =>
+      (await invoke<{ options: Array<{ name: string; why: string; kcal_low: number; kcal_high: number; protein_g: number }> }>('food-ai', {
+        mode: 'menu', image: image(img), kcal_left: left.kcal, protein_left: left.proteinG,
+      })).options,
+    pantry: {
+      list: () => call(sb.from('pantry_items').select('*').order('created_at', { ascending: false }).limit(300)) as Promise<Pantry[]>,
+      add: (items: Array<{ name: string; grams: number | null }>, source: 'manual' | 'ticket' | 'foto') =>
+        items.length
+          ? call(sb.from('pantry_items').insert(items.slice(0, 100).map((i) => ({ name: i.name.slice(0, 120), grams: i.grams, source }))))
+          : Promise.resolve(null),
+      remove: (id: string) => call(sb.from('pantry_items').delete().eq('id', id)),
+      clear: () => call(sb.from('pantry_items').delete().not('id', 'is', null)),
+      /** A receipt or a photo of the fridge → what is at home (names match the list). */
+      read: async (img: ImageInput) => (await invoke<{ items: Array<{ name: string; grams: number | null }> }>('food-ai', { mode: 'pantry', image: image(img) })).items,
     },
     /** Names of foods by id (plan ingredients). */
     foodsByIds: (ids: string[]) =>

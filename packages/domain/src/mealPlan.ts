@@ -139,3 +139,14 @@ export function workoutFuelTips(p: { routineName: string; weightKg: number | nul
     after: 'Después: unos ' + post + ' g de proteína en la próxima comida.' + left,
   };
 }
+
+// ── Water ─────────────────────────────────────────────────────────────────────
+
+/**
+ * A day's water goal: ~35 ml per kg (70 kg if unknown), +500 ml on a strength day, +500 ml per hour of
+ * cycling. An estimate; food also brings water. Rounded to 50 ml.
+ */
+export function waterGoalMl(weightKg: number | null, strengthDay: boolean, rideMinutes = 0): number {
+  const base = 35 * (weightKg ?? 70) + (strengthDay ? 500 : 0) + (500 * Math.max(0, rideMinutes)) / 60;
+  return Math.round(base / 50) * 50;
+}

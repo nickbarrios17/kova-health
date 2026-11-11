@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { postWorkoutProtein, rideFuel, slotsFor, weekStartOf, weekTargets, workoutFuelTips } from '../src/mealPlan.js';
+import { postWorkoutProtein, rideFuel, waterGoalMl, slotsFor, weekStartOf, weekTargets, workoutFuelTips } from '../src/mealPlan.js';
 
 const base = { weekStart: '2026-11-09', baseKcal: 2200, proteinG: 150, fatG: 70, trainingDays: [1, 4], trainingKcal: 200, events: [], floorKcal: 1500 };
 const total = (d: Array<{ kcal: number }>) => d.reduce((a, x) => a + x.kcal, 0);
@@ -52,5 +52,11 @@ describe('meal plan helpers', () => {
     const t = workoutFuelTips({ routineName: 'Pecho', weightKg: 80, proteinLeftG: 60 });
     expect(t.before).toContain('Antes de Pecho');
     expect(t.after).toBe('Después: unos 25 g de proteína en la próxima comida. Hoy te faltan 60 g de proteína.');
+  });
+
+  it('sets a water goal', () => {
+    expect(waterGoalMl(80, false)).toBe(2800);
+    expect(waterGoalMl(80, true, 60)).toBe(3800);
+    expect(waterGoalMl(null, false)).toBe(2450);
   });
 });

@@ -488,6 +488,7 @@ export type Database = {
           ref_amount: number
           ref_unit: Database["public"]["Enums"]["food_unit"]
           serving_label: string | null
+          shop: Json | null
           source_ref: string | null
           updated_at: string
         }
@@ -509,6 +510,7 @@ export type Database = {
           ref_amount: number
           ref_unit: Database["public"]["Enums"]["food_unit"]
           serving_label?: string | null
+          shop?: Json | null
           source_ref?: string | null
           updated_at?: string
         }
@@ -530,6 +532,7 @@ export type Database = {
           ref_amount?: number
           ref_unit?: Database["public"]["Enums"]["food_unit"]
           serving_label?: string | null
+          shop?: Json | null
           source_ref?: string | null
           updated_at?: string
         }
@@ -805,6 +808,56 @@ export type Database = {
             referencedColumns: ["id", "user_id"]
           },
         ]
+      }
+      household_members: {
+        Row: {
+          household_id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          household_id: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          household_id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      households: {
+        Row: {
+          code: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       meal_events: {
         Row: {
@@ -1174,6 +1227,33 @@ export type Database = {
           serving_g?: number | null
           sodium_mg_100?: number | null
           sugars_100?: number | null
+        }
+        Relationships: []
+      }
+      pantry_items: {
+        Row: {
+          created_at: string
+          grams: number | null
+          id: string
+          name: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          grams?: number | null
+          id?: string
+          name: string
+          source?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          grams?: number | null
+          id?: string
+          name?: string
+          source?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1589,6 +1669,101 @@ export type Database = {
         }
         Relationships: []
       }
+      shopping_items: {
+        Row: {
+          aisle: string
+          checked_at: string | null
+          created_at: string
+          grams: number | null
+          id: string
+          list_id: string
+          name: string
+          package_label: string | null
+          packages: number | null
+          position: number
+          user_id: string
+        }
+        Insert: {
+          aisle?: string
+          checked_at?: string | null
+          created_at?: string
+          grams?: number | null
+          id?: string
+          list_id: string
+          name: string
+          package_label?: string | null
+          packages?: number | null
+          position?: number
+          user_id?: string
+        }
+        Update: {
+          aisle?: string
+          checked_at?: string | null
+          created_at?: string
+          grams?: number | null
+          id?: string
+          list_id?: string
+          name?: string
+          package_label?: string | null
+          packages?: number | null
+          position?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_items_list_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          household_id: string | null
+          id: string
+          plan_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          household_id?: string | null
+          id?: string
+          plan_id?: string | null
+          title: string
+          user_id?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          household_id?: string | null
+          id?: string
+          plan_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_lists_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_lists_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shown_insights: {
         Row: {
           created_at: string
@@ -1699,6 +1874,30 @@ export type Database = {
           user_id?: string
           week_start?: number
           weight_unit?: Database["public"]["Enums"]["weight_unit"]
+        }
+        Relationships: []
+      }
+      water_logs: {
+        Row: {
+          created_at: string
+          id: string
+          local_date: string
+          ml: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          local_date: string
+          ml: number
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          local_date?: string
+          ml?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -2250,6 +2449,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_household: {
+        Args: { p_name: string }
+        Returns: {
+          code: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "households"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_invite: {
         Args: { p_kind: Database["public"]["Enums"]["link_kind"] }
         Returns: {
@@ -2334,6 +2549,14 @@ export type Database = {
         }[]
       }
       has_entitlement: { Args: { p_code: string }; Returns: boolean }
+      household_people: {
+        Args: never
+        Returns: {
+          me: boolean
+          name: string
+          user_id: string
+        }[]
+      }
       invite_info: {
         Args: { p_code: string }
         Returns: {
@@ -2342,6 +2565,23 @@ export type Database = {
           valid: boolean
         }[]
       }
+      join_household: {
+        Args: { p_code: string }
+        Returns: {
+          code: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "households"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      leave_household: { Args: never; Returns: undefined }
       log_bike_ride: {
         Args: {
           p_distance_m: number
@@ -2441,6 +2681,17 @@ export type Database = {
           share_body: boolean
           share_health: boolean
           share_nutrition: boolean
+        }[]
+      }
+      person_meal_plan: {
+        Args: { p_owner: string; p_week_start: string }
+        Returns: {
+          kcal: number
+          local_date: string
+          logged_at: string
+          protein_g: number
+          slot: Database["public"]["Enums"]["meal_slot"]
+          title: string
         }[]
       }
       record_body_measurements: { Args: { p_rows: Json }; Returns: number }
@@ -2586,6 +2837,7 @@ export type Database = {
           ref_amount: number
           ref_unit: Database["public"]["Enums"]["food_unit"]
           serving_label: string | null
+          shop: Json | null
           source_ref: string | null
           updated_at: string
         }[]
