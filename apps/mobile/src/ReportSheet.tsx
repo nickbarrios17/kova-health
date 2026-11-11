@@ -7,10 +7,10 @@ import { composeReport, newId, reportOptions, KovaError, type ReportContext, typ
 import * as Application from 'expo-application';
 import { Check } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { kova } from './client';
 import { c, font, rad } from './theme';
-import { Button, Notice, Row, T } from './ui';
+import { Button, KeyboardRoom, Notice, Row, T } from './ui';
 
 export function ReportSheet({ visible, onClose, screen = 'other', context }: {
   visible: boolean;
@@ -56,7 +56,7 @@ export function ReportSheet({ visible, onClose, screen = 'other', context }: {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <KeyboardRoom style={{ justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <View style={{ backgroundColor: c.surface, borderTopLeftRadius: rad.card, borderTopRightRadius: rad.card, maxHeight: '90%' }}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }} keyboardShouldPersistTaps="handled">
             <T size={18} w="medium">Reportar un problema</T>
@@ -97,7 +97,7 @@ export function ReportSheet({ visible, onClose, screen = 'other', context }: {
             )}
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardRoom>
     </Modal>
   );
 }

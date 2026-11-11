@@ -5,9 +5,9 @@ import { useFonts } from 'expo-font';
 import { KovaError } from '@kova/domain';
 import { StatusBar } from 'expo-status-bar';
 import { Barbell, ChartLineUp, ForkKnife, SquaresFour, type Icon } from 'phosphor-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, AppState, Linking, Platform, Pressable, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { checkApkUpdate, type ApkRelease } from './appUpdate';
 import { useBack } from './back';
 import { inviteCode } from '@kova/api-client';
@@ -25,7 +25,7 @@ import { UpdatePrompt } from './screens/UpdatePrompt';
 import { SessionProvider, useSession } from './session';
 import { c } from './theme';
 import type { TrainingData } from './training';
-import { Button, Loading, T } from './ui';
+import { Button, KeyboardRoom, Loading, T } from './ui';
 import { loadLive, saveLive, startFromRoutine, type LiveSession, type Summary } from './workout';
 import { SessionConflict, SyncProvider } from './sync';
 import { ReportProvider, useReportButtonOffset } from './report';
@@ -206,9 +206,15 @@ export default function App() {
             <T size={16}>Falta configurar EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY (ver apps/mobile/.env.example).</T>
           </View>
         ) : (
-          <SessionProvider><SyncProvider><ReportProvider><Shell /></ReportProvider></SyncProvider></SessionProvider>
+          <AppKeyboardRoom><SessionProvider><SyncProvider><ReportProvider><Shell /></ReportProvider></SyncProvider></SessionProvider></AppKeyboardRoom>
         )}
       </SafeAreaView>
     </SafeAreaProvider>
   );
+}
+
+/** Every screen stays above the keyboard; the safe-area bottom (navigation bar) is already left out. */
+function AppKeyboardRoom({ children }: { children: ReactNode }) {
+  const insets = useSafeAreaInsets();
+  return <KeyboardRoom extra={insets.bottom}>{children}</KeyboardRoom>;
 }

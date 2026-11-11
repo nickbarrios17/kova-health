@@ -11,7 +11,7 @@ import { kova, outbox } from '../client';
 import { c, rad } from '../theme';
 import { loadTraining } from '../training';
 import { useAsync } from '../useAsync';
-import { Banner, Button, Chip, Field, Row, Seg, Sheet, Skeleton, T } from '../ui';
+import { Banner, Button, Chip, Field, Row, Seg, Sheet, Skeleton, T, KeyboardRoom } from '../ui';
 
 const SLOT_LABEL = Object.fromEntries(MEAL_SLOTS) as Record<string, string>;
 const DAY_LETTER = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -223,7 +223,7 @@ function PrefsSheet({ initial, onClose, onSaved }: { initial: FoodPreferences; o
   };
   return (
     <Sheet visible onClose={onClose} title="Qué te gusta">
-      <ScrollView style={{ maxHeight: 520 }} contentContainerStyle={{ gap: 12 }} keyboardShouldPersistTaps="handled">
+      <View style={{ gap: 12 }}>
         <T size={13} w="medium" color={c.n400}>Cómo comés</T>
         <Seg stretch value={p.diet} onChange={(diet) => setP({ ...p, diet })} label="Tipo de alimentación"
           options={[['omnivora', 'De todo'], ['vegetariana', 'Vegetariana'], ['vegana', 'Vegana'], ['sin_tacc', 'Sin TACC']]} />
@@ -243,7 +243,7 @@ function PrefsSheet({ initial, onClose, onSaved }: { initial: FoodPreferences; o
         <Chip label="Presupuesto ajustado" selected={p.budget_week_ars != null} onPress={() => setP({ ...p, budget_week_ars: p.budget_week_ars == null ? 1 : null })} />
         {error ? <Banner tone="crit" text={error} /> : null}
         <Button large label="Guardar" icon={Check} onPress={save} busy={busy} />
-      </ScrollView>
+      </View>
     </Sheet>
   );
 }
@@ -318,7 +318,7 @@ function CookSession({ plan, today, onClose }: { plan: MealPlan; today: string; 
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardRoom style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Cocinar para varios días</T>
@@ -359,7 +359,7 @@ function CookSession({ plan, today, onClose }: { plan: MealPlan; today: string; 
             </View>
           ) : null}
         </ScrollView>
-      </View>
+      </KeyboardRoom>
     </Modal>
   );
 }
@@ -382,7 +382,7 @@ function HomeSheet({ items, onClose, onChanged, onGo }: { items: Pantry[]; onClo
   };
   return (
     <Sheet visible onClose={onClose} title="¿Qué tenés en casa?">
-      <ScrollView style={{ maxHeight: 560 }} contentContainerStyle={{ gap: 12 }} keyboardShouldPersistTaps="handled">
+      <View style={{ gap: 12 }}>
         <T size={14} color={c.n400}>Armo la semana usando primero lo que ya tenés, y la compra solo completa lo que falta.</T>
         {items.length ? (
           <View style={{ gap: 6 }}>
@@ -400,7 +400,7 @@ function HomeSheet({ items, onClose, onChanged, onGo }: { items: Pantry[]; onClo
         {typed.length ? <T size={12} color={c.n500}>Anoto: {typed.join(' · ')}</T> : null}
         <Button large label={items.length || typed.length ? 'Armar mi semana con esto' : 'No tengo nada, armala igual'} icon={Sparkle} onPress={go} busy={busy} />
         <T size={12} color={c.n500}>También podés sacarle una foto a la heladera o al ticket en Compras → En casa.</T>
-      </ScrollView>
+      </View>
     </Sheet>
   );
 }

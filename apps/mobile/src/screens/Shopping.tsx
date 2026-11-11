@@ -11,7 +11,7 @@ import { Modal, Platform, Pressable, ScrollView, Share, View } from 'react-nativ
 import { kova } from '../client';
 import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
-import { Banner, Button, Field, Row, Sheet, Skeleton, T } from '../ui';
+import { Banner, Button, Field, Row, Sheet, Skeleton, T, KeyboardRoom } from '../ui';
 
 const msg = (e: unknown) => (e instanceof KovaError ? e.message : 'Algo salió mal. Probá de nuevo.');
 
@@ -140,7 +140,7 @@ function ListModal({ list: initial, onClose }: { list: ShoppingList; onClose: ()
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardRoom style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <View style={{ flex: 1 }}>
@@ -182,7 +182,7 @@ function ListModal({ list: initial, onClose }: { list: ShoppingList; onClose: ()
           <Button large label="Terminé de comprar" icon={Check} onPress={finish} busy={busy} />
           <T size={12} color={c.n500} style={{ textAlign: 'center' }}>Lo que tildaste pasa a «En casa».</T>
         </View>
-      </View>
+      </KeyboardRoom>
     </Modal>
   );
 }
@@ -232,7 +232,7 @@ function PantrySheet({ items, list, onClose, onChanged }: { items: Pantry[]; lis
   };
   return (
     <Sheet visible onClose={onClose} title="En casa">
-      <ScrollView style={{ maxHeight: 540 }} contentContainerStyle={{ gap: 10 }} keyboardShouldPersistTaps="handled">
+      <View style={{ gap: 10 }}>
         <T size={14} color={c.n400}>Lo que tenés en casa no entra en la lista de compras.</T>
         {read ? (
           <View style={{ gap: 6 }}>
@@ -271,7 +271,7 @@ function PantrySheet({ items, list, onClose, onChanged }: { items: Pantry[]; lis
           </>
         )}
         {error ? <Banner tone="warn" text={error} /> : null}
-      </ScrollView>
+      </View>
     </Sheet>
   );
 }

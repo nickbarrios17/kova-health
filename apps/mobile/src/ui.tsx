@@ -7,6 +7,11 @@ import { CircleNotch, Info, WarningCircle } from 'phosphor-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   AccessibilityInfo,
+  Dimensions,
+  Keyboard,
+  Platform,
+  ScrollView,
+  useWindowDimensions,
 
   Animated,
   Modal,
@@ -312,15 +317,48 @@ export function MiniBars({ values, todayColor = c.accent, label }: { values: Arr
   );
 }
 
-/** Bottom sheet: raised, top radius 24, scrim. */
+/**
+ * How much of this window the keyboard covers, in px (0 when closed or on the web). Android draws the
+ * app edge to edge, so the system no longer shrinks the window for the keyboard: screens and sheets
+ * make room themselves. Where the system does shrink it, the overlap is ~0 and nothing is added twice.
+ */
+export function useKeyboardInset(): number {
+  const [inset, setInset] = useState(0);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
+      const winH = Dimensions.get('window').height;
+      const top = e.endCoordinates.screenY || winH - e.endCoordinates.height;
+      setInset(Math.max(0, Math.round(winH - top)));
+    });
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setInset(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+  return inset;
+}
+
+/** A full screen (or full-screen modal) whose content stays above the keyboard. */
+export function KeyboardRoom({ children, style, extra = 0 }: { children: ReactNode; style?: StyleProp<ViewStyle>; extra?: number }) {
+  const kb = useKeyboardInset();
+  return <View style={[{ flex: 1, paddingBottom: Math.max(0, kb - extra) }, style]}>{children}</View>;
+}
+
+/**
+ * Bottom sheet: raised, top radius 24, scrim. It sits on top of the keyboard and its content scrolls
+ * when it does not fit, so what you type is always in view.
+ */
 export function Sheet({ visible, onClose, title, children }: { visible: boolean; onClose: () => void; title: string; children: ReactNode }) {
+  const kb = useKeyboardInset();
+  const { height } = useWindowDimensions();
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
-      <Pressable onPress={onClose} accessibilityLabel="Cerrar" style={{ flex: 1, backgroundColor: c.scrim, justifyContent: 'flex-end' }}>
-        <Pressable accessibilityViewIsModal style={{ backgroundColor: c.raised, borderTopLeftRadius: rad.sheet, borderTopRightRadius: rad.sheet, borderWidth: 1, borderColor: c.divider, padding: 20, paddingBottom: 32, gap: 12 }}>
+      <Pressable onPress={onClose} accessibilityLabel="Cerrar" style={{ flex: 1, backgroundColor: c.scrim, justifyContent: 'flex-end', paddingBottom: kb }}>
+        <Pressable accessibilityViewIsModal style={{ maxHeight: Math.max(240, height - kb - 48), backgroundColor: c.raised, borderTopLeftRadius: rad.sheet, borderTopRightRadius: rad.sheet, borderWidth: 1, borderColor: c.divider, paddingTop: 20, paddingHorizontal: 20, paddingBottom: kb ? 12 : 32, gap: 12 }}>
           <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: c.n700, marginBottom: 4 }} />
           <T size={19} w="semibold" accessibilityRole="header">{title}</T>
-          {children}
+          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 12 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {children}
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>

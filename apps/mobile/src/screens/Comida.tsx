@@ -9,7 +9,7 @@ import { outbox, kova } from '../client';
 import { useSession } from '../session';
 import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
-import { Button, Card, Chip, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
+import { Button, Card, Chip, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T, KeyboardRoom } from '../ui';
 import { useReportTarget } from '../report';
 import { FoodAssistant } from './FoodAssistant';
 import { MealPlanCard } from './MealPlan';
@@ -165,7 +165,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent={false}>
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardRoom style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityLabel="Cerrar" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Agregar a {label}</T>
@@ -225,7 +225,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
             </>
           )}
         </ScrollView>
-      </View>
+      </KeyboardRoom>
     </Modal>
   );
 }
