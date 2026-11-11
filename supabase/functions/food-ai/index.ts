@@ -268,6 +268,9 @@ async function buildPlan(sb: any, body: any) {
   const days: DayT[] = (Array.isArray(body.days) ? body.days : []).filter((d: any) => isDate(d?.date) && num(d?.kcal, 900, 6000) != null).slice(0, 7);
   if (days.length !== 7) throw invalid('days');
   const { list, p } = await catalogAndPrefs(sb);
+  // What is already at home: the week starts from that, and the shopping only completes it.
+  const { data: pantry } = await sb.from('pantry_items').select('name, grams').order('created_at').limit(60);
+  const home = (pantry ?? []).map((x: any) => (str(x?.name, 80) ?? '') + (Number(x?.grams) > 0 ? ' (' + Math.round(Number(x.grams)) + ' g)' : '')).filter((x: string) => x && !x.startsWith(' '));
   const slots = p.meals_per_day <= 3 ? ['breakfast', 'lunch', 'dinner'] : p.meals_per_day === 4 ? ['breakfast', 'lunch', 'afternoon_snack', 'dinner'] : SLOTS;
   const total = slots.reduce((a, s) => a + DAY_SHARE[s]!, 0);
 
@@ -278,7 +281,13 @@ async function buildPlan(sb: any, body: any) {
     'Acercate a las kcal y proteínas de cada día (después afinamos las cantidades). Repetí ingredientes entre días para que la compra sea simple ' +
     'y aprovechá sobras (lo que sobra de una cena puede ser el almuerzo del día siguiente; el primer día no hay sobras). ' +
     'Repartí la proteína entre las comidas. Los días de fuerza, más carbohidratos. ' +
-    'Los días de evento, comidas livianas fuera del evento. ' + prefsText(p) + '\n\nDías:\n' +
+    'Los días de evento, comidas livianas fuera del evento. ' + prefsText(p) +
+    (home.length
+      ? ' La persona YA TIENE en casa: ' + home.join(', ') + '. Usá primero todo eso (en los primeros días lo fresco: carne, pollo, verduras), ' +
+        'y armá el resto para que la compra que falta sea chica: pocos ingredientes nuevos, baratos y que se repitan en varias comidas. ' +
+        'Si tiene un plato armado (por ejemplo milanesas), usá el plato del catálogo.'
+      : '') +
+    '\n\nDías:\n' +
     days.map((d) => d.date + ' (' + d.kind + '): ' + d.kcal + ' kcal, ' + d.proteinG + ' g proteína' + (d.note ? ', ' + d.note : '')).join('\n') +
     '\n\nAlimentos (número|nombre|por 100 g):\n' + catalogText(list);
   const raw = await geminiJson([{ text: prompt }], PLAN_SCHEMA, 0.7, 55000);
@@ -300,7 +309,7 @@ async function buildPlan(sb: any, body: any) {
   if (error) throw upstream(error.message);
   const { error: e2 } = await sb.from('meal_plan_items').insert(items.map((it) => ({ ...it, plan_id: plan.id })));
   if (e2) throw upstream(e2.message);
-  return { plan_id: plan.id, meals: items.length };
+  return { plan_id: plan.id, meals: items.length, from_home: home.length };
 }
 
 async function swapMeal(sb: any, body: any) {

@@ -2,7 +2,7 @@
  * Comidas, etapa 3 (docs/comidas.md): the shopping list from «Tu semana» (by aisle, real packages, minus
  * what is at home) and the pantry, filled by hand, from a receipt or from a photo of the fridge.
  */
-import { AISLE_ORDER, buildShoppingList, lineAmount, nf, RECEIPT_KIND_LABEL, reviewReceipt, weekStartOf, KovaError, type ReceiptItem } from '@kova/domain';
+import { AISLE_ORDER, buildShoppingList, lineAmount, nf, shoppingFromPlan, RECEIPT_KIND_LABEL, reviewReceipt, weekStartOf, KovaError, type ReceiptItem } from '@kova/domain';
 import type { Pantry, ShoppingList } from '@kova/api-client';
 import * as ImagePicker from 'expo-image-picker';
 import { Basket, Camera, Check, House, Plus, Receipt, ShareNetwork, ShoppingCart, Trash, UsersThree, Warning, X } from 'phosphor-react-native';
@@ -34,10 +34,16 @@ export function ShoppingCard({ today }: { today: string }) {
   const [error, setError] = useState<string | null>(null);
   const [houseOpen, setHouseOpen] = useState(false);
   const q = useAsync(async () => {
-    const [list, plan, pantry, house] = await Promise.all([
+    const [list, plan, pantry, house, foods, prefs] = await Promise.all([
       kova.food.shopping.current(), kova.food.plan.get(weekStart), kova.food.pantry.list(), kova.food.household.get().catch(() => null),
+      kova.food.catalogShop().catch(() => []), kova.food.preferences.get().catch(() => null),
     ]);
-    return { list, plan, pantry, house };
+    // What the rest of the week needs, minus what is at home: shown before making the list.
+    const preview = plan && foods.length
+      ? shoppingFromPlan(plan.items.filter((m) => m.local_date >= today && !m.logged_at).flatMap((m) => m.ingredients)
+          .map((i) => ({ ...i, grams: i.grams * (prefs?.people ?? 1) })), foods, pantry.map((p) => ({ name: p.name, grams: p.grams })))
+      : null;
+    return { list, plan, pantry, house, preview };
   }, [weekStart]);
 
   const build = async () => {
@@ -63,7 +69,7 @@ export function ShoppingCard({ today }: { today: string }) {
   };
 
   if (q.loading && !q.data) return <Skeleton height={120} radius={rad.sheet} />;
-  const { list, plan, pantry, house } = q.data ?? { list: null, plan: null, pantry: [] as Pantry[], house: null };
+  const { list, plan, pantry, house, preview } = q.data ?? { list: null, plan: null, pantry: [] as Pantry[], house: null, preview: null };
   const others = house?.people.filter((p) => !p.me).map((p) => p.name) ?? [];
   const done = list?.items.filter((i) => i.checked_at).length ?? 0;
 
@@ -89,9 +95,11 @@ export function ShoppingCard({ today }: { today: string }) {
         </>
       ) : (
         <>
-          <T size={14} color={c.n400}>
-            {plan ? 'Armo la lista con las comidas que te quedan de la semana, por góndola y en envases reales, sin lo que ya tenés en casa.' : 'Cuando armes tu semana, te hago la lista de compras.'}
-          </T>
+          {preview ? <HomeSummary preview={preview} /> : (
+            <T size={14} color={c.n400}>
+              {plan ? 'Armo la lista con las comidas que te quedan de la semana, por góndola y en envases reales, sin lo que ya tenés en casa.' : 'Cuando armes tu semana, te hago la lista de compras.'}
+            </T>
+          )}
           <Button large label="Armar la lista de compras" icon={Basket} onPress={build} busy={busy} disabled={!plan} />
         </>
       )}
@@ -345,6 +353,26 @@ function ReceiptSummary({ review, withList }: { review: ReturnType<typeof review
           <T size={12} color={c.n500} style={{ flex: 1 }}>«Fuera del plan» no es un reto: tu semana no cuenta con eso. Si lo comés, anotalo y ajusto el resto.</T>
         </Row>
       ) : null}
+    </View>
+  );
+}
+
+/** «Tenés esto, te falta comprar esto otro», before the list is made. */
+function HomeSummary({ preview }: { preview: ReturnType<typeof shoppingFromPlan> }) {
+  const { fromHome, lines, unused } = preview;
+  return (
+    <View style={{ gap: 8 }}>
+      {fromHome.length ? (
+        <View style={{ gap: 2 }}>
+          <T size={13} w="semibold" color={c.ok}>Usás lo que tenés</T>
+          <T size={14}>{fromHome.join(', ')}</T>
+        </View>
+      ) : null}
+      <View style={{ gap: 2 }}>
+        <T size={13} w="semibold" color={c.n300}>{lines.length ? 'Te falta comprar ' + lines.length + (lines.length === 1 ? ' cosa' : ' cosas') : 'No te falta nada'}</T>
+        {lines.length ? <T size={14} color={c.n400}>{lines.slice(0, 8).map((l) => l.name).join(', ')}{lines.length > 8 ? ' y ' + (lines.length - 8) + ' más' : ''}</T> : null}
+      </View>
+      {unused.length ? <T size={12} color={c.n500}>Esta semana no usa: {unused.join(', ')}.</T> : null}
     </View>
   );
 }
