@@ -25,6 +25,12 @@ describe('food AI helpers', () => {
     const medialunas = item({ name: 'Medialunas', grams: 100, kcal_low: 330, kcal_high: 420, candidates: [manteca, medialuna] });
     expect(usableCandidate(medialunas)?.id).toBe('c');
     expect(usableCandidate({ ...medialunas, candidates: [manteca] })).toBeNull();
+    // «Barra de cereal sabor yogur y frutilla» (25 g, ≈ 100 kcal) must not become 25 g of strawberries (8 kcal).
+    const frutillas = { ...base, id: 'f', name: 'Frutillas', ref_unit: 'g' as const, kcal: 32 };
+    expect(usableCandidate(item({ name: 'Barra de cereal sabor yogur y frutilla', grams: 25, kcal_low: 90, kcal_high: 110, candidates: [frutillas] }))).toBeNull();
+    // Same food, another word order: still picked.
+    const pechuga = { ...base, id: 'p', name: 'Pechuga de pollo (a la plancha)', ref_unit: 'g' as const, kcal: 165 };
+    expect(usableCandidate(item({ name: 'Pollo a la plancha', grams: 150, kcal_low: 220, kcal_high: 280, candidates: [pechuga] }))?.id).toBe('p');
   });
 
   it('shows the estimate as a range, and its middle when saved', () => {
