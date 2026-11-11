@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { postWorkoutProtein, rideFuel, waterGoalMl, slotsFor, weekStartOf, weekTargets, workoutFuelTips } from '../src/mealPlan.js';
+import { footFuel, postWorkoutProtein, rideFuel, waterGoalMl, slotsFor, weekStartOf, weekTargets, workoutFuelTips } from '../src/mealPlan.js';
 
 const base = { weekStart: '2026-11-09', baseKcal: 2200, proteinG: 150, fatG: 70, trainingDays: [1, 4], trainingKcal: 200, events: [], floorKcal: 1500 };
 const total = (d: Array<{ kcal: number }>) => d.reduce((a, x) => a + x.kcal, 0);
@@ -58,5 +58,11 @@ describe('meal plan helpers', () => {
     expect(waterGoalMl(80, false)).toBe(2800);
     expect(waterGoalMl(80, true, 60)).toBe(3800);
     expect(waterGoalMl(null, false)).toBe(2450);
+  });
+
+  it('fuels a run or a walk', () => {
+    expect(footFuel(10000, 3600, 70, 'run')).toEqual({ kcal: 700, carbsG: 0, waterMl: 500, suggestion: null });
+    expect(footFuel(5000, 3600, 70, 'walk').kcal).toBe(180);
+    expect(footFuel(21000, 7200, 70, 'run').suggestion).toBe('3 geles');
   });
 });

@@ -57,13 +57,14 @@ function toRaw(feature: any) {
   };
 }
 
-async function directions(coordinates: LngLat[], roundTrip?: { length: number; seed: number }) {
+// Bike or on foot (running and walking use the pedestrian profile: sidewalks, paths, parks).
+async function directions(coordinates: LngLat[], roundTrip?: { length: number; seed: number }, foot = false) {
   const body: Record<string, unknown> = {
     coordinates, elevation: true, instructions: true, language: 'es', extra_info: ['waytype', 'surface'],
     preference: 'recommended', units: 'm',
   };
   if (roundTrip) body.options = { round_trip: { length: roundTrip.length, points: 5, seed: roundTrip.seed } };
-  const r = await ors('/v2/directions/cycling-regular/geojson', { method: 'POST', body: JSON.stringify(body) });
+  const r = await ors('/v2/directions/' + (foot ? 'foot-walking' : 'cycling-regular') + '/geojson', { method: 'POST', body: JSON.stringify(body) });
   if (!r.ok) {
     const msg = r.body?.error?.message ?? r.body?.error ?? 'route failed';
     console.error('ors directions', r.status, msg);
@@ -255,22 +256,23 @@ Deno.serve(async (req) => {
       return json(200, { places });
     }
 
+    const foot = body.sport === 'run' || body.sport === 'walk';
     if (body.action === 'route') {
       const points = body.points;
       if (!Array.isArray(points) || points.length < 2 || points.length > 10 || !points.every(isCoord)) return bad('Entre 2 y 10 puntos');
-      const r = await directions(points.map((p: LngLat) => [p[0], p[1]]));
-      if (!r.route) return json(r.error === 'NO_ROUTE' ? 404 : 502, { code: r.error, message: 'No encontramos una ruta en bici entre esos puntos' });
+      const r = await directions(points.map((p: LngLat) => [p[0], p[1]]), undefined, foot);
+      if (!r.route) return json(r.error === 'NO_ROUTE' ? 404 : 502, { code: r.error, message: foot ? 'No encontramos un camino a pie entre esos puntos' : 'No encontramos una ruta en bici entre esos puntos' });
       const [parks, safe] = await Promise.all([parksAround([r.route]), withSafety(sb, [r.route])]);
       return json(200, { routes: safe.routes, parks, zones: safe.zones });
     }
 
     if (body.action === 'loop') {
       const length = Number(body.length_m);
-      if (!isCoord(body.start) || !(length >= 2000 && length <= 150000)) return bad('Largo entre 2 y 150 km');
+      if (!isCoord(body.start) || !(length >= (foot ? 800 : 2000) && length <= (foot ? 50000 : 150000))) return bad(foot ? 'Largo entre 0,8 y 50 km' : 'Largo entre 2 y 150 km');
       const n = Math.min(3, Math.max(1, Number(body.options) || 3));
       const seed0 = Math.floor(Math.random() * 1000);
       const results = await Promise.all(Array.from({ length: n }, (_, i) =>
-        directions([[body.start[0], body.start[1]]], { length, seed: seed0 + i * 37 })));
+        directions([[body.start[0], body.start[1]]], { length, seed: seed0 + i * 37 }, foot)));
       const routes = results.flatMap((r) => (r.route ? [r.route] : []));
       if (!routes.length) return json(502, { code: 'UPSTREAM', message: 'No pudimos armar recorridos ahora' });
       const [parks, safe] = await Promise.all([parksAround(routes), withSafety(sb, routes)]);

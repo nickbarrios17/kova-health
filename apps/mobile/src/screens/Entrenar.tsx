@@ -1,6 +1,6 @@
 /** Routines + history (prototype "Rutinas"), with the routine editor (new, edit, duplicate, delete). */
 import { dayMonth, draftFromRoutine, dur, emptyDraft, isoDays, newId, nf, toDisplayWeight, type RoutineDraft } from '@kova/domain';
-import { Barbell, Bicycle, CaretRight, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
+import { Barbell, Bicycle, CaretRight, PersonSimpleRun, ClockCounterClockwise, Copy, PencilSimple, Play, Plus } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { kova } from '../client';
@@ -26,10 +26,12 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
   useReportTarget('entrenar');
   const [howTo, setHowTo] = useState<{ id: string; name: string } | null>(null);
   const [bike, setBike] = useState(false);
+  const [foot, setFoot] = useState(false);
 
   // Back closes the routine editor without saving, like «Cancelar».
 
   if (bike) return <Ciclismo onClose={() => setBike(false)} />;
+  if (foot) return <Ciclismo sport="run" onClose={() => setFoot(false)} />;
   if (q.loading && !q.data) return <Loading />;
   if (q.error) return <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>;
   const { training, done } = q.data!;
@@ -50,6 +52,15 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
         <View style={{ flex: 1, gap: 2 }}>
           <T size={15} w="medium">Ciclismo</T>
           <T size={12} color={c.n400}>Planificá una ruta o pedí recorridos de 1 hora</T>
+        </View>
+        <CaretRight size={18} color={c.n500} />
+      </Pressable>
+      <Pressable onPress={() => setFoot(true)} accessibilityRole="button" accessibilityLabel="Correr y caminar: armar un circuito"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: rad.card, borderWidth: 1, borderColor: c.divider, backgroundColor: c.surface }}>
+        <PersonSimpleRun size={24} color={c.accent} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <T size={15} w="medium">Correr y caminar</T>
+          <T size={12} color={c.n400}>Circuitos por parques y calles tranquilas, a tu ritmo</T>
         </View>
         <CaretRight size={18} color={c.n500} />
       </Pressable>
