@@ -337,8 +337,13 @@ const PANTRY_SCHEMA = {
         properties: {
           name: { type: 'STRING', description: 'Nombre del alimento; si está en la lista de nombres, usá ese nombre exacto' },
           grams: { type: 'NUMBER', description: 'Gramos o ml si se pueden saber (ticket: peso o tamaño del envase); 0 si no' },
+          kind: {
+            type: 'STRING', enum: ['comida', 'snack', 'bebida_azucarada', 'alcohol', 'ultraprocesado', 'no_comida'],
+            description: 'comida = alimento común; snack = golosinas, galletitas dulces, papas fritas; ultraprocesado = salchichas, nuggets, comida rápida congelada, postres industriales; no_comida = limpieza, perfumería',
+          },
+          price: { type: 'NUMBER', description: 'Precio total de la línea en pesos si se ve; 0 si no' },
         },
-        required: ['name', 'grams'],
+        required: ['name', 'grams', 'kind', 'price'],
       },
     },
     readable: { type: 'BOOLEAN' },
@@ -346,25 +351,32 @@ const PANTRY_SCHEMA = {
   required: ['items', 'readable'],
 };
 
+const KINDS = ['comida', 'snack', 'bebida_azucarada', 'alcohol', 'ultraprocesado', 'no_comida'];
+
 async function readPantry(sb: any, body: any) {
   const mime = str(body?.image?.mime, 40), data = typeof body?.image?.data === 'string' ? body.image.data : null;
   if (!mime || !/^image\/(jpeg|png|webp|heic)$/.test(mime) || !data) throw invalid('image');
   if (data.length * 0.75 > MAX_IMAGE_BYTES) throw invalid('image too large');
   // The names the shopping list uses, so what is at home matches what is on the list.
+  const list: string[] = (Array.isArray(body?.list) ? body.list : []).slice(0, 80).flatMap((x: unknown) => { const v = str(x, 80); return v ? [v] : []; });
   const { data: foods } = await sb.from('foods').select('name, shop').is('owner_id', null).not('shop', 'is', null).limit(400);
   const names = [...new Set((foods ?? []).filter((f: any) => !f.shop?.parts).map((f: any) => f.shop?.name ?? String(f.name).replace(/\s*\(.*\)\s*$/, '')))];
   const prompt =
     'Mirá esta foto: es un ticket de supermercado argentino o el interior de una heladera o alacena. ' +
     'Listá los alimentos que la persona tiene en casa. En un ticket, usá el peso o el tamaño del envase para los gramos (1 kg = 1000, 1 l = 1000); ' +
-    'si es una heladera y no se puede saber cuánto hay, grams = 0. Ignorá productos de limpieza y cosas que no son comida. ' +
-    'Si no se ve nada claro, readable=false.\n\nNombres de la lista (usalos cuando corresponda):\n' + names.join(', ');
+    'si es una heladera y no se puede saber cuánto hay, grams = 0. ' +
+    'Si no se ve nada claro, readable=false.\n\nNombres de la lista (usalos cuando corresponda):\n' + names.join(', ') +
+    (list.length ? '\n\nLa lista de compras de esta persona (si una línea del ticket es una de estas, usá ese nombre exacto):\n' + list.join(', ') : '') +
+    '\n\nEn un ticket listá también golosinas, bebidas y lo que no es comida (limpieza, perfumería), cada uno con su kind. En una heladera, solo alimentos.';
   const raw = await geminiJson([{ text: prompt }, { inline_data: { mime_type: mime, data } }], PANTRY_SCHEMA, 0.1, 40000);
   if (!raw?.readable) return { items: [] };
   const items = (Array.isArray(raw.items) ? raw.items : []).slice(0, 60).flatMap((x: any) => {
     const name = str(x?.name, 120);
     if (!name) return [];
     const g = num(x?.grams, 0, 100000);
-    return [{ name: name.charAt(0).toUpperCase() + name.slice(1), grams: g && g > 0 ? Math.round(g) : null }];
+    const kind = KINDS.includes(x?.kind) ? x.kind : 'comida';
+    const price = num(x?.price, 0, 10000000);
+    return [{ name: name.charAt(0).toUpperCase() + name.slice(1), grams: g && g > 0 ? Math.round(g) : null, kind, price: price && price > 0 ? Math.round(price) : null }];
   });
   return { items };
 }

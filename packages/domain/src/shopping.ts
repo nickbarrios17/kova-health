@@ -85,3 +85,58 @@ export function lineAmount(l: Pick<ShoppingLine, 'grams' | 'packages' | 'package
   if (l.packages && l.package_label) return l.packages + ' × ' + l.package_label;
   return l.grams >= 1000 ? (Math.round(l.grams / 100) / 10).toLocaleString('es-AR') + ' kg' : l.grams + ' g';
 }
+
+// ── Receipt review ─────────────────────────────────────────────────────────────
+
+/**
+ * What a receipt line is, as the photo reading classifies it. «comida» is plain food; the rest are things
+ * the plan does not count on (treats, sugary drinks, alcohol, ultra-processed) or not food at all.
+ */
+export type ReceiptKind = 'comida' | 'snack' | 'bebida_azucarada' | 'alcohol' | 'ultraprocesado' | 'no_comida';
+export interface ReceiptItem { name: string; grams: number | null; kind: ReceiptKind; price?: number | null }
+
+export const RECEIPT_KIND_LABEL: Record<Exclude<ReceiptKind, 'comida' | 'no_comida'>, string> = {
+  snack: 'Snack o golosina', bebida_azucarada: 'Bebida con azúcar', alcohol: 'Alcohol', ultraprocesado: 'Ultraprocesado',
+};
+
+export interface ReceiptReview {
+  /** On the list: bought as planned. `listName` is the list line it matched. */
+  onList: Array<ReceiptItem & { listName: string }>;
+  /** Plain food that was not on the list (fine, but outside what the week needed). */
+  offList: ReceiptItem[];
+  /** Outside the plan: treats, sugary drinks, alcohol, ultra-processed. */
+  offPlan: ReceiptItem[];
+  /** On the list and not on the receipt. */
+  missing: string[];
+  /** Cleaning products and the like: not part of the review. */
+  other: ReceiptItem[];
+}
+
+const words = (s: string) => fold(s).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 2);
+
+/** Same food: equal names, or both start with the same food word («Leche» ↔ «Leche entera La Serenísima 1 l»). */
+export function sameFood(receiptName: string, listName: string): boolean {
+  const a = fold(receiptName), b = fold(listName);
+  if (a === b) return true;
+  const lw = words(listName), rw = words(receiptName);
+  if (!lw.length || !rw.length) return false;
+  // The first word of each decides (it is the food: «Pechuga de pollo» → pechuga, «Arroz con leche» is
+  // arroz, not leche); a stem match allows plurals («Bananas» ↔ «Banana»).
+  const head = lw[0]!, w = rw[0]!;
+  return w === head || (w.startsWith(head) && w.length - head.length <= 2) || (head.startsWith(w) && head.length - w.length <= 2);
+}
+
+/** Compares a receipt with the shopping list: what matched, what was extra, what is outside the plan and what is missing. */
+export function reviewReceipt(items: ReceiptItem[], listNames: string[]): ReceiptReview {
+  const out: ReceiptReview = { onList: [], offList: [], offPlan: [], missing: [], other: [] };
+  const used = new Set<string>();
+  for (const it of items) {
+    if (it.kind === 'no_comida') { out.other.push(it); continue; }
+    if (it.kind !== 'comida') { out.offPlan.push(it); continue; }
+    const match = listNames.find((n) => !used.has(n) && sameFood(it.name, n)) ?? listNames.find((n) => sameFood(it.name, n));
+    if (match) { used.add(match); out.onList.push({ ...it, listName: match }); }
+    else out.offList.push(it);
+  }
+  out.missing = listNames.filter((n) => !used.has(n));
+  return out;
+}
