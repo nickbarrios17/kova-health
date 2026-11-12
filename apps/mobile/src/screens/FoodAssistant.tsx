@@ -10,12 +10,13 @@ import {
 import type { OffProduct, ReadLabel } from '@kova/api-client';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { Barcode, Camera, Check, ForkKnife, PaperPlaneRight, X } from 'phosphor-react-native';
+import { Barcode, Camera, Check, ForkKnife, PaperPlaneRight, Sparkle, X } from 'phosphor-react-native';
 import { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { kova, outbox } from '../client';
 import { c, font, rad } from '../theme';
 import { Banner, Button, Chip, Field, Row, T, KeyboardRoom } from '../ui';
+import { EatNow } from './EatNow';
 
 type Slot = (typeof MEAL_SLOTS)[number][0];
 
@@ -46,6 +47,7 @@ export function FoodAssistant({ day, deviceId, onLogged }: { day: string; device
   const [text, setText] = useState('');
   const [busy, setBusy] = useState<null | 'text' | 'photo' | 'menu'>(null);
   const [menu, setMenu] = useState<MenuOption[] | null>(null);
+  const [now, setNow] = useState(false);
 
   const runMenu = async () => {
     setError(null);
@@ -110,8 +112,11 @@ export function FoodAssistant({ day, deviceId, onLogged }: { day: string; device
         <Button variant="secondary" label="Foto" icon={Camera} onPress={() => run('photo')} busy={busy === 'photo'} disabled={!!busy} accessibilityLabel="Sacar una foto del plato" />
         <Button variant="secondary" label="Código" icon={Barcode} onPress={() => setScan(true)} disabled={!!busy} accessibilityLabel="Escanear un código de barras" />
       </Row>
+      <Button variant="secondary" label="¿Qué como ahora?" icon={Sparkle} onPress={() => setNow(true)} disabled={!!busy}
+        accessibilityHint="Con lo que tenés, te armo las comidas que te faltan hoy para llegar a tu meta" />
       <Button variant="text" label="¿Comés afuera? Sacale una foto a la carta" icon={ForkKnife} onPress={() => runMenu()} busy={busy === 'menu'} disabled={!!busy} style={{ alignSelf: 'flex-start', paddingHorizontal: 0 }} />
       <T size={11} color={c.n500}>Las estimaciones se marcan como estimadas. Las fotos no se guardan.</T>
+      {now ? <EatNow day={day} deviceId={deviceId} onClose={() => setNow(false)} onLogged={onLogged} /> : null}
       {menu ? <MenuSheet options={menu} day={day} deviceId={deviceId} onClose={() => setMenu(null)} onSaved={() => { setMenu(null); onLogged(); }} /> : null}
       {review ? (
         <Review items={review.items} unclear={review.unclear} day={day} deviceId={deviceId}

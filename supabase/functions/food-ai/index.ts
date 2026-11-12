@@ -334,6 +334,72 @@ async function swapMeal(sb: any, body: any) {
   return { item: fresh };
 }
 
+// ── «¿Qué como ahora?»: the meals left today, from what you have ────────────────────────────────
+
+const NOW_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    note: { type: 'STRING', description: 'Una o dos frases en voseo: qué aporta lo que tiene (proteína, carbohidratos, grasa) y qué le falta para llegar' },
+    meals: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          ...MEAL_SCHEMA.properties,
+          ingredients: {
+            type: 'ARRAY',
+            items: {
+              type: 'OBJECT',
+              properties: {
+                food: { type: 'NUMBER', description: 'Número del alimento en la lista' }, grams: { type: 'NUMBER' },
+                home: { type: 'BOOLEAN', description: 'true si es algo que la persona dijo que tiene' },
+              },
+              required: ['food', 'grams', 'home'],
+            },
+          },
+        },
+        required: MEAL_SCHEMA.required,
+      },
+    },
+  },
+  required: ['note', 'meals'],
+};
+
+async function eatNow(sb: any, body: any) {
+  const want = (Array.isArray(body?.meals) ? body.meals : []).flatMap((m: any) => {
+    const kcal = num(m?.kcal, 80, 4000), protein = num(m?.protein_g, 0, 300);
+    return SLOTS.includes(m?.slot) && kcal != null ? [{ slot: m.slot as string, kcal, protein: protein ?? 0 }] : [];
+  }).slice(0, 5);
+  if (!want.length) throw invalid('meals');
+  const have = str(body?.have, 600);
+  const { list, p } = await catalogAndPrefs(sb);
+  const { data: pantry } = await sb.from('pantry_items').select('name').order('created_at').limit(60);
+  const home = (pantry ?? []).map((x: any) => str(x?.name, 80)).filter(Boolean);
+  const prompt =
+    'Sos un nutricionista argentino. La persona quiere saber qué comer ahora con lo que tiene. ' +
+    (have ? 'Tiene: ' + have + '. ' : '') + (home.length ? 'En casa también anotó: ' + home.join(', ') + '. ' : '') +
+    'Armá estas comidas, una por cada una y distintas entre sí:\n' +
+    want.map((m: any) => '- ' + SLOT_ES[m.slot] + ' (slot ' + m.slot + '): unas ' + Math.round(m.kcal) + ' kcal y ' + Math.round(m.protein) + ' g de proteína').join('\n') +
+    '\nUsá primero lo que tiene; sumá pocos ingredientes más, comunes y baratos, solo si hacen falta para llegar a la proteína o a las calorías, y marcalos con home=false. ' +
+    'Comida casera argentina, fácil. Usá SOLO alimentos de la lista por su número, con gramos según diga el nombre (crudo o cocido). ' +
+    'En note, decí en pocas palabras qué aporta lo que tiene y qué le falta (por ejemplo «tenés buena proteína; te faltan carbohidratos para la cena»). ' +
+    prefsText(p) + '\n\nAlimentos (número|nombre|por 100 g):\n' + catalogText(list);
+  const raw = await geminiJson([{ text: prompt }], NOW_SCHEMA, 0.6, 45000);
+  const meals = want.flatMap((w: any, i: number) => {
+    const m = (raw?.meals ?? []).find((x: any) => x?.slot === w.slot) ?? (raw?.meals ?? [])[i];
+    const cooked = m ? cookMeal(m, list, w.kcal, w.protein) : null;
+    if (!cooked) return [];
+    // Names and «you have it» for each ingredient, in the order cookMeal kept them.
+    const raws = (m.ingredients ?? []).filter((x: any) => Number.isInteger(x?.food) && list[x.food] && num(x?.grams, 1, 1500) != null).slice(0, 12);
+    const ingredients = cooked.ingredients.map((ing: any, k: number) => ({
+      ...ing, name: list.find((f) => f.id === ing.food_id)?.name ?? '', home: raws[k]?.home === true,
+    }));
+    return [{ slot: w.slot, ...cooked, ingredients }];
+  });
+  if (!meals.length) throw upstream('no meals');
+  return { note: str(raw?.note, 400), meals };
+}
+
 // ── Etapa 3: what is at home, from a supermarket receipt or a photo of the fridge ────────────────
 
 const PANTRY_SCHEMA = {
@@ -445,13 +511,13 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return fail(400, 'INVALID_INPUT', 'json body'); }
-  if (body?.mode === 'plan' || body?.mode === 'swap' || body?.mode === 'pantry' || body?.mode === 'menu') {
+  if (body?.mode === 'plan' || body?.mode === 'swap' || body?.mode === 'pantry' || body?.mode === 'menu' || body?.mode === 'now') {
     const since = new Date(Date.now() - 24 * 3600_000).toISOString();
     const { count } = await admin.from('ai_requests').select('id', { count: 'exact', head: true })
       .eq('user_id', who.user.id).gte('created_at', since);
     if ((count ?? 0) >= DAILY_CAP) return fail(429, 'RATE_LIMITED', 'daily AI limit');
     try {
-      const out = body.mode === 'plan' ? await buildPlan(sb, body) : body.mode === 'swap' ? await swapMeal(sb, body) : body.mode === 'menu' ? await readMenu(body) : await readPantry(sb, body);
+      const out = body.mode === 'now' ? await eatNow(sb, body) : body.mode === 'plan' ? await buildPlan(sb, body) : body.mode === 'swap' ? await swapMeal(sb, body) : body.mode === 'menu' ? await readMenu(body) : await readPantry(sb, body);
       await admin.from('ai_requests').insert({ user_id: who.user.id, kind: body.mode === 'pantry' || body.mode === 'menu' ? body.mode : 'plan', ok: true });
       return json(200, out);
     } catch (e) {

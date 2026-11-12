@@ -163,3 +163,39 @@ export function waterGoalMl(weightKg: number | null, strengthDay: boolean, rideM
   const base = 35 * (weightKg ?? 70) + (strengthDay ? 500 : 0) + (500 * Math.max(0, rideMinutes)) / 60;
   return Math.round(base / 50) * 50;
 }
+
+/** Share of the day's calories of each meal (the same split the week plan uses). */
+export const DAY_SHARE: Record<MealSlotKey, number> = { breakfast: 0.22, lunch: 0.33, afternoon_snack: 0.13, dinner: 0.32, snack: 0.08 };
+
+export interface Left { kcal: number; proteinG: number; carbsG: number | null; fatG: number | null }
+export interface MealLeft { slot: MealSlotKey; kcal: number; proteinG: number; carbsG: number | null; fatG: number | null }
+
+/** Hour from which each meal is «now or later» (a meal whose time passed and was skipped is not asked for). */
+const SLOT_FROM: Record<MealSlotKey, number> = { breakfast: 0, lunch: 11, afternoon_snack: 15, dinner: 19, snack: 22 };
+
+/**
+ * «¿Qué como ahora?»: the meals still to eat today and what each one should bring so the day closes on
+ * target. The meals you skipped give their part to the ones left; the meals already logged count as done.
+ * Empty when what is left is less than a snack (≈ 120 kcal). No meal goes over 40 % of the day's goal
+ * (`goalKcal`): a whole day is not made up in one sitting; the rest is simply not eaten.
+ */
+export const MAX_MEAL_SHARE = 0.4;
+export function mealsLeft(p: { mealsPerDay: number; logged: string[]; left: Left; hour: number; goalKcal?: number }): MealLeft[] {
+  if (p.left.kcal < 120) return [];
+  const slots = slotsFor(p.mealsPerDay);
+  const open = slots.filter((s) => !p.logged.includes(s));
+  const now = open.filter((s, i) => SLOT_FROM[s] <= p.hour && (open[i + 1] === undefined || SLOT_FROM[open[i + 1]!] > p.hour));
+  const ahead = open.filter((s) => SLOT_FROM[s] > p.hour);
+  // The meal of this time (or the last one that was skipped, late at night) and the ones still ahead.
+  const pending = [...now, ...ahead];
+  if (!pending.length) pending.push(open[open.length - 1] ?? slots[slots.length - 1]!);
+  const total = pending.reduce((a, s) => a + DAY_SHARE[s], 0);
+  const part = (v: number | null, s: MealSlotKey) => (v == null ? null : Math.max(0, Math.round((v * DAY_SHARE[s]) / total)));
+  const cap = p.goalKcal ? p.goalKcal * MAX_MEAL_SHARE : Infinity;
+  return pending.map((s) => {
+    const kcal = part(p.left.kcal, s)!;
+    const k = kcal > cap ? cap / kcal : 1;
+    const scaled = (v: number | null) => (v == null ? null : Math.round(v * k));
+    return { slot: s, kcal: Math.round(kcal * k), proteinG: scaled(part(p.left.proteinG, s))!, carbsG: scaled(part(p.left.carbsG, s)), fatG: scaled(part(p.left.fatG, s)) };
+  });
+}

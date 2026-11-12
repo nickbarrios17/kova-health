@@ -20,6 +20,21 @@ export interface NewsDay {
 
 export const NEWS: NewsDay[] = [
   {
+    date: '2026-11-13',
+    items: [
+      { title: '¿Qué como ahora?', body: 'En Comida, contale qué tenés y te armo las comidas que te faltan hoy para llegar a tu meta: todo el día si recién arrancás, o solo la cena. Cada plato te dice sus calorías y macros, y qué te faltaría comprar. Sin atracones: ninguna comida se pasa de lo razonable.', preview: true },
+    ],
+  },
+  {
+    date: '2026-11-12',
+    items: [
+      { title: 'Tu semana desde lo que tenés', body: 'Antes de armar la semana, Kova te pregunta qué hay en casa y lo usa primero. La compra solo completa lo que falta.' },
+      { title: 'Revisar el ticket', body: 'En Compras, sacale una foto al ticket del súper: ves qué compraste de la lista, qué te faltó y qué quedó fuera del plan.' },
+      { title: 'Correr y caminar', body: 'En Entrenar, armá circuitos a pie como los de Ciclismo: por tiempo o hasta un lugar, con tu ritmo en min/km y navegación con voz.' },
+      { title: 'El teclado ya no tapa', body: 'Cuando escribís, lo que estás escribiendo queda siempre a la vista, y un solo toque alcanza para los botones.' },
+    ],
+  },
+  {
     date: '2026-11-11',
     items: [
       { title: 'Tu semana de comidas', body: 'En Comida, Kova te arma las comidas de la semana con platos caseros, alrededor de tus entrenamientos: más carbohidratos los días de fuerza. Tocá «Lo comí» para registrarla o «Cambiar» si no te tienta.' },
