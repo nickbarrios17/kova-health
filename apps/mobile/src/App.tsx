@@ -25,7 +25,7 @@ import { UpdatePrompt } from './screens/UpdatePrompt';
 import { SessionProvider, useSession } from './session';
 import { c } from './theme';
 import type { TrainingData } from './training';
-import { Button, KeyboardRoom, Loading, T } from './ui';
+import { Button, KeyboardRoom, Loading, T, useKeyboardInset } from './ui';
 import { loadLive, saveLive, startFromRoutine, type LiveSession, type Summary } from './workout';
 import { SessionConflict, SyncProvider } from './sync';
 import { ReportProvider, useReportButtonOffset } from './report';
@@ -46,6 +46,8 @@ function Shell() {
   const { status, prefs, deviceId, bootError, retryBoot } = useSession();
   const [tab, setTab] = useState<Tab>('hoy');
   const [live, setLive] = useState<LiveSession | null>(null);
+  // While typing, the tabs step aside so the screen keeps the room above the keyboard.
+  const typing = useKeyboardInset() > 0;
   const [showLive, setShowLive] = useState(false);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [apkUpdate, setApkUpdate] = useState<ApkRelease | null>(null);
@@ -146,9 +148,9 @@ function Shell() {
           : tab === 'comida' ? <Comida />
           : <Progreso />}
       </View>
-      {live ? <LiveBar live={live} onOpen={() => setShowLive(true)} /> : null}
+      {live && !typing ? <LiveBar live={live} onOpen={() => setShowLive(true)} /> : null}
       <SessionConflict live={live} onDropLocal={() => { saveLive(null).catch(() => undefined); setLive(null); }} />
-      <View accessibilityRole="tablist" style={{ height: 80, flexDirection: 'row', backgroundColor: c.navBg, borderTopWidth: 1, borderTopColor: c.borderSubtle, paddingBottom: 6 }}>
+      {typing ? null : <View accessibilityRole="tablist" style={{ height: 80, flexDirection: 'row', backgroundColor: c.navBg, borderTopWidth: 1, borderTopColor: c.borderSubtle, paddingBottom: 6 }}>
         {TABS.map(([k, label, Ic]) => {
           const on = tab === k;
           return (
@@ -161,7 +163,7 @@ function Shell() {
             </Pressable>
           );
         })}
-      </View>
+      </View>}
     </View>
   );
 }
