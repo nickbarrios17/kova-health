@@ -9,7 +9,7 @@ import { outbox, kova } from '../client';
 import { useSession } from '../session';
 import { c, rad } from '../theme';
 import { useAsync } from '../useAsync';
-import { Button, Card, Chip, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T } from '../ui';
+import { Button, Card, Chip, Empty, ErrorNote, Field, Loading, Notice, Row, Seg, T, KeyboardRoom } from '../ui';
 import { useReportTarget } from '../report';
 import { FoodAssistant } from './FoodAssistant';
 import { MealPlanCard } from './MealPlan';
@@ -28,6 +28,8 @@ export function Comida() {
   const today = localDate(new Date(), prefs!.time_zone);
   const [day, setDay] = useState(today);
   const [adding, setAdding] = useState<Slot | null>(null);
+  // A new week plan refreshes the shopping card (what you have vs. what is missing).
+  const [planRev, setPlanRev] = useState(0);
   useReportTarget('comida');
 
   const q = useAsync(async () => {
@@ -51,14 +53,14 @@ export function Comida() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
+      <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
         <Row style={{ justifyContent: 'space-between' }}>
           <T size={26} w="semibold" accessibilityRole="header">Comida</T>
           <Seg options={[[addDays(today, -1), 'Ayer'], [today, 'Hoy']]} value={day} onChange={setDay} />
         </Row>
         <FoodAssistant day={day} deviceId={deviceId} onLogged={q.reload} />
-        {day === today ? <MealPlanCard today={today} deviceId={deviceId} onLogged={q.reload} /> : null}
-        {day === today ? <ShoppingCard today={today} /> : null}
+        {day === today ? <MealPlanCard today={today} deviceId={deviceId} onLogged={q.reload} onPlanChanged={() => setPlanRev((n) => n + 1)} /> : null}
+        {day === today ? <ShoppingCard key={planRev} today={today} /> : null}
         {day === today ? <WaterCard today={today} /> : null}
         {q.loading && !q.data ? <Loading /> : q.error ? <ErrorNote message={q.error} onRetry={q.reload} /> : (
           <>
@@ -163,12 +165,12 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent={false}>
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityLabel="Cerrar" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Agregar a {label}</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} keyboardShouldPersistTaps="handled">
+        <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, gap: 12 }} keyboardShouldPersistTaps="handled">
           {error ? <Notice tone="warn" text={error} /> : null}
           {picked ? (
             <Card>
@@ -223,7 +225,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
             </>
           )}
         </ScrollView>
-      </View>
+      </KeyboardRoom>
     </Modal>
   );
 }

@@ -50,7 +50,7 @@ export function WaterCard({ today }: { today: string }) {
         {d?.trained ? 'Hoy entrenaste: la meta suma medio litro. ' : ''}Es una estimación por tu peso; la comida también aporta agua.
       </T>
       <Row style={{ gap: 8 }}>
-        <Button label="+ 1 vaso (250 ml)" icon={Plus} disabled={!d || busy} onPress={() => act(() => kova.food.water.add(today, 250))} />
+        <Button label="1 vaso (250 ml)" icon={Plus} disabled={!d || busy} onPress={() => act(() => kova.food.water.add(today, 250))} />
         {d?.last_id ? (
           <Button variant="ghost" label="Deshacer" icon={ArrowCounterClockwise} disabled={busy} onPress={() => act(() => kova.food.water.remove(d.last_id!))} />
         ) : null}

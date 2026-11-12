@@ -39,17 +39,30 @@ export function scaleFood(f: Pick<CatalogFood, 'ref_amount' | 'kcal' | 'protein_
   return { kcal: Math.round(f.kcal * k), protein_g: r1(f.protein_g * k), carbs_g: r1(f.carbs_g * k), fat_g: r1(f.fat_g * k) };
 }
 
+const fold = (x: string) => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const words = (x: string) => fold(x).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 2);
+const stemEq = (a: string, b: string) => a === b || (a.startsWith(b) && a.length - b.length <= 2) || (b.startsWith(a) && b.length - a.length <= 2);
+
 /**
- * The catalog food picked by default: measured by weight or volume, and with calories for those grams
- * close to the AI estimate (within 1.6 times either way, or 100 kcal). A far-off match («Manteca» for
- * «2 medialunas») is still offered as an option, but never chosen on its own.
+ * The catalog food picked by default, only when it is the same food and its calories agree:
+ * - measured by weight or volume;
+ * - the dish's main word is in the catalog name («Pollo a la plancha» ↔ «Pechuga de pollo»), so a
+ *   «Barra de cereal sabor frutilla» never becomes «Frutillas»;
+ * - calories for those grams within 1.6 times the AI estimate either way (or 30 kcal for tiny amounts).
+ * A far-off match («Manteca» for «2 medialunas») is still offered as an option, but never chosen on its own.
  */
 export function usableCandidate(item: DescribedItem): CatalogFood | null {
   const mid = (item.kcal_low + item.kcal_high) / 2;
+  const head = words(item.name)[0];
+  // What comes after «con» («tostada con manteca») has to be in the catalog food too, or it is lost.
+  const extras = words(fold(item.name).split(/\s+con\s+/).slice(1).join(' '));
   return item.candidates.find((c) => {
     if (c.ref_unit !== 'g' && c.ref_unit !== 'ml') return false;
+    const cw = words(c.name);
+    if (head && !cw.some((w) => stemEq(w, head))) return false;
+    if (extras.length && !extras.every((e) => cw.some((w) => stemEq(w, e)))) return false;
     const kcal = (c.kcal * item.grams) / c.ref_amount;
-    return Math.abs(kcal - mid) <= 100 || (kcal >= mid / 1.6 && kcal <= mid * 1.6);
+    return Math.abs(kcal - mid) <= 30 || (kcal >= mid / 1.6 && kcal <= mid * 1.6);
   }) ?? null;
 }
 

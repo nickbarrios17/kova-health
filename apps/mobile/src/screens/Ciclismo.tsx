@@ -1,15 +1,16 @@
 /**
- * Ciclismo (docs/ciclismo.md): plan a ride before going out.
+ * Ciclismo (docs/ciclismo.md), and the same planner on foot for running and walking (docs/correr.md):
+ * plan before going out.
  * - Por tiempo: «quiero andar 1 hora» → up to 3 loops from where you are, best first.
  * - A → B: to a place you search or tap on the map.
  * Each route says how much is bike lane, neighbourhood streets or avenues, which parks it crosses,
  * the estimated time at your speed, and what to watch out for. 2D/3D map and a 3D ride: a bike follows the route at the speed you pick.
  */
-import { KovaError, SAFETY_REPORT_KINDS, SPEEDS_KMH, analyzeRoute, formatKm, newId, nf, rideFuel, routeScore, type Coord, type Park, type RawRoute, type RouteAnalysis, type SafetyReportKind, type SafetyZones } from '@kova/domain';
+import { KovaError, SAFETY_REPORT_KINDS, SPORTS, analyzeRoute, footFuel, formatKm, loopLengthM, newId, nf, paceLabel, rideFuel, routeScore, type Coord, type Park, type RawRoute, type RouteAnalysis, type SafetyReportKind, type SafetyZones, type Sport } from '@kova/domain';
 import type { MySafetyReport, Place, SavedRoute } from '@kova/api-client';
 import * as Location from 'expo-location';
-import { ArrowLeft, Bicycle, Crosshair, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, MegaphoneSimple, NavigationArrow, ShieldWarning, Pause, Play, Stop, Trash, Warning } from 'phosphor-react-native';
-import { useMemo, useState } from 'react';
+import { ArrowLeft, Bicycle, Crosshair, PersonSimpleRun, PersonSimpleWalk, CubeFocus, FloppyDisk, MagnifyingGlass, MapTrifold, MegaphoneSimple, NavigationArrow, ShieldWarning, Pause, Play, Stop, Trash, Warning } from 'phosphor-react-native';
+import { useEffect, useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { useBack } from '../back';
 import { kova } from '../client';
@@ -22,7 +23,6 @@ import { Button, Card, Confirm, Empty, ErrorNote, Field, Loading, Notice, Row, S
 
 type Mode = 'tiempo' | 'ab' | 'guardadas';
 type Plan = { kind: 'ab' | 'loop'; routes: RawRoute[]; parks: Park[]; zones?: SafetyZones | null; savedName?: string; savedId?: string };
-const MINUTES = [30, 45, 60, 90, 120];
 // «Recorrer en 3D»: how many times faster than your pace the bike goes on the map.
 const RIDE_SPEEDS = [{ label: 'Lenta', x: 5 }, { label: 'Media', x: 15 }, { label: 'Rápida', x: 40 }];
 
@@ -41,9 +41,9 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
   );
 }
 
-function Shares({ a }: { a: RouteAnalysis }) {
+function Shares({ a, foot }: { a: RouteAnalysis; foot?: boolean }) {
   const parts = (['bicisenda', 'calle', 'avenida', 'sendero', 'otro'] as const).filter((k) => a.shares[k] >= 0.01);
-  const names = { bicisenda: 'Bicisenda', calle: 'Calles', avenida: 'Avenidas', sendero: 'Sendero', otro: 'Otros' };
+  const names = { bicisenda: 'Bicisenda', calle: foot ? 'Calles y veredas' : 'Calles', avenida: 'Avenidas', sendero: foot ? 'Senderos' : 'Sendero', otro: 'Otros' };
   return (
     <View style={{ gap: 6 }}>
       <View style={{ flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: c.n800 }}>
@@ -61,7 +61,7 @@ function Shares({ a }: { a: RouteAnalysis }) {
   );
 }
 
-function RouteCard({ a, title, selected, onPress }: { a: RouteAnalysis; title: string; selected: boolean; onPress: () => void }) {
+function RouteCard({ a, title, selected, onPress, foot }: { a: RouteAnalysis; title: string; selected: boolean; onPress: () => void; foot?: boolean }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected }}
       style={{ padding: 14, gap: 10, borderRadius: rad.card, borderWidth: 1, borderColor: selected ? c.accent : c.divider, backgroundColor: selected ? 'rgba(145,132,217,0.08)' : c.surface }}>
@@ -70,7 +70,7 @@ function RouteCard({ a, title, selected, onPress }: { a: RouteAnalysis; title: s
         <T size={15} w="medium" color={c.a300}>{fmtDuration(a.duration_s)}</T>
       </Row>
       <T size={13} color={c.n400}>{formatKm(a.distance_m)}{a.ascent_m >= 10 ? ' · ' + a.ascent_m + ' m de subida' : ''} · tiempo estimado</T>
-      <Shares a={a} />
+      <Shares a={a} foot={foot} />
       {a.tags.length ? <Row style={{ flexWrap: 'wrap', gap: 6 }}>{a.tags.map((t) => (
         <View key={t} style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: 'rgba(95,211,154,0.12)' }}><T size={12} color={c.ok}>{t}</T></View>
       ))}</Row> : null}
@@ -81,12 +81,21 @@ function RouteCard({ a, title, selected, onPress }: { a: RouteAnalysis; title: s
   );
 }
 
-export function Ciclismo({ onClose }: { onClose: () => void }) {
+const FOOT_TITLE: Record<Sport, string> = { bike: 'Ciclismo', run: 'Correr y caminar', walk: 'Correr y caminar' };
+
+/** `sport` 'bike' is Ciclismo; 'run' or 'walk' opens the on-foot planner, where you switch between the two. */
+export function Ciclismo({ onClose, sport: initialSport = 'bike' }: { onClose: () => void; sport?: Sport }) {
   useBack(true, onClose);
+  const [sport, setSportState] = useState<Sport>(initialSport);
+  const foot = sport !== 'bike';
+  const cfg = SPORTS[sport];
+  const SportIcon = sport === 'bike' ? Bicycle : sport === 'run' ? PersonSimpleRun : PersonSimpleWalk;
   const { height: screenH } = useWindowDimensions();
   const [mode, setMode] = useState<Mode>('tiempo');
-  const [minutes, setMinutes] = useState(60);
-  const [speed, setSpeed] = useState<number>(18);
+  const [minutes, setMinutes] = useState(initialSport === 'bike' ? 60 : 30);
+  const [speed, setSpeed] = useState<number>(SPORTS[initialSport].defaultKmh);
+  // Running ↔ walking: another pace, and loops of another length.
+  const setSport = (sp: Sport) => { setSportState(sp); setSpeed(SPORTS[sp].defaultKmh); setPlan(null); };
   const [me, setMe] = useState<Coord | null>(null);
   const [start, setStart] = useState<Coord | null>(null);
   const [end, setEnd] = useState<{ coord: Coord; label: string } | null>(null);
@@ -113,14 +122,20 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   const [reporting, setReporting] = useState<'tap' | { coord: [number, number] } | null>(null);
   const [removingReport, setRemovingReport] = useState<MySafetyReport | null>(null);
   const myReports = useAsync(() => (mode === 'guardadas' ? kova.cycling.myReports() : Promise.resolve([] as MySafetyReport[])), [mode]);
-  const saved = useAsync(() => (mode === 'guardadas' ? kova.cycling.saved() : Promise.resolve([] as SavedRoute[])), [mode]);
+  const saved = useAsync(() => (mode === 'guardadas' ? kova.cycling.saved(foot ? 'foot' : 'bike') : Promise.resolve([] as SavedRoute[])), [mode, foot]);
   // Weight for the ride's energy estimate (latest weighing); without it, a 75 kg reference.
   const weight = useAsync(async () => Number(((await kova.body.history('weight_kg', 1)) as Array<{ value: unknown }>)[0]?.value ?? 0) || null, []);
 
   const from = start ?? me;
-  const analyses = useMemo(() => (plan ? plan.routes.map((rt) => analyzeRoute(rt, plan.parks, speed)) : []), [plan, speed]);
+  const analyses = useMemo(() => (plan ? plan.routes.map((rt) => analyzeRoute(rt, plan.parks, speed, sport)) : []), [plan, speed, sport]);
   // Loops: best first. A → B: the only route.
-  const order = useMemo(() => analyses.map((a, i) => ({ a, i })).sort((x, y) => (plan?.kind === 'loop' ? routeScore(y.a) - routeScore(x.a) : 0)), [analyses, plan]);
+  const order = useMemo(() => analyses.map((a, i) => ({ a, i })).sort((x, y) => (plan?.kind === 'loop' ? routeScore(y.a, sport) - routeScore(x.a, sport) : 0)), [analyses, plan, sport]);
+
+  // A new set of loops starts on the best one (the first in the list), not on whatever the engine sent first.
+  useEffect(() => {
+    if (plan?.kind === 'loop' && order[0]) setSel(order[0].i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan]);
 
   const mapData = useMemo<MapData>(() => {
     const markers: MapData['markers'] = [];
@@ -133,7 +148,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
       markers, fit: fit > 0, view3d, zones: plan?.zones ?? null, showZones,
     };
   }, [plan, analyses, sel, me, from, end, mode, view3d, fit, showZones]);
-  const ride = useMemo<Ride | null>(() => (riding ? { kmh: speed * rideX, paused: riding.paused } : null), [riding, speed, rideX]);
+  const ride = useMemo<Ride | null>(() => (riding ? { kmh: speed * rideX, paused: riding.paused, figure: foot ? 'foot' : 'bike' } : null), [riding, speed, rideX, foot]);
   const stopRide = () => { setRiding(null); setProgress(null); };
   // Back to the whole route when a ride ends or is stopped.
   const endRide = () => { stopRide(); setFit((n) => n + 1); };
@@ -146,7 +161,11 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   const locate = () => run('locate', async () => {
     const perm = await Location.requestForegroundPermissionsAsync();
     if (!perm.granted) throw new KovaError('FORBIDDEN', 'Sin permiso de ubicación. Tocá el mapa para marcar desde dónde salís.');
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    const pos = await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 12000)),
+    ]) ?? await Location.getLastKnownPositionAsync({ maxAge: 10 * 60 * 1000 }).catch(() => null);
+    if (!pos) throw new KovaError('INTERNAL', 'No pudimos ubicarte. Tocá el mapa para marcar desde dónde salís.');
     setMe([pos.coords.longitude, pos.coords.latitude]);
     setStart(null);
     setFit((n) => n + 1);
@@ -156,13 +175,13 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
 
   const findLoops = () => run('plan', async () => {
     if (!from) throw new KovaError('INVALID_INPUT', 'Primero marcá desde dónde salís: tu ubicación o un punto en el mapa.');
-    const res = await kova.cycling.loops(from, Math.round(((minutes * 60) * (speed / 3.6)) / 1.08));
+    const res = await kova.cycling.loops(from, loopLengthM(minutes, speed, sport), sport);
     showPlan({ kind: 'loop', ...res });
   });
   const findRoute = () => run('plan', async () => {
     if (!from) throw new KovaError('INVALID_INPUT', 'Marcá desde dónde salís: tu ubicación o un punto en el mapa.');
     if (!end) throw new KovaError('INVALID_INPUT', 'Elegí a dónde vas: buscalo o tocá el mapa.');
-    const res = await kova.cycling.route([from, end.coord]);
+    const res = await kova.cycling.route([from, end.coord], sport);
     showPlan({ kind: 'ab', ...res });
   });
   const search = () => run('search', async () => {
@@ -171,11 +190,12 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
   });
   const save = (a: RouteAnalysis, rt: RawRoute) => run('save', async () => {
     const fallback = plan?.kind === 'loop' ? 'Vuelta de ' + fmtDuration(a.duration_s) : 'A ' + (end?.label ?? 'destino');
-    await kova.cycling.save({ id: newId(), name: name || fallback, kind: plan!.kind, route: rt, analysis: a });
+    await kova.cycling.save({ id: newId(), name: name || fallback, kind: plan!.kind, route: rt, analysis: a, sport });
     setNotice('Ruta guardada. La encontrás en «Guardadas».');
   });
   const open = (s: SavedRoute) => run('open', async () => {
     const got = await kova.cycling.get(s.id);
+    if (got.sport !== 'bike' && got.sport !== sport) setSport(got.sport);
     showPlan({ kind: got.kind, routes: [got.route], parks: [], savedName: got.name, savedId: got.id });
   });
 
@@ -194,7 +214,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
     // Show it right away on the map, as yours.
     setPlan((p) => (p?.zones ? { ...p, zones: { ...p.zones, reports: [{ id, coord: reporting.coord, kind, day: '', mine: true }, ...p.zones.reports] } } : p));
     setReporting(null);
-    setNotice('Gracias. Otros ciclistas lo van a ver durante 6 meses, sin tu nombre.');
+    setNotice(foot ? 'Gracias. Otras personas lo van a ver durante 6 meses, sin tu nombre.' : 'Gracias. Otros ciclistas lo van a ver durante 6 meses, sin tu nombre.');
   });
 
   const selected = plan ? { a: analyses[sel]!, rt: plan.routes[sel]! } : null;
@@ -202,20 +222,21 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
 
   if (navigating && selected && plan) {
     return (
-      <Navegar route={selected.rt} kind={plan.kind} speedKmh={speed} onClose={() => setNavigating(false)} zones={plan.zones ?? null}
-        name={plan.savedName ?? (plan.kind === 'loop' ? 'Vuelta en bici' : 'A ' + (end?.label ?? 'destino'))} />
+      <Navegar route={selected.rt} kind={plan.kind} speedKmh={speed} onClose={() => setNavigating(false)} zones={plan.zones ?? null} sport={sport}
+        name={plan.savedName ?? (plan.kind === 'loop' ? (sport === 'bike' ? 'Vuelta en bici' : sport === 'run' ? 'Salida a correr' : 'Caminata') : 'A ' + (end?.label ?? 'destino'))} />
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" scrollEnabled={!onMap}>
+    <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" scrollEnabled={!onMap}>
       <Row style={{ gap: 8 }}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Volver" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 }}>
           <ArrowLeft size={22} color={c.text} />
         </Pressable>
-        <T size={22} w="medium" style={{ flex: 1 }}>Ciclismo</T>
-        <Bicycle size={24} color={c.accent} />
+        <T size={22} w="medium" style={{ flex: 1 }}>{FOOT_TITLE[sport]}</T>
+        <SportIcon size={24} color={c.accent} />
       </Row>
+      {foot ? <Seg stretch options={[['run', 'Correr'], ['walk', 'Caminar']]} value={sport} onChange={setSport} /> : null}
 
       <Seg stretch options={[['tiempo', 'Por tiempo'], ['ab', 'A → B'], ['guardadas', 'Guardadas']]} value={mode}
         onChange={(m) => { setMode(m); setPlan(null); setError(null); setNotice(null); stopRide(); }} />
@@ -253,7 +274,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
           <Legend color="rgba(229,72,77,0.55)" label="Muchos robos" square />
           <Legend color="rgba(242,153,74,0.45)" label="Algunos robos" square />
           <Legend color="#f2c94c" label="Choques" />
-          <Legend color="#8b5cf6" label="Avisos de ciclistas" />
+          <Legend color="#8b5cf6" label={foot ? 'Avisos' : 'Avisos de ciclistas'} />
         </Row>
       ) : null}
       {reporting === 'tap' ? <Notice text="Tocá en el mapa el lugar del que querés avisar." /> : null}
@@ -263,7 +284,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
           <Row style={{ flexWrap: 'wrap', gap: 8 }}>
             {SAFETY_REPORT_KINDS.map((k) => <Chip key={k.kind} label={k.label} on={false} onPress={() => sendReport(k.kind)} />)}
           </Row>
-          <T size={12} color={c.n500}>Otros ciclistas ven el punto y qué pasó, nunca quién avisó. Se borra solo a los 6 meses.</T>
+          <T size={12} color={c.n500}>{foot ? 'Los demás ven' : 'Otros ciclistas ven'} el punto y qué pasó, nunca quién avisó. Se borra solo a los 6 meses.</T>
           <Button variant="ghost" label="Cancelar" onPress={() => setReporting(null)} style={{ alignSelf: 'flex-start' }} />
         </Card>
       ) : null}
@@ -272,14 +293,14 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
         <View style={{ gap: 12 }}>
           <T size={13} color={c.n400}>{from ? (start ? 'Salís desde el punto marcado.' : 'Salís desde tu ubicación.') : 'Tocá el mapa o el botón de ubicación para marcar desde dónde salís.'}</T>
           <View style={{ gap: 8 }}>
-            <T size={13} color={c.n300}>¿Cuánto querés andar?</T>
-            <Row style={{ flexWrap: 'wrap', gap: 8 }}>{MINUTES.map((m) => <Chip key={m} label={fmtDuration(m * 60)} on={minutes === m} onPress={() => setMinutes(m)} />)}</Row>
+            <T size={13} color={c.n300}>{sport === 'bike' ? '¿Cuánto querés andar?' : sport === 'run' ? '¿Cuánto querés correr?' : '¿Cuánto querés caminar?'}</T>
+            <Row style={{ flexWrap: 'wrap', gap: 8 }}>{cfg.minutes.map((m) => <Chip key={m} label={fmtDuration(m * 60)} on={minutes === m} onPress={() => setMinutes(m)} />)}</Row>
           </View>
           <View style={{ gap: 8 }}>
             <T size={13} color={c.n300}>Tu ritmo</T>
-            <Row style={{ flexWrap: 'wrap', gap: 8 }}>{SPEEDS_KMH.map((s) => <Chip key={s} label={s + ' km/h'} on={speed === s} onPress={() => setSpeed(s)} />)}</Row>
+            <Row style={{ flexWrap: 'wrap', gap: 8 }}>{cfg.speeds.map((s) => <Chip key={s} label={paceLabel(s, sport)} on={speed === s} onPress={() => setSpeed(s)} />)}</Row>
           </View>
-          <Button label={plan ? 'Buscar otros recorridos' : 'Buscar recorridos'} icon={Bicycle} onPress={findLoops} busy={busy === 'plan'} />
+          <Button label={plan ? 'Buscar otros recorridos' : 'Buscar recorridos'} icon={SportIcon} onPress={findLoops} busy={busy === 'plan'} />
         </View>
       ) : null}
 
@@ -304,21 +325,21 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
             {from ? (start ? 'Salís del punto marcado' : 'Salís de tu ubicación') : 'Falta la salida'}{' · '}{end ? 'vas a ' + end.label : 'falta el destino'}
           </T>
           <Row style={{ gap: 8 }}>
-            {SPEEDS_KMH.map((s) => <Chip key={s} label={s + ' km/h'} on={speed === s} onPress={() => setSpeed(s)} />)}
+            {cfg.speeds.map((s) => <Chip key={s} label={paceLabel(s, sport)} on={speed === s} onPress={() => setSpeed(s)} />)}
           </Row>
-          <Button label="Calcular ruta" icon={Bicycle} onPress={findRoute} busy={busy === 'plan'} />
+          <Button label="Calcular ruta" icon={SportIcon} onPress={findRoute} busy={busy === 'plan'} />
         </View>
       ) : null}
 
       {mode === 'guardadas' && !plan ? (
         saved.loading ? <Loading /> : saved.error ? <ErrorNote message={saved.error} onRetry={saved.reload} /> : !saved.data?.length ? (
-          <Empty icon={Bicycle} title="Todavía no guardaste rutas">Planificá una en «Por tiempo» o «A → B» y tocá «Guardar ruta».</Empty>
+          <Empty icon={SportIcon} title="Todavía no guardaste rutas">Planificá una en «Por tiempo» o «A → B» y tocá «Guardar ruta».</Empty>
         ) : (
           <View style={{ gap: 10 }}>{saved.data.map((s) => (
             <Card key={s.id} style={{ gap: 6 }}>
               <Pressable onPress={() => open(s)} accessibilityRole="button" style={{ gap: 4 }}>
                 <Row style={{ justifyContent: 'space-between' }}>
-                  <T size={15} w="medium" style={{ flex: 1 }}>{s.name}</T>
+                  <T size={15} w="medium" style={{ flex: 1 }}>{s.name}{foot ? (s.sport === 'run' ? ' · Correr' : ' · Caminar') : ''}</T>
                   <T size={14} color={c.a300}>{fmtDuration(s.duration_s)}</T>
                 </Row>
                 <T size={12} color={c.n400}>{formatKm(s.distance_m)}{s.summary.tags?.length ? ' · ' + s.summary.tags.join(' · ') : ''}</T>
@@ -346,19 +367,20 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
 
       {plan && order.length ? (
         <View style={{ gap: 10 }}>
-          {plan.kind === 'loop' ? <T size={13} color={c.n400}>{order.length === 1 ? 'Encontramos un recorrido.' : 'Encontramos ' + order.length + ' recorridos; el primero es el que más bicisendas y parques tiene. Tocá uno para verlo.'}</T> : null}
+          {plan.kind === 'loop' ? <T size={13} color={c.n400}>{order.length === 1 ? 'Encontramos un recorrido.' : 'Encontramos ' + order.length + ' recorridos; el primero es el que ' + (foot ? 'más parques y senderos' : 'más bicisendas y parques') + ' tiene. Tocá uno para verlo.'}</T> : null}
           {order.map(({ a, i }, k) => (
-            <RouteCard key={i} a={a} selected={i === sel} onPress={() => { setSel(i); stopRide(); }}
-              title={plan.savedName ?? (plan.kind === 'loop' ? 'Opción ' + (k + 1) : 'Ruta en bici')} />
+            <RouteCard key={i} a={a} selected={i === sel} onPress={() => { setSel(i); stopRide(); }} foot={foot}
+              title={plan.savedName ?? (plan.kind === 'loop' ? 'Opción ' + (k + 1) : foot ? 'Ruta a pie' : 'Ruta en bici')} />
           ))}
           {selected ? (
             <View style={{ gap: 10 }}>
               <Button large label="Navegar" icon={NavigationArrow} onPress={() => { stopRide(); setNavigating(true); }} />
               {(() => {
-                const f = rideFuel(selected.a.distance_m, selected.a.duration_s, weight.data ?? 75);
+                const f = sport === 'bike' ? rideFuel(selected.a.distance_m, selected.a.duration_s, weight.data ?? 75)
+                  : footFuel(selected.a.distance_m, selected.a.duration_s, weight.data ?? 75, sport);
                 return (
                   <View style={{ padding: 12, borderRadius: rad.card, backgroundColor: c.raised, gap: 2 }}>
-                    <T size={14} w="semibold">Para esta vuelta</T>
+                    <T size={14} w="semibold">{sport === 'bike' ? 'Para esta vuelta' : sport === 'run' ? 'Para esta salida' : 'Para esta caminata'}</T>
                     <T size={13} color={c.n400}>
                       ≈ {nf(f.kcal, 0)} kcal{f.suggestion ? ' · llevá ' + f.suggestion : ' · no hace falta comer en el camino'} · agua ≈ {nf(f.waterMl, 0)} ml{weight.data ? '' : ' (calculado para 75 kg)'}.
                     </T>
@@ -366,7 +388,7 @@ export function Ciclismo({ onClose }: { onClose: () => void }) {
                 );
               })()}
               <View style={{ gap: 8 }}>
-                <T size={13} color={c.n300}>{riding ? (progress ? formatKm(progress.done) + ' de ' + formatKm(progress.total) : 'Preparando la bici…') : 'Velocidad del recorrido en 3D'}</T>
+                <T size={13} color={c.n300}>{riding ? (progress ? formatKm(progress.done) + ' de ' + formatKm(progress.total) : (foot ? 'Preparando…' : 'Preparando la bici…')) : 'Velocidad del recorrido en 3D'}</T>
                 <Row style={{ flexWrap: 'wrap', gap: 8 }}>{RIDE_SPEEDS.map((o) => (
                   <Chip key={o.x} on={rideX === o.x} onPress={() => setRideX(o.x)}
                     label={o.label + ' · ' + fmtDuration(selected.a.distance_m / ((speed * o.x) / 3.6))} />

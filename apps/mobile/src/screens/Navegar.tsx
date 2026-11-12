@@ -1,5 +1,5 @@
 /**
- * Ciclismo, navigation mode (docs/ciclismo.md): follow the chosen route with the GPS.
+ * Ciclismo, navigation mode (docs/ciclismo.md), also for running and walking (docs/correr.md): follow the chosen route with the GPS.
  * The next maneuver on top, said out loud; distance and time left, speed and arrival time below.
  * Leaving the route recalculates from where you are. The screen stays on while navigating.
  * At the end: distance, time moving and average speed, and it can be saved as a workout.
@@ -8,7 +8,7 @@
  */
 import {
   ARRIVE_M, analyzeRoute, announcement, bearing, cumulative, distanceM, formatKm, isOff, locate, navInfo, newId, pointAt, rideSummary,
-  stepText, type Coord, type NavInfo, type RawRoute, type SafetyZones,
+  paceLabel, stepText, type Coord, type NavInfo, type RawRoute, type SafetyZones, type Sport,
 } from '@kova/domain';
 import * as Location from 'expo-location';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -42,15 +42,20 @@ export interface NavigateProps {
   name: string;
   /** Zones with many robberies: a voice heads-up when you enter one. */
   zones?: SafetyZones | null;
+  /** Bike, or on foot (the runner on the map, pace in min/km, saved as Correr or Caminata). */
+  sport?: Sport;
   onClose: () => void;
 }
 
-export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null, onClose }: NavigateProps) {
+export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null, sport = 'bike', onClose }: NavigateProps) {
+  const foot = sport !== 'bike';
+  // Speed in km/h on the bike; pace in min/km on foot (nothing while standing still).
+  const speedText = (v: number) => (!foot ? Math.round(v) + ' km/h' : v >= 1 ? paceLabel(v, sport) : '—');
   useKeepAwake();
   const { height: screenH } = useWindowDimensions();
   const [rt, setRt] = useState(route);
   const cum = useMemo(() => cumulative(rt.coords), [rt]);
-  const segments = useMemo(() => analyzeRoute(rt, [], speedKmh).segments, [rt, speedKmh]);
+  const segments = useMemo(() => analyzeRoute(rt, [], speedKmh, sport).segments, [rt, speedKmh, sport]);
   const [info, setInfo] = useState<NavInfo | null>(null);
   const [pos, setPos] = useState<NavPos | null>(null);
   const [kmh, setKmh] = useState(0);
@@ -103,7 +108,7 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null
       const total = s.cum[s.cum.length - 1] ?? 0;
       // A loop goes back to it a bit ahead of where you left it, then on to the end, so it stays a loop.
       const via = kind === 'loop' && total - s.along > 800 ? [pointAt(s.rt.coords, s.cum, s.along + 400)] : [];
-      const res = await kova.cycling.route([here, ...via, end]);
+      const res = await kova.cycling.route([here, ...via, end], sport);
       const next = res.routes[0];
       if (next) {
         s.rt = next; s.cum = cumulative(next.coords); s.along = 0; s.said = new Set(); s.offCount = 0;
@@ -171,7 +176,7 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null
             heading = loc.coords.heading != null && loc.coords.heading >= 0 ? loc.coords.heading : bearing(p, f.point);
           }
           if (gpsSpeed !== null && gpsSpeed > 1.5 && loc.coords.heading != null && loc.coords.heading >= 0) heading = loc.coords.heading;
-          setPos({ pos: [p[0], p[1]], bearing: heading, kmh: (gpsSpeed ?? 0) * 3.6 });
+          setPos({ pos: [p[0], p[1]], bearing: heading, kmh: (gpsSpeed ?? 0) * 3.6, figure: foot ? 'foot' : 'bike' });
         },
       );
     })().catch((e) => setGpsError('No pudimos leer el GPS: ' + message(e)));
@@ -188,30 +193,33 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null
   }), [rt, segments]);
 
   if (ended) {
+    const defaultName = sport === 'run' ? 'Salida a correr' : sport === 'walk' ? 'Caminata' : 'Salida en bici';
     const save = async () => {
       setSaving(true); setSaveError(null);
       try {
-        await kova.cycling.logRide({ id: rideId.current, name: name || 'Salida en bici', startedAt: ended.startedAt, endedAt: ended.endedAt, movingS: ended.moving_s, distanceM: ended.distance_m });
+        const r = { id: rideId.current, startedAt: ended.startedAt, endedAt: ended.endedAt, movingS: ended.moving_s, distanceM: ended.distance_m };
+        if (sport === 'bike') await kova.cycling.logRide({ ...r, name: name || 'Salida en bici' });
+        else await kova.cycling.logFoot({ ...r, sport, name: name || defaultName });
         setSaved(true);
       } catch (e) { setSaveError(message(e)); } finally { setSaving(false); }
     };
     return (
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         <Row style={{ gap: 10 }}>
           <FlagCheckered size={26} color={c.accent} />
-          <T size={22} w="medium">{ended.arrived ? 'Llegaste' : 'Salida terminada'}</T>
+          <T size={22} w="medium">{ended.arrived ? 'Llegaste' : sport === 'walk' ? 'Caminata terminada' : 'Salida terminada'}</T>
         </Row>
         <Card style={{ gap: 12 }}>
           <Row style={{ justifyContent: 'space-between' }}>
             <Stat label="Distancia" value={formatKm(ended.distance_m)} />
             <Stat label="En movimiento" value={ended.moving_s >= 60 ? fmtDuration(ended.moving_s) : ended.moving_s + ' s'} />
-            <Stat label="Promedio" value={ended.avg_kmh + ' km/h'} />
+            <Stat label={foot ? 'Ritmo' : 'Promedio'} value={speedText(ended.avg_kmh)} />
           </Row>
           <T size={12} color={c.n500}>Medido con el GPS del celular.</T>
         </Card>
         {ended.distance_m >= 100 ? (saved ? <Notice text="Guardada en tu historial de entrenamientos." /> : (
           <View style={{ gap: 10 }}>
-            <Field label="Nombre" value={name} onChangeText={setName} placeholder="Salida en bici" maxLength={120} />
+            <Field label="Nombre" value={name} onChangeText={setName} placeholder={defaultName} maxLength={120} />
             <Button label="Guardar como entrenamiento" icon={FloppyDisk} onPress={save} busy={saving} />
             {saveError ? <ErrorNote message={saveError} /> : null}
           </View>
@@ -225,7 +233,7 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null
   const Icon = next ? ICONS[next.step.type] ?? ArrowUp : NavigationArrow;
   const remaining = info?.remaining_m ?? (cum[cum.length - 1] ?? 0);
   const avg = s.moving > 60 ? (s.odometer / s.moving) * 3.6 : speedKmh;
-  const leftS = remaining / (Math.max(5, avg) / 3.6);
+  const leftS = remaining / (Math.max(foot ? 2 : 5, avg) / 3.6);
   const banner = gpsError ? null : rerouting ? 'Recalculando la ruta…' : off ? 'Te saliste de la ruta' : !info ? 'Buscando tu ubicación…'
     : next ? stepText(next.step) : (rt.steps?.length ? 'Seguí la ruta' : 'Seguí la línea de la ruta');
   const mapH = Math.max(280, screenH - 330);
@@ -254,7 +262,7 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null
         <Stat label="Falta" value={formatKm(remaining)} />
         <Stat label="Tiempo" value={fmtDuration(leftS)} />
         <Stat label="Llegada" value={clock(new Date(Date.now() + leftS * 1000))} />
-        <Stat label="Velocidad" value={kmh + ' km/h'} />
+        <Stat label={foot ? 'Ritmo' : 'Velocidad'} value={speedText(kmh)} />
       </Row>
       <Row style={{ gap: 8 }}>
         <Pressable onPress={() => { setMuted((m) => !m); if (!muted) Speech.stop(); }} accessibilityRole="button" accessibilityLabel={muted ? 'Activar la voz' : 'Silenciar la voz'}

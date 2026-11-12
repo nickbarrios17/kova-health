@@ -140,6 +140,21 @@ Un asesor que arma lo que comés alrededor de **tu entrenamiento real, tu bolsil
 - El coach ve el plan semanal del alumno y cuánto comió de lo planeado. Solo si el alumno comparte su alimentación (`person_meal_plan`). Por ahora no lo edita.
 - Agua: tarjeta en Comida con +1 vaso y Deshacer. Meta de ~35 ml/kg, más medio litro si entrenaste. Es privada: nadie más la ve.
 
+**Ticket contra la lista y el plan:** en Compras, «Revisar el ticket» lee la foto del ticket y muestra:
+- Qué compraste de la lista.
+- Qué te faltó.
+- Qué no estaba en la lista.
+- Qué queda fuera del plan (snacks, bebidas con azúcar, alcohol, ultraprocesados), con lo que gastaste en eso.
+
+Al guardar, tilda en la lista lo comprado y lo pasa a «En casa». Lo que no es comida (limpieza, perfumería) no entra.
+
+**Tu semana desde lo que tenés:** «Armar mi semana» y «Rehacer la semana» ahora preguntan primero «¿Qué tenés en casa?». Se escribe como sale («milanesas, cebolla, morrón, pechugas de pollo y huevos») y cada cosa queda en «En casa».
+- La IA usa eso primero, sobre todo lo fresco en los primeros días.
+- Arma el resto para que la compra que falta sea chica: pocos ingredientes nuevos que se repitan.
+- En Compras, antes de armar la lista, se ve «Usás lo que tenés: …», «Te falta comprar N cosas: …» y lo que esta semana no usa.
+- Si tenés un plato armado (milanesas), cubre el plato entero y no pide sus ingredientes.
+- Lo escrito se reconoce aunque esté en plural o le falte un detalle: «pechugas de pollo» ↔ «Pechuga de pollo».
+
 **Queda para después:**
 - Proteína ↔ récords y Bici ↔ hambre: necesitan más historia para no inventar.
 - Reloj: aviso antes de entrenar y agua desde la muñeca.

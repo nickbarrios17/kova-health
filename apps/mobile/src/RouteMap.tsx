@@ -17,9 +17,9 @@ export interface MapData {
   showZones?: boolean;
 }
 /** «Recorrer en 3D» on the selected route: map speed in km/h, and whether it is paused. */
-export interface Ride { kmh: number; paused: boolean }
+export interface Ride { kmh: number; paused: boolean; figure?: 'bike' | 'foot' }
 /** Navigation mode: your GPS position, heading and speed, once per fix. */
-export interface NavPos { pos: [number, number]; bearing: number; kmh: number }
+export interface NavPos { pos: [number, number]; bearing: number; kmh: number; figure?: 'bike' | 'foot' }
 export interface MapEvents {
   onTap?: (coord: [number, number]) => void;
   onPick?: (index: number) => void;

@@ -178,6 +178,8 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
   // «Recorrer en 3D»: a 3D bike rides the route and the camera follows it from behind.
   // Speed is in km/h of map distance; it can change or pause mid-ride without restarting.
   var ride = null, selCoords = null, bike = null, threeLoading = false, pendingRide = null;
+  // Who goes along the route: 'bike' (a cyclist) or 'foot' (a runner), set by kovaRide / kovaNav.
+  var figure = 'bike', bikeScene = null;
   // Bigger than life so it reads on a phone screen.
   var BIKE_SCALE = 7, bikeScale = BIKE_SCALE;
   function meters(a, b){
@@ -254,14 +256,71 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     pedal(0);
     return { group: g, rear: rear, front: front, pedal: pedal, at: null };
   }
+  // A runner, same style as the cyclist. pedal(angle) moves the stride, so the ride and navigation
+  // loops drive it like the cranks; rear/front are stand-ins for the wheels.
+  function makeRunner(){
+    var T = window.THREE, g = new T.Group(), body = new T.Group(); g.add(body);
+    var mat = function(c){ return new T.MeshLambertMaterial({ color: c }); };
+    var shirt = mat('#22b573'), skin = mat('#e2b48e'), shorts = mat('#2b2c38'), shoe = mat('#7b68d9'), hair = mat('#3a2c25');
+    var up = new T.Vector3(0, 1, 0);
+    function tube(r, m){ var t = new T.Mesh(new T.CylinderGeometry(r, r, 1, 10), m); body.add(t); return t; }
+    function place(t, a, b){
+      var va = new T.Vector3(a[0], a[1], a[2] || 0), vb = new T.Vector3(b[0], b[1], b[2] || 0), d = vb.clone().sub(va);
+      t.position.copy(va).add(vb).multiplyScalar(0.5);
+      t.scale.set(1, d.length() || 0.001, 1);
+      t.quaternion.setFromUnitVectors(up, d.normalize());
+    }
+    var HIP = [0, 0.87], SH = [0.07, 1.37];
+    place(tube(0.13, shirt), HIP, SH);
+    var head = new T.Mesh(new T.SphereGeometry(0.11, 16, 12), skin); head.position.set(0.1, 1.54, 0); body.add(head);
+    var cap = new T.Mesh(new T.SphereGeometry(0.115, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), hair); cap.position.set(0.09, 1.56, 0); body.add(cap);
+    var legs = [-1, 1].map(function(sd){ return { sd: sd, thigh: tube(0.065, shorts), shin: tube(0.045, skin), foot: tube(0.04, shoe) }; });
+    var arms = [-1, 1].map(function(sd){ return { sd: sd, upper: tube(0.04, shirt), fore: tube(0.035, skin) }; });
+    var L = 0.45;
+    function stride(angle){
+      legs.forEach(function(l, i){
+        var a = angle + i * Math.PI, z = 0.1 * l.sd;
+        var th = Math.sin(a) * 0.62, knee = 0.25 + 1.0 * Math.max(0, -Math.cos(a));
+        var K = [HIP[0] + Math.sin(th) * L, HIP[1] - Math.cos(th) * L, z];
+        var P = [K[0] + Math.sin(th - knee) * L, K[1] - Math.cos(th - knee) * L, z];
+        place(l.thigh, [HIP[0], HIP[1], z], K); place(l.shin, K, P); place(l.foot, P, [P[0] + 0.14, P[1] - 0.02, z]);
+      });
+      arms.forEach(function(r, i){
+        var a = angle + i * Math.PI, z = 0.19 * r.sd, ph = -Math.sin(a) * 0.7;
+        var S = [SH[0], SH[1] - 0.04, z], E = [S[0] + Math.sin(ph) * 0.28, S[1] - Math.cos(ph) * 0.28, z];
+        place(r.upper, S, E); place(r.fore, E, [E[0] + Math.sin(ph + 1.4) * 0.26, E[1] - Math.cos(ph + 1.4) * 0.26, z]);
+      });
+      // A small bounce, twice per stride, so it reads as running.
+      body.position.y = 0.05 * Math.abs(Math.cos(angle));
+    }
+    stride(0);
+    return { group: g, rear: { rotation: { z: 0 } }, front: { rotation: { z: 0 } }, pedal: stride, at: null, kind: 'foot' };
+  }
+  function makeFigure(){
+    var f = figure === 'foot' ? makeRunner() : makeBike();
+    f.kind = figure;
+    return f;
+  }
+  // Switch between cyclist and runner when the layer already exists.
+  function setFigure(f){
+    figure = f === 'foot' ? 'foot' : 'bike';
+    if (bike && bikeScene && bike.kind !== figure) {
+      var vis = bike.group.visible;
+      bikeScene.remove(bike.group);
+      bike = makeFigure();
+      bike.group.visible = vis;
+      bikeScene.add(bike.group);
+    }
+  }
   function addBikeLayer(){
     var T = window.THREE;
     var scene = new T.Scene(), camera = new T.Camera(), renderer = null;
     scene.add(new T.AmbientLight(0xffffff, 0.65));
     var sun = new T.DirectionalLight(0xffffff, 0.75); sun.position.set(0.4, 1, 0.6); scene.add(sun);
-    bike = makeBike();
+    bike = makeFigure();
     bike.group.visible = false;
     scene.add(bike.group);
+    bikeScene = scene;
     map.addLayer({
       id: 'bike', type: 'custom', renderingMode: '3d',
       onAdd: function(m, gl){ renderer = new T.WebGLRenderer({ canvas: m.getCanvas(), context: gl, antialias: true }); renderer.autoClear = false; },
@@ -285,6 +344,7 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
   }
   function startRide(r){
     if (!selCoords || selCoords.length < 2) return;
+    setFigure(r.figure);
     var coords = selCoords.map(function(c){ return [c[0], c[1]]; });
     var dist = [0];
     for (var i = 1; i < coords.length; i++) dist.push(dist[i-1] + meters(coords[i-1], coords[i]));
@@ -311,7 +371,7 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     ride.last = ts;
     if (!ride.paused) {
       ride.done = Math.min(ride.total, ride.done + dt * ride.kmh / 3.6);
-      ride.crank += dt * Math.PI * 2 * 1.4;
+      ride.crank += dt * Math.PI * 2 * (figure === 'foot' ? 1.3 : 1.4);
     }
     var here = at(ride.done), target = bearingOf(at(ride.done - 10), at(ride.done + 25));
     if (ride.bearing === null) ride.bearing = target;
@@ -348,7 +408,7 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     nav.cur[0] += (nav.target[0] - nav.cur[0]) * k;
     nav.cur[1] += (nav.target[1] - nav.cur[1]) * k;
     nav.brg += (((nav.targetBrg - nav.brg + 540) % 360) - 180) * Math.min(1, dt * 2);
-    if (nav.kmh > 2) nav.crank += dt * Math.PI * 2 * Math.min(1.6, nav.kmh / 12);
+    if (nav.kmh > (figure === 'foot' ? 1 : 2)) nav.crank += dt * Math.PI * 2 * (figure === 'foot' ? Math.min(1.5, 0.5 + nav.kmh / 15) : Math.min(1.6, nav.kmh / 12));
     if (bike) {
       bike.at = { lngLat: nav.cur, bearing: nav.brg };
       bike.pedal(-nav.crank);
@@ -365,6 +425,7 @@ export const ROUTE_MAP_HTML = `<!doctype html><html><head><meta charset="utf-8">
     if (!ready) return;
     if (!nav) {
       stopRide();
+      setFigure(n.figure);
       bikeScale = 11;
       nav = { cur: null, target: n.pos, targetBrg: n.bearing || 0, brg: 0, kmh: n.kmh || 0, crank: 0, last: null, raf: 0, follow: true };
       if (!map.getTerrain()) map.setTerrain({ source: 'dem', exaggeration: 1.6 });

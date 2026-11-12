@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildShoppingList, lineAmount, type ShopFood } from '../src/shopping.js';
+import { buildShoppingList, lineAmount, pantryMatches, reviewReceipt, splitFoods, sameFood, shoppingFromPlan, type ShopFood } from '../src/shopping.js';
 
 const foods: ShopFood[] = [
   { id: 'arroz', name: 'Arroz blanco (cocido)', shop: { aisle: 'Almacén', name: 'Arroz blanco', factor: 0.36, package_g: 1000, package_label: 'paquete de 1 kg' } },
@@ -46,5 +46,65 @@ describe('shopping list', () => {
     expect(lineAmount({ grams: 1200, packages: null, package_label: null })).toBe('1,2 kg');
     expect(lineAmount({ grams: 300, packages: null, package_label: null })).toBe('300 g');
     expect(lineAmount({ grams: 900, packages: 2, package_label: 'paquete de 500 g' })).toBe('2 × paquete de 500 g');
+  });
+});
+
+describe('receipt review', () => {
+  it('matches receipt lines to the list, flags what is outside the plan and what is missing', () => {
+    const r = reviewReceipt([
+      { name: 'Leche entera La Serenísima 1 l', grams: 1000, kind: 'comida' },
+      { name: 'Pechugas de pollo', grams: 1200, kind: 'comida' },
+      { name: 'Alfajor triple', grams: 70, kind: 'snack' },
+      { name: 'Coca-Cola 2,25 l', grams: 2250, kind: 'bebida_azucarada' },
+      { name: 'Queso cremoso', grams: 500, kind: 'comida' },
+      { name: 'Lavandina', grams: 1000, kind: 'no_comida' },
+    ], ['Leche', 'Pechuga de pollo', 'Arroz blanco']);
+    expect(r.onList.map((x) => x.listName)).toEqual(['Leche', 'Pechuga de pollo']);
+    expect(r.offPlan.map((x) => x.name)).toEqual(['Alfajor triple', 'Coca-Cola 2,25 l']);
+    expect(r.offList.map((x) => x.name)).toEqual(['Queso cremoso']);
+    expect(r.missing).toEqual(['Arroz blanco']);
+    expect(r.other).toHaveLength(1);
+  });
+
+  it('does not match unrelated foods by a shared minor word', () => {
+    expect(sameFood('Arroz con leche', 'Leche')).toBe(false);
+    expect(sameFood('Bananas', 'Banana')).toBe(true);
+    expect(sameFood('Huevos blancos x12', 'Huevos')).toBe(true);
+  });
+});
+
+describe('what you have at home', () => {
+  it('recognizes what you wrote, with plurals and missing details', () => {
+    expect(pantryMatches('pechugas de pollo', 'Pechuga de pollo')).toBe(true);
+    expect(pantryMatches('morrón', 'Morrón rojo')).toBe(true);
+    expect(pantryMatches('Huevos', 'Huevos')).toBe(true);
+    expect(pantryMatches('leche', 'Dulce de leche')).toBe(false);
+    expect(pantryMatches('pollo', 'Pechuga de pollo')).toBe(false);
+  });
+
+  it('uses it first: a dish you have is covered whole, the rest goes on the list', () => {
+    const foods: ShopFood[] = [
+      { id: 'm', name: 'Milanesa de carne (frita)', shop: { aisle: 'Carnicería', parts: [{ name: 'Nalga', share: 0.7 }, { name: 'Pan rallado', share: 0.3 }] } },
+      { id: 'n', name: 'Nalga', shop: { aisle: 'Carnicería' } },
+      { id: 'r', name: 'Pan rallado', shop: { aisle: 'Almacén', package_g: 500, package_label: 'paquete de 500 g' } },
+      { id: 'p', name: 'Pechuga de pollo (cocida)', shop: { aisle: 'Pollería', name: 'Pechuga de pollo', factor: 1.3 } },
+      { id: 'a', name: 'Arroz blanco (cocido)', shop: { aisle: 'Almacén', name: 'Arroz blanco', factor: 0.4, package_g: 1000, package_label: 'paquete de 1 kg' } },
+    ];
+    const plan = shoppingFromPlan(
+      [{ food_id: 'm', grams: 300 }, { food_id: 'p', grams: 400 }, { food_id: 'a', grams: 300 }],
+      foods,
+      [{ name: 'Milanesas', grams: null }, { name: 'pechugas de pollo', grams: null }, { name: 'Huevos', grams: null }],
+    );
+    expect(plan.lines.map((l) => l.name)).toEqual(['Arroz blanco']);
+    expect(plan.fromHome).toEqual(['Milanesas', 'pechugas de pollo']);
+    expect(plan.unused).toEqual(['Huevos']);
+  });
+});
+
+describe('typing what you have', () => {
+  it('splits a free sentence into foods', () => {
+    expect(splitFoods('milanesas, cebolla, morrón, pechugas de pollo y huevos')).toEqual(['Milanesas', 'Cebolla', 'Morrón', 'Pechugas de pollo', 'Huevos']);
+    expect(splitFoods('arroz; fideos; 6 huevos.')).toEqual(['Arroz', 'Fideos', '6 huevos']);
+    expect(splitFoods('  ')).toEqual([]);
   });
 });

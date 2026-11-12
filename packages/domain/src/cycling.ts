@@ -87,22 +87,40 @@ export interface RouteAnalysis {
 export const DEFAULT_SPEED_KMH = 18;
 export const SPEEDS_KMH = [14, 18, 22, 26] as const;
 
-/** Traffic lights and corners in a city make a ride ~8 % slower than the flat-road speed. */
-const URBAN_FACTOR = 1.08;
-/** Seconds added per metre climbed. */
-const CLIMB_S_PER_M = 6;
+/** Ciclismo, or the same planner on foot (docs/correr.md). */
+export type Sport = 'bike' | 'run' | 'walk';
 
-export function estimateDurationS(distance_m: number, ascent_m: number, speedKmh: number): number {
-  const v = Math.max(5, speedKmh) / 3.6;
-  return Math.round((distance_m / v) * URBAN_FACTOR + Math.max(0, ascent_m) * CLIMB_S_PER_M);
+/**
+ * Per sport: the paces offered (km/h), the default, how much a city slows you down (lights, corners) and
+ * the seconds added per metre climbed (Naismith for walking: ~1 h per 600 m; about half running).
+ */
+export const SPORTS: Record<Sport, { speeds: readonly number[]; defaultKmh: number; urban: number; climbSPerM: number; minutes: readonly number[] }> = {
+  bike: { speeds: SPEEDS_KMH, defaultKmh: DEFAULT_SPEED_KMH, urban: 1.08, climbSPerM: 6, minutes: [30, 45, 60, 90, 120] },
+  run: { speeds: [8, 9.5, 11, 12.5], defaultKmh: 9.5, urban: 1.03, climbSPerM: 3, minutes: [20, 30, 45, 60, 90] },
+  walk: { speeds: [4, 5, 6], defaultKmh: 5, urban: 1.05, climbSPerM: 6, minutes: [20, 30, 45, 60, 90] },
+};
+
+/** «6:19 min/km» for running and walking; «18 km/h» for the bike. */
+export function paceLabel(kmh: number, sport: Sport): string {
+  if (sport === 'bike') return String(kmh).replace('.', ',') + ' km/h';
+  const s = Math.round(3600 / kmh);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' min/km';
 }
 
-/** The loop length to ask the engine for, to ride for `minutes` at `speedKmh` (flat). */
-export function loopLengthM(minutes: number, speedKmh: number): number {
-  return Math.round(((minutes * 60) * (speedKmh / 3.6)) / URBAN_FACTOR);
+export function estimateDurationS(distance_m: number, ascent_m: number, speedKmh: number, sport: Sport = 'bike'): number {
+  const k = SPORTS[sport];
+  const v = Math.max(sport === 'bike' ? 5 : 2, speedKmh) / 3.6;
+  return Math.round((distance_m / v) * k.urban + Math.max(0, ascent_m) * k.climbSPerM);
 }
 
-export function wayKind(waytype: number): WayKind {
+/** The loop length to ask the engine for, to go for `minutes` at `speedKmh` (flat). */
+export function loopLengthM(minutes: number, speedKmh: number, sport: Sport = 'bike'): number {
+  return Math.round(((minutes * 60) * (speedKmh / 3.6)) / SPORTS[sport].urban);
+}
+
+export function wayKind(waytype: number, foot = false): WayKind {
+  // On foot every sidewalk comes as «footway» (7), and bike lanes (6) are just streets to walk by.
+  if (foot) return waytype === 4 || waytype === 5 ? 'sendero' : waytype === 1 || waytype === 2 ? 'avenida' : waytype === 0 ? 'otro' : 'calle';
   switch (waytype) {
     case 6: return 'bicisenda';
     case 3: return 'calle';
@@ -142,7 +160,8 @@ function bbox(ring: Array<[number, number]>): [number, number, number, number] {
 const km = (m: number) => (m < 10000 ? (Math.round(m / 100) / 10).toFixed(1).replace('.', ',') : String(Math.round(m / 1000)));
 const pct = (x: number) => Math.round(x * 100) + ' %';
 
-export function analyzeRoute(route: RawRoute, parks: Park[], speedKmh: number = DEFAULT_SPEED_KMH): RouteAnalysis {
+export function analyzeRoute(route: RawRoute, parks: Park[], speedKmh: number = DEFAULT_SPEED_KMH, sport: Sport = 'bike'): RouteAnalysis {
+  const foot = sport !== 'bike';
   const { coords } = route;
   // Length of each step i → i+1.
   const step = coords.slice(1).map((c, i) => distanceM(coords[i]!, c));
@@ -153,7 +172,7 @@ export function analyzeRoute(route: RawRoute, parks: Park[], speedKmh: number = 
   const segments: RouteAnalysis['segments'] = [];
   let covered = 0;
   for (const [from, to, v] of route.waytype) {
-    const kind = wayKind(v);
+    const kind = wayKind(v, foot);
     const len = lengthOf(from, to);
     meters[kind] += len;
     covered += len;
@@ -184,17 +203,23 @@ export function analyzeRoute(route: RawRoute, parks: Park[], speedKmh: number = 
   const park_share = inPark / total;
 
   const tags: string[] = [];
-  if (shares.bicisenda >= 0.5) tags.push('Mayormente por bicisenda');
-  else if (shares.bicisenda >= 0.15) tags.push(pct(shares.bicisenda) + ' por bicisenda');
+  if (foot) {
+    // On foot, bike lanes do not matter; paths and parks do (and a dirt path is a plus for running).
+    if (park_share >= 0.4) tags.push('Mayormente por parques');
+    if (shares.sendero >= 0.3) tags.push(pct(shares.sendero) + ' por senderos');
+  } else {
+    if (shares.bicisenda >= 0.5) tags.push('Mayormente por bicisenda');
+    else if (shares.bicisenda >= 0.15) tags.push(pct(shares.bicisenda) + ' por bicisenda');
+  }
   if (shares.calle >= 0.6) tags.push('Casi todo calles de barrio');
   if (names.length) tags.push('Pasa por ' + names.slice(0, 2).join(' y ') + (names.length > 2 ? ' y más' : ''));
   else if (park_share >= 0.05) tags.push('Pasa por un parque');
-  if (shares.sendero >= 0.2) tags.push('Tramos de sendero');
+  if (!foot && shares.sendero >= 0.2) tags.push('Tramos de sendero');
 
   const warnings: string[] = [];
-  if (meters.avenida >= 1000 || shares.avenida >= 0.4) warnings.push(km(meters.avenida) + ' km por avenidas');
-  if (rough >= 500) warnings.push(km(rough) + ' km de adoquines o tierra');
-  if (route.ascent_m >= 150) warnings.push(Math.round(route.ascent_m) + ' m de subida en total');
+  if (meters.avenida >= 1000 || shares.avenida >= 0.4) warnings.push(km(meters.avenida) + (foot ? ' km junto a avenidas' : ' km por avenidas'));
+  if (!foot && rough >= 500) warnings.push(km(rough) + ' km de adoquines o tierra');
+  if (route.ascent_m >= (foot ? 80 : 150)) warnings.push(Math.round(route.ascent_m) + ' m de subida en total');
 
   // Safety, from public statistics: said plainly, as an average, not as a promise either way.
   const sf = route.safety;
@@ -206,19 +231,21 @@ export function analyzeRoute(route: RawRoute, parks: Park[], speedKmh: number = 
     if (sf.choque_high_m >= 300) warnings.push(km(sf.choque_high_m) + ' km por zonas con muchos choques');
     const risky = sf.partidos.filter((p) => p.level >= 2).map((p) => p.name);
     if (risky.length) warnings.push('Pasa por ' + risky.slice(0, 2).join(' y ') + ', con más robos que el promedio del conurbano');
-    if (sf.reports > 0) warnings.push(sf.reports === 1 ? 'Un aviso de otro ciclista cerca de la ruta' : sf.reports + ' avisos de ciclistas cerca de la ruta');
+    if (sf.reports > 0) warnings.push(sf.reports === 1 ? (foot ? 'Un aviso de otra persona cerca de la ruta' : 'Un aviso de otro ciclista cerca de la ruta') : sf.reports + (foot ? ' avisos de otras personas cerca de la ruta' : ' avisos de ciclistas cerca de la ruta'));
   }
 
   return {
     distance_m: Math.round(route.distance_m || total),
     ascent_m: Math.round(route.ascent_m),
-    duration_s: estimateDurationS(route.distance_m || total, route.ascent_m, speedKmh),
+    duration_s: estimateDurationS(route.distance_m || total, route.ascent_m, speedKmh, sport),
     shares, park_share, parks: names, tags, warnings, risk_share, segments,
   };
 }
 
 /** Order for the «por tiempo» options: more bike lanes and parks first; avenues and zones with many robberies last. */
-export function routeScore(a: RouteAnalysis): number {
+export function routeScore(a: RouteAnalysis, sport: Sport = 'bike'): number {
+  // On foot: parks and paths first, quiet streets next, avenues last.
+  if (sport !== 'bike') return a.park_share * 2.5 + a.shares.sendero * 1.2 + a.shares.calle * 0.6 - a.shares.avenida * 1.2 - a.risk_share * 2.5;
   return a.shares.bicisenda * 2 + a.park_share * 1.5 + a.shares.calle * 0.5 + a.shares.sendero * 0.5 - a.shares.avenida - a.risk_share * 2.5;
 }
 

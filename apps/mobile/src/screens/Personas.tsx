@@ -106,7 +106,7 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
   );
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }} keyboardShouldPersistTaps="handled">
+    <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }} keyboardShouldPersistTaps="handled">
       {header}
       {error ? <Notice tone="warn" text={error} /> : null}
       {notice ? <Notice text={notice} /> : null}
@@ -201,14 +201,14 @@ export function Personas({ initialCode, onClose }: { initialCode?: string | null
 
           {!coach && !students.length && !friends.length ? (
             <Empty icon={UsersThree} title="Todavía no tenés coach ni amigos">
-              Invita a un alumno para armarle las rutinas y ver cómo entrena, o a un amigo para ver los entrenamientos del otro.
+              Invitá a un alumno para armarle las rutinas y ver cómo entrena, o a un amigo para ver los entrenamientos del otro.
             </Empty>
           ) : null}
         </>
       )}
 
       <View style={{ padding: 12, borderRadius: rad.control, borderWidth: 1, borderColor: c.divider }}>
-        <T size={12} color={c.n400}>Tus datos son tuyos: un coach o un amigo solo ve lo que este vínculo permite, y deja de verlo apenas lo cortas.</T>
+        <T size={12} color={c.n400}>Tus datos son tuyos: un coach o un amigo solo ve lo que este vínculo permite, y deja de verlo apenas lo cortás.</T>
       </View>
 
       <Confirm visible={ending != null} title="Cortar vínculo"

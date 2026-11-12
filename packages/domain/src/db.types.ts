@@ -69,6 +69,7 @@ export type Database = {
           kind: string
           name: string
           route: Json
+          sport: string
           summary: Json
           updated_at: string
           user_id: string
@@ -83,6 +84,7 @@ export type Database = {
           kind: string
           name: string
           route: Json
+          sport?: string
           summary?: Json
           updated_at?: string
           user_id?: string
@@ -97,6 +99,7 @@ export type Database = {
           kind?: string
           name?: string
           route?: Json
+          sport?: string
           summary?: Json
           updated_at?: string
           user_id?: string
@@ -2663,6 +2666,47 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "meal_items"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      log_foot_activity: {
+        Args: {
+          p_distance_m: number
+          p_ended_at: string
+          p_id: string
+          p_moving_s: number
+          p_name: string
+          p_started_at: string
+          p_sport: string
+          p_time_zone?: string
+        }
+        Returns: {
+          avg_hr: number | null
+          created_at: string
+          deleted_at: string | null
+          device_id: string | null
+          ended_at: string | null
+          energy_is_estimated: boolean
+          energy_kcal: number | null
+          id: string
+          local_date: string
+          name: string
+          notes: string | null
+          paused_at: string | null
+          routine_id: string | null
+          routine_version: number | null
+          started_at: string
+          status: Database["public"]["Enums"]["session_status"]
+          tags: string[]
+          time_zone: string
+          total_paused_s: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "workout_sessions"
           isOneToOne: true
           isSetofReturn: false
         }

@@ -2,8 +2,8 @@
  * Comidas, etapa 2 (docs/comidas.md): «Tu semana». Preferences, a weekly plan built around the person's
  * training and events, today's meals with «Lo comí» (logs them) and «Cambiar» (another meal like it).
  */
-import { addDays, isoWeekday, MEAL_SLOTS, newId, nf, weekStartOf, weekTargets, KovaError, type DayTarget } from '@kova/domain';
-import type { FoodPreferences, MealEvent, MealPlan, PlanMeal } from '@kova/api-client';
+import { addDays, isoWeekday, MEAL_SLOTS, newId, nf, splitFoods, weekStartOf, weekTargets, KovaError, type DayTarget } from '@kova/domain';
+import type { FoodPreferences, MealEvent, MealPlan, Pantry, PlanMeal } from '@kova/api-client';
 import { ArrowsClockwise, CalendarPlus, Check, CookingPot, ForkKnife, GearSix, Pause, Play, Sparkle, X } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
@@ -11,7 +11,7 @@ import { kova, outbox } from '../client';
 import { c, rad } from '../theme';
 import { loadTraining } from '../training';
 import { useAsync } from '../useAsync';
-import { Banner, Button, Chip, Field, Row, Seg, Sheet, Skeleton, T } from '../ui';
+import { Banner, Button, Chip, Field, Row, Seg, Sheet, Skeleton, T, KeyboardRoom } from '../ui';
 
 const SLOT_LABEL = Object.fromEntries(MEAL_SLOTS) as Record<string, string>;
 const DAY_LETTER = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -34,7 +34,8 @@ async function targetsFor(weekStart: string, today: string, events: MealEvent[])
   return weekTargets({ weekStart, baseKcal, proteinG: energy.proteinG, fatG: energy.fatG, trainingDays, trainingKcal, events: events.map((e) => ({ date: e.local_date, kind: e.kind })), floorKcal: 1200 });
 }
 
-export function MealPlanCard({ today, deviceId, onLogged }: { today: string; deviceId: string | null; onLogged: () => void }) {
+export function MealPlanCard({ today, deviceId, onLogged, onPlanChanged }: { today: string; deviceId: string | null; onLogged: () => void; onPlanChanged?: () => void }) {
+  const [homeOpen, setHomeOpen] = useState(false);
   const weekStart = weekStartOf(today);
   const [day, setDay] = useState(today);
   const [busy, setBusy] = useState<string | null>(null);
@@ -45,10 +46,11 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
   const [cook, setCook] = useState(false);
 
   const q = useAsync(async () => {
-    const [prefs, plan, events] = await Promise.all([
+    const [prefs, plan, events, pantry] = await Promise.all([
       kova.food.preferences.get(), kova.food.plan.get(weekStart), kova.food.events.list(weekStart, addDays(weekStart, 6)),
+      kova.food.pantry.list().catch(() => [] as Pantry[]),
     ]);
-    return { prefs, plan, events };
+    return { prefs, plan, events, pantry };
   }, [weekStart]);
 
   const generate = async () => {
@@ -59,6 +61,7 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
       if (!days) throw new KovaError('INVALID_INPUT', 'Primero calculá tu meta en Ajustes → Recalcular meta.');
       await kova.food.plan.generate(weekStart, days as unknown as Array<Record<string, unknown>>);
       q.reload();
+      onPlanChanged?.();
     } catch (e) {
       setError(msg(e));
     } finally {
@@ -98,7 +101,7 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
   };
 
   if (q.loading && !q.data) return <Skeleton height={180} radius={rad.sheet} />;
-  const { prefs, plan, events } = q.data ?? { prefs: null, plan: null, events: [] as MealEvent[] };
+  const { prefs, plan, events, pantry } = q.data ?? { prefs: null, plan: null, events: [] as MealEvent[], pantry: [] as Pantry[] };
   const target = (plan?.targets as unknown as DayTarget[] | undefined)?.find((t) => t.date === day);
   const meals = (plan?.items ?? []).filter((m) => m.local_date === day).sort((a, b) => MEAL_SLOTS.findIndex(([s]) => s === a.slot) - MEAL_SLOTS.findIndex(([s]) => s === b.slot));
   const dayEvents = events.filter((e) => e.local_date === day);
@@ -119,7 +122,7 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
             Te armo las comidas de la semana alrededor de tus entrenamientos: más carbohidratos los días de fuerza y, si tenés un asado, el resto de la semana lo compensa.
           </T>
           {!prefs ? <Button variant="secondary" label="Contame qué te gusta" icon={ForkKnife} onPress={() => setPrefsOpen(true)} /> : null}
-          <Button large label="Armar mi semana" icon={Sparkle} onPress={generate} busy={busy === 'plan'} />
+          <Button large label="Armar mi semana" icon={Sparkle} onPress={() => setHomeOpen(true)} busy={busy === 'plan'} />
           {busy === 'plan' ? <T size={12} color={c.n500}>Puede tardar hasta un minuto.</T> : null}
         </View>
       ) : (
@@ -154,7 +157,7 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
           ))}
           <Row style={{ gap: 4, flexWrap: 'wrap' }}>
             <Button variant="secondary" label="Cocinar para varios días" icon={CookingPot} onPress={() => setCook(true)} />
-            <Button variant="text" label="Rehacer la semana" icon={Sparkle} onPress={generate} busy={busy === 'plan'} />
+            <Button variant="text" label="Rehacer la semana" icon={Sparkle} onPress={() => setHomeOpen(true)} busy={busy === 'plan'} />
           </Row>
         </>
       )}
@@ -163,6 +166,10 @@ export function MealPlanCard({ today, deviceId, onLogged }: { today: string; dev
 
       {prefsOpen ? <PrefsSheet initial={prefs ?? DEFAULT_PREFS} onClose={() => setPrefsOpen(false)} onSaved={() => { setPrefsOpen(false); q.reload(); }} /> : null}
       {eventOpen ? <EventSheet weekStart={weekStart} today={today} events={events} onClose={() => setEventOpen(false)} onChanged={() => q.reload()} hasPlan={!!plan} onRedo={() => { setEventOpen(false); generate(); }} /> : null}
+      {homeOpen ? (
+        <HomeSheet items={pantry} onClose={() => setHomeOpen(false)} onChanged={() => q.reload()}
+          onGo={() => { setHomeOpen(false); void generate(); }} />
+      ) : null}
       {cook && plan ? <CookSession plan={plan} today={today} onClose={() => setCook(false)} /> : null}
       <Sheet visible={!!open} onClose={() => setOpen(null)} title={open?.title ?? ''}>
         {open ? <MealDetail meal={open} /> : null}
@@ -216,7 +223,7 @@ function PrefsSheet({ initial, onClose, onSaved }: { initial: FoodPreferences; o
   };
   return (
     <Sheet visible onClose={onClose} title="Qué te gusta">
-      <ScrollView style={{ maxHeight: 520 }} contentContainerStyle={{ gap: 12 }} keyboardShouldPersistTaps="handled">
+      <View style={{ gap: 12 }}>
         <T size={13} w="medium" color={c.n400}>Cómo comés</T>
         <Seg stretch value={p.diet} onChange={(diet) => setP({ ...p, diet })} label="Tipo de alimentación"
           options={[['omnivora', 'De todo'], ['vegetariana', 'Vegetariana'], ['vegana', 'Vegana'], ['sin_tacc', 'Sin TACC']]} />
@@ -236,7 +243,7 @@ function PrefsSheet({ initial, onClose, onSaved }: { initial: FoodPreferences; o
         <Chip label="Presupuesto ajustado" selected={p.budget_week_ars != null} onPress={() => setP({ ...p, budget_week_ars: p.budget_week_ars == null ? 1 : null })} />
         {error ? <Banner tone="crit" text={error} /> : null}
         <Button large label="Guardar" icon={Check} onPress={save} busy={busy} />
-      </ScrollView>
+      </View>
     </Sheet>
   );
 }
@@ -311,12 +318,12 @@ function CookSession({ plan, today, onClose }: { plan: MealPlan; today: string; 
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Cocinar para varios días</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14 }}>
+        <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14 }}>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[2, 3, 4, 5].map((n) => <Chip key={n} label={n + ' días'} selected={days === n} onPress={() => setDays(n)} />)}
           </Row>
@@ -352,7 +359,48 @@ function CookSession({ plan, today, onClose }: { plan: MealPlan; today: string; 
             </View>
           ) : null}
         </ScrollView>
-      </View>
+      </KeyboardRoom>
     </Modal>
+  );
+}
+
+/**
+ * Before the week is made: what you already have. The plan uses that first and the shopping only
+ * completes it. Written freely («milanesas, cebolla, morrón y huevos»); each thing becomes an «En casa» item.
+ */
+function HomeSheet({ items, onClose, onChanged, onGo }: { items: Pantry[]; onClose: () => void; onChanged: () => void; onGo: () => void }) {
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const typed = splitFoods(text);
+  const go = async () => {
+    setBusy(true);
+    try {
+      if (typed.length) await kova.food.pantry.add(typed.map((name) => ({ name, grams: null })), 'manual');
+    } catch { /* the plan still works without them */ }
+    setBusy(false);
+    onGo();
+  };
+  return (
+    <Sheet visible onClose={onClose} title="¿Qué tenés en casa?">
+      <View style={{ gap: 12 }}>
+        <T size={14} color={c.n400}>Armo la semana usando primero lo que ya tenés, y la compra solo completa lo que falta.</T>
+        {items.length ? (
+          <View style={{ gap: 6 }}>
+            <T size={13} w="semibold" color={c.n400}>Ya anotado</T>
+            <Row style={{ flexWrap: 'wrap', gap: 6 }}>
+              {items.map((i) => (
+                <Chip key={i.id} label={i.name + ' ✕'} accessibilityLabel={'Quitar ' + i.name}
+                  onPress={() => { kova.food.pantry.remove(i.id).then(onChanged).catch(() => undefined); }} />
+              ))}
+            </Row>
+          </View>
+        ) : null}
+        <Field label={items.length ? 'Algo más' : 'Escribilo como te salga'} value={text} onChangeText={setText} multiline
+          placeholder="Ej.: milanesas, cebolla, morrón, pechugas de pollo y huevos" />
+        {typed.length ? <T size={12} color={c.n500}>Anoto: {typed.join(' · ')}</T> : null}
+        <Button large label={items.length || typed.length ? 'Armar mi semana con esto' : 'No tengo nada, armala igual'} icon={Sparkle} onPress={go} busy={busy} />
+        <T size={12} color={c.n500}>También podés sacarle una foto a la heladera o al ticket en Compras → En casa.</T>
+      </View>
+    </Sheet>
   );
 }

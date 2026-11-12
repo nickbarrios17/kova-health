@@ -125,6 +125,19 @@ export function rideFuel(distanceM: number, durationS: number, weightKg: number)
   return { kcal, carbsG, waterMl, suggestion };
 }
 
+/**
+ * The same for a run or a walk: net energy ≈ 1 kcal per kg and km running, ≈ 0.5 walking (independent
+ * of pace, a well-known rule of thumb). Carbs only past ~75 min running; water ~500 ml/h running, 300 walking.
+ */
+export function footFuel(distanceM: number, durationS: number, weightKg: number, sport: 'run' | 'walk'): RideFuel {
+  const h = Math.max(0, durationS) / 3600, km = Math.max(0, distanceM) / 1000;
+  const kcal = Math.round((weightKg * km * (sport === 'run' ? 1 : 0.5)) / 10) * 10;
+  const carbsG = sport === 'run' && h > 1.25 ? Math.round((30 * h) / 5) * 5 : 0;
+  const waterMl = Math.round(((sport === 'run' ? 500 : 300) * h) / 50) * 50;
+  const gels = Math.ceil(carbsG / 25);
+  return { kcal, carbsG, waterMl, suggestion: carbsG > 0 ? (gels === 1 ? 'un gel o una banana' : gels + ' geles') : null };
+}
+
 // ── Around a workout ──────────────────────────────────────────────────────────
 
 /** Protein after strength training: ~0.3 g per kg, between 20 and 40 g. */
