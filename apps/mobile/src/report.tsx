@@ -9,6 +9,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { Pressable, View } from 'react-native';
 import { ReportSheet } from './ReportSheet';
 import { c } from './theme';
+import { useKeyboardInset } from './ui';
 
 interface Target { screen: ReportScreen; context?: ReportContext }
 interface Ctx { push: (t: Target) => () => void; setBottom: (n: number) => void; open: () => void }
@@ -47,6 +48,8 @@ export function ReportProvider({ children }: { children: ReactNode }) {
   const [top, setTop] = useState<Target>({ screen: 'other' });
   const [bottom, setBottom] = useState(24);
   const [open, setOpen] = useState(false);
+  // While typing, the floating button would sit on top of the field or its buttons.
+  const typing = useKeyboardInset() > 0;
   const push = (t: Target) => {
     stack.current.push(t);
     setTop(t);
@@ -59,7 +62,7 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     <ReportCtx.Provider value={{ push, setBottom, open: () => setOpen(true) }}>
       <View style={{ flex: 1 }}>
         {children}
-        {bottom >= 0 ? <View pointerEvents="box-none" style={{ position: 'absolute', right: 10, bottom }}>
+        {bottom >= 0 && !typing ? <View pointerEvents="box-none" style={{ position: 'absolute', right: 10, bottom }}>
           <View style={{ borderRadius: 22, backgroundColor: 'rgba(35,37,50,0.92)', borderWidth: 1, borderColor: c.divider }}>
             <ReportButton onPress={() => setOpen(true)} />
           </View>
