@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { kova, outbox } from '../client';
 import { c, font, rad } from '../theme';
-import { Banner, Button, Chip, Field, Row, T } from '../ui';
+import { Banner, Button, Chip, Field, Row, T, KeyboardRoom } from '../ui';
 
 type Slot = (typeof MEAL_SLOTS)[number][0];
 
@@ -167,12 +167,12 @@ function Review({ items, unclear, day, deviceId, onClose, onSaved }: {
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Revisá antes de guardar</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }} keyboardShouldPersistTaps="handled">
+        <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }} keyboardShouldPersistTaps="handled">
           {unclear ? <Banner tone="info" glyph="?" text={unclear} /> : null}
           {rows.map((r, i) => {
             const v = values(r);
@@ -225,7 +225,7 @@ function Review({ items, unclear, day, deviceId, onClose, onSaved }: {
           <T size={13} color={c.n400} style={{ textAlign: 'center' }}>Total ≈ {nf(total, 0)} kcal</T>
           <Button large label="Guardar" icon={Check} onPress={save} busy={busy} disabled={!rows.some((r) => r.on && r.grams > 0)} />
         </View>
-      </View>
+      </KeyboardRoom>
     </Modal>
   );
 }
@@ -322,12 +322,12 @@ function BarcodeFlow({ day, deviceId, onClose, onSaved }: { day: string; deviceI
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Código de barras</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }} keyboardShouldPersistTaps="handled">
+        <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }} keyboardShouldPersistTaps="handled">
           {!shown && !missing ? (
             <>
               {Platform.OS !== 'web' ? (
@@ -384,7 +384,7 @@ function BarcodeFlow({ day, deviceId, onClose, onSaved }: { day: string; deviceI
           {error ? <Banner tone="crit" text={error} /> : null}
           {shown || missing ? <Button variant="secondary" label="Escanear otro" onPress={() => { setProduct(null); setLabel(null); setMissing(null); setAlt(null); setCode(''); }} /> : null}
         </ScrollView>
-      </View>
+      </KeyboardRoom>
     </Modal>
   );
 }
@@ -416,12 +416,12 @@ function MenuSheet({ options, day, deviceId, onClose, onSaved }: { options: Menu
   };
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Lo que mejor te queda hoy</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }}>
+        <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }}>
           {options.map((o, k) => (
             <View key={k} style={{ padding: 14, borderRadius: rad.card, backgroundColor: c.surface, gap: 6 }}>
               <T size={16} w="semibold">{o.name}</T>
@@ -433,7 +433,7 @@ function MenuSheet({ options, day, deviceId, onClose, onSaved }: { options: Menu
           {error ? <Banner tone="crit" text={error} /> : null}
           <T size={11} color={c.n500}>Las porciones de restaurante varían: se guarda como estimado.</T>
         </ScrollView>
-      </View>
+      </KeyboardRoom>
     </Modal>
   );
 }

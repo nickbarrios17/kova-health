@@ -159,7 +159,7 @@ export function Onboarding({ onCancel }: { onCancel?: () => void }) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 18 }} keyboardShouldPersistTaps="handled">
+      <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 18 }} keyboardShouldPersistTaps="handled">
         <Row style={{ justifyContent: 'space-between' }}>
           <T size={12} color={c.n500}>Paso {step} de 3</T>
           {onCancel ? <Button variant="ghost" label="Cancelar" onPress={onCancel} /> : null}

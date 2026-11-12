@@ -31,6 +31,11 @@ describe('food AI helpers', () => {
     // Same food, another word order: still picked.
     const pechuga = { ...base, id: 'p', name: 'Pechuga de pollo (a la plancha)', ref_unit: 'g' as const, kcal: 165 };
     expect(usableCandidate(item({ name: 'Pollo a la plancha', grams: 150, kcal_low: 220, kcal_high: 280, candidates: [pechuga] }))?.id).toBe('p');
+    // «Tostada con manteca» is not plain toast: without the butter the calories come out low.
+    const tostadas = { ...base, id: 't', name: 'Tostadas de pan', ref_unit: 'g' as const, kcal: 290 };
+    expect(usableCandidate(item({ name: 'Tostada con manteca', grams: 60, kcal_low: 200, kcal_high: 260, candidates: [tostadas] }))).toBeNull();
+    const cafe = { ...base, id: 'k', name: 'Café con leche', ref_unit: 'ml' as const, kcal: 40 };
+    expect(usableCandidate(item({ name: 'Café con leche', grams: 250, kcal_low: 80, kcal_high: 120, candidates: [cafe] }))?.id).toBe('k');
   });
 
   it('shows the estimate as a range, and its middle when saved', () => {

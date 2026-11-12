@@ -151,7 +151,7 @@ export function RoutineEditor({ initial, exercises, units, onClose, ownerId, tit
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
+      <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 16 }} keyboardShouldPersistTaps="handled">
         <Row style={{ justifyContent: 'space-between' }}>
           <T size={22} w="medium" style={{ flex: 1 }}>{title ?? (isNew ? 'Nueva rutina' : 'Editar rutina')}</T>
           <Button variant="ghost" label="Cancelar" onPress={() => onClose(false)} />

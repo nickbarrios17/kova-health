@@ -46,7 +46,7 @@ export function Login() {
   const k = COPY[mode];
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView disableScrollViewPanResponder contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }} keyboardShouldPersistTaps="handled">
         <Card style={{ gap: 16, padding: 22 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <KovaMark size={30} />

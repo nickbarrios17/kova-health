@@ -21,7 +21,7 @@ export function NewsSheet({ visible, days, onClose, title = 'Novedades' }: { vis
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <View style={{ backgroundColor: c.surface, borderTopLeftRadius: rad.card, borderTopRightRadius: rad.card, maxHeight: '85%' }}>
-          <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 20, gap: 16 }}>
             <Row style={{ gap: 10, alignItems: 'center' }}>
               <Sparkle size={22} color={c.accent} weight="fill" />
               <T size={18} w="medium">{title}</T>

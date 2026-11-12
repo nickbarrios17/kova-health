@@ -37,7 +37,7 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
   if (recalc) return <Onboarding onCancel={() => setRecalc(false)} />;
   if (people) return <Personas onClose={() => setPeople(false)} />;
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}>
       <Row style={{ gap: 4 }}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Volver" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 }}>
           <ArrowLeft size={22} color={c.text} />
@@ -62,7 +62,7 @@ export function Ajustes({ onClose }: { onClose: () => void }) {
         <UsersThree size={20} color={c.a300} />
         <View style={{ flex: 1 }}>
           <T size={15} w="medium">Coach y amigos</T>
-          <T size={12} color={c.n400}>Invita a tu coach, a tus alumnos o a tus amigos</T>
+          <T size={12} color={c.n400}>Invitá a tu coach, a tus alumnos o a tus amigos</T>
         </View>
         <CaretRight size={16} color={c.n500} />
       </Pressable>
