@@ -318,7 +318,7 @@ function CookSession({ plan, today, onClose }: { plan: MealPlan; today: string; 
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <KeyboardRoom style={{ backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Cocinar para varios días</T>

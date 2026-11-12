@@ -167,7 +167,7 @@ function Review({ items, unclear, day, deviceId, onClose, onSaved }: {
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <KeyboardRoom style={{ backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Revisá antes de guardar</T>
@@ -322,7 +322,7 @@ function BarcodeFlow({ day, deviceId, onClose, onSaved }: { day: string; deviceI
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <KeyboardRoom style={{ backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Código de barras</T>
@@ -416,7 +416,7 @@ function MenuSheet({ options, day, deviceId, onClose, onSaved }: { options: Menu
   };
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <KeyboardRoom style={{ backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Lo que mejor te queda hoy</T>

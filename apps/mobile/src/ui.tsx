@@ -25,6 +25,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { c, font, rad } from './theme';
 
@@ -337,10 +338,15 @@ export function useKeyboardInset(): number {
   return inset;
 }
 
-/** A full screen (or full-screen modal) whose content stays above the keyboard. */
-export function KeyboardRoom({ children, style, extra = 0 }: { children: ReactNode; style?: StyleProp<ViewStyle>; extra?: number }) {
+/**
+ * A full screen whose content stays above the keyboard. `modal`: a full-screen Modal, which Android also
+ * draws edge to edge, so it keeps clear of the status bar on top and the navigation bar below.
+ */
+export function KeyboardRoom({ children, style, extra = 0, modal }: { children: ReactNode; style?: StyleProp<ViewStyle>; extra?: number; modal?: boolean }) {
   const kb = useKeyboardInset();
-  return <View style={[{ flex: 1, paddingBottom: Math.max(0, kb - extra) }, style]}>{children}</View>;
+  const insets = useSafeAreaInsets();
+  const pad = modal ? { paddingTop: insets.top, paddingBottom: Math.max(kb, insets.bottom) } : { paddingBottom: Math.max(0, kb - extra) };
+  return <View style={[{ flex: 1 }, pad, style]}>{children}</View>;
 }
 
 /**

@@ -140,7 +140,7 @@ function ListModal({ list: initial, onClose }: { list: ShoppingList; onClose: ()
 
   return (
     <Modal animationType="slide" onRequestClose={onClose}>
-      <KeyboardRoom style={{ backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <View style={{ flex: 1 }}>
