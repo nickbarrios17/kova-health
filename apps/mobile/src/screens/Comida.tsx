@@ -165,7 +165,7 @@ function AddFood({ slot, day, deviceId, onClose, onAdded }: { slot: Slot; day: s
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent={false}>
-      <KeyboardRoom style={{ backgroundColor: c.bg }}>
+      <KeyboardRoom modal style={{ backgroundColor: c.bg }}>
         <Row style={{ padding: 12 }}>
           <Pressable onPress={onClose} accessibilityLabel="Cerrar" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Agregar a {label}</T>
