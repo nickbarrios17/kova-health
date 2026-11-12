@@ -323,7 +323,7 @@ function CookSession({ plan, today, onClose }: { plan: MealPlan; today: string; 
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Cocinar para varios días</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14 }}>
+        <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14 }}>
           <Row style={{ gap: 6, flexWrap: 'wrap' }}>
             {[2, 3, 4, 5].map((n) => <Chip key={n} label={n + ' días'} selected={days === n} onPress={() => setDays(n)} />)}
           </Row>

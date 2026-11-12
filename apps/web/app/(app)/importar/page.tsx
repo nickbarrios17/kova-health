@@ -122,7 +122,7 @@ export default function ImportPage() {
     setError(null);
     const tooLong = chosen.find((r) => r.items.length > 50);
     if (tooLong) return setError('«' + tooLong.name + '» tiene más de 50 ejercicios; divídela en dos rutinas.');
-    if (chosen.some((r) => !r.name.trim())) return setError('Ponle nombre a cada rutina.');
+    if (chosen.some((r) => !r.name.trim())) return setError('Ponele nombre a cada rutina.');
     setBusy(true);
     try {
       const c = kova();

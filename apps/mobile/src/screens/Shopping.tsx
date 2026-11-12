@@ -148,7 +148,7 @@ function ListModal({ list: initial, onClose }: { list: ShoppingList; onClose: ()
             <T size={12} color={c.n400}>{done} de {list.items.length} en el carrito</T>
           </View>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14 }} keyboardShouldPersistTaps="handled">
+        <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14 }} keyboardShouldPersistTaps="handled">
           {aisles.map((aisle) => (
             <View key={aisle} style={{ gap: 4 }}>
               <T size={13} w="semibold" color={c.n400}>{aisle}</T>

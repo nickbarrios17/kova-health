@@ -204,7 +204,7 @@ export function Navegar({ route, kind, speedKmh, name: plannedName, zones = null
       } catch (e) { setSaveError(message(e)); } finally { setSaving(false); }
     };
     return (
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
         <Row style={{ gap: 10 }}>
           <FlagCheckered size={26} color={c.accent} />
           <T size={22} w="medium">{ended.arrived ? 'Llegaste' : sport === 'walk' ? 'Caminata terminada' : 'Salida terminada'}</T>

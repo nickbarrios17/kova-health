@@ -43,7 +43,7 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
 
 function Shares({ a, foot }: { a: RouteAnalysis; foot?: boolean }) {
   const parts = (['bicisenda', 'calle', 'avenida', 'sendero', 'otro'] as const).filter((k) => a.shares[k] >= 0.01);
-  const names = { bicisenda: 'Bicisenda', calle: 'Calles', avenida: 'Avenidas', sendero: foot ? 'Senderos y peatonales' : 'Sendero', otro: 'Otros' };
+  const names = { bicisenda: 'Bicisenda', calle: foot ? 'Calles y veredas' : 'Calles', avenida: 'Avenidas', sendero: foot ? 'Senderos' : 'Sendero', otro: 'Otros' };
   return (
     <View style={{ gap: 6 }}>
       <View style={{ flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: c.n800 }}>
@@ -161,7 +161,11 @@ export function Ciclismo({ onClose, sport: initialSport = 'bike' }: { onClose: (
   const locate = () => run('locate', async () => {
     const perm = await Location.requestForegroundPermissionsAsync();
     if (!perm.granted) throw new KovaError('FORBIDDEN', 'Sin permiso de ubicación. Tocá el mapa para marcar desde dónde salís.');
-    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    const pos = await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 12000)),
+    ]) ?? await Location.getLastKnownPositionAsync({ maxAge: 10 * 60 * 1000 }).catch(() => null);
+    if (!pos) throw new KovaError('INTERNAL', 'No pudimos ubicarte. Tocá el mapa para marcar desde dónde salís.');
     setMe([pos.coords.longitude, pos.coords.latitude]);
     setStart(null);
     setFit((n) => n + 1);
@@ -224,7 +228,7 @@ export function Ciclismo({ onClose, sport: initialSport = 'bike' }: { onClose: (
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" scrollEnabled={!onMap}>
+    <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" scrollEnabled={!onMap}>
       <Row style={{ gap: 8 }}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Volver" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 }}>
           <ArrowLeft size={22} color={c.text} />

@@ -48,7 +48,7 @@ export function Alumno({ link, onClose }: { link: PersonLink; onClose: () => voi
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}
+    <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }}
       refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
       <Row style={{ gap: 4 }}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Volver" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 }}>

@@ -84,7 +84,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
       days,
       stepGoal: (goals as Array<{ kind: string; status: string; target_value: number }>).find((g) => g.kind === 'steps_daily' && g.status === 'active')?.target_value ?? null,
       sessions: (sessions as Array<Record<string, unknown>>).filter((s) => s.status === 'completed'),
-      habits: habits as Array<{ id: string; name: string; unit: string | null }>,
+      habits: habits as Array<{ id: string; name: string; unit: string | null; kind: string }>,
       habitDays: habitDays as Array<HabitDay & { habit_id: string }>,
     };
   }, [today, metric]);
@@ -197,7 +197,7 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
   const listDays = [...daily].reverse().filter((p) => p.value != null).slice(0, 31);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }} keyboardShouldPersistTaps="handled"
+    <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 16 }} keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
       {header}
       {error ? <Notice tone="warn" text={error} /> : null}
@@ -237,16 +237,20 @@ export function Metric({ metric, onClose }: { metric: MetricKey; onClose: () => 
             const t = hd.find((d) => d.local_date === today);
             const done = !!t?.completed;
             const streak = dailyStreak(hd, today);
+            // Count habits («8 vasos de agua»): each tap adds one, and the row shows how many are done.
+            const counted = h.kind === 'count' && (t?.target_value ?? 0) > 1;
+            const progress = counted && t ? Number(t.value) + ' de ' + Number(t.target_value) + (h.unit ? ' ' + h.unit : '') : null;
             return (
               <Row key={h.id}>
-                <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={h.name} disabled={t ? !t.scheduled && !done : false}
+                <Pressable accessibilityRole={counted && !done ? 'button' : 'checkbox'} accessibilityState={{ checked: done }}
+                  accessibilityLabel={counted && !done ? 'Sumar uno a ' + h.name : h.name} disabled={t ? !t.scheduled && !done : false}
                   onPress={() => toggleHabit(h.id, done)}
                   style={{ width: 44, height: 44, borderRadius: rad.control, borderWidth: 1, borderColor: done ? c.accent : c.divider, backgroundColor: done ? c.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                  <Check size={18} weight="bold" color={done ? c.bg : c.n400} />
+                  {counted && !done ? <T size={14} w="semibold" color={c.a300}>+1</T> : <Check size={18} weight="bold" color={done ? c.bg : c.n400} />}
                 </Pressable>
                 <View style={{ flex: 1 }}>
                   <T size={14}>{h.name}</T>
-                  <T size={12} color={c.n400}>{t && !t.scheduled ? 'Hoy no toca' : done ? 'Hecho' : 'Pendiente'}</T>
+                  <T size={12} color={c.n400}>{t && !t.scheduled ? 'Hoy no toca' : done ? 'Hecho' + (progress ? ' · ' + progress : '') : progress ?? 'Pendiente'}</T>
                 </View>
                 <Row style={{ gap: 4 }}><Flame size={14} color={streak ? c.warn : c.n600} /><T size={13} color={c.n300}>{streak} {streak === 1 ? 'día' : 'días'}</T></Row>
               </Row>

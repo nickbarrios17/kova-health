@@ -78,7 +78,7 @@ export function Hoy({ live, onOpenLive, onStart, onCreateRoutine }: {
   const top = insights[0];
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 24 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
+    <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 24 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ flex: 1, gap: 4 }}>
           <T size={13} color={c.n400}>{headerDate(new Date(), tz, false)}</T>

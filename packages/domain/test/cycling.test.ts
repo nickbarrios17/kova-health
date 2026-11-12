@@ -94,10 +94,14 @@ describe('on foot', () => {
     const park: Park = { name: 'Parque Centenario', rings: [[[0.0025, -1], [0.0095, -1], [0.0095, 1], [0.0025, 1], [0.0025, -1]]] };
     const a = analyzeRoute(route({ waytype: [[0, 2, 1], [2, 10, 5]] }), [park], 9.5, 'run');
     expect(a.tags).toContain('Mayormente por parques');
-    expect(a.tags).toContain('80 % por senderos y caminos peatonales');
+    expect(a.tags).toContain('80 % por senderos');
     expect(a.tags.some((t) => /bicisenda/.test(t))).toBe(false);
     const b = analyzeRoute(route({ waytype: [[0, 10, 1]] }), [], 9.5, 'run');
     expect(b.warnings).toContain('1,1 km junto a avenidas');
     expect(routeScore(a, 'run')).toBeGreaterThan(routeScore(b, 'run'));
+    // Sidewalks come as footway (7): streets, not trails.
+    const c = analyzeRoute(route({ waytype: [[0, 10, 7]] }), [], 9.5, 'run');
+    expect(c.shares.calle).toBeCloseTo(1, 5);
+    expect(c.tags.some((t) => /sendero/.test(t))).toBe(false);
   });
 });

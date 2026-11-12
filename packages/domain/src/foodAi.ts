@@ -54,9 +54,13 @@ const stemEq = (a: string, b: string) => a === b || (a.startsWith(b) && a.length
 export function usableCandidate(item: DescribedItem): CatalogFood | null {
   const mid = (item.kcal_low + item.kcal_high) / 2;
   const head = words(item.name)[0];
+  // What comes after «con» («tostada con manteca») has to be in the catalog food too, or it is lost.
+  const extras = words(fold(item.name).split(/\s+con\s+/).slice(1).join(' '));
   return item.candidates.find((c) => {
     if (c.ref_unit !== 'g' && c.ref_unit !== 'ml') return false;
-    if (head && !words(c.name).some((w) => stemEq(w, head))) return false;
+    const cw = words(c.name);
+    if (head && !cw.some((w) => stemEq(w, head))) return false;
+    if (extras.length && !extras.every((e) => cw.some((w) => stemEq(w, e)))) return false;
     const kcal = (c.kcal * item.grams) / c.ref_amount;
     return Math.abs(kcal - mid) <= 30 || (kcal >= mid / 1.6 && kcal <= mid * 1.6);
   }) ?? null;

@@ -63,7 +63,7 @@ export function Progreso() {
   const without = cards.filter((x) => !x.st.days);
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 14 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
+    <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 14 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
       <Row style={{ justifyContent: 'space-between' }}>
         <T size={22} w="medium">Progreso</T>
         <Pressable onPress={() => setSettings(true)} accessibilityRole="button" accessibilityLabel="Ajustes" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>

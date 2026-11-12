@@ -118,7 +118,9 @@ export function loopLengthM(minutes: number, speedKmh: number, sport: Sport = 'b
   return Math.round(((minutes * 60) * (speedKmh / 3.6)) / SPORTS[sport].urban);
 }
 
-export function wayKind(waytype: number): WayKind {
+export function wayKind(waytype: number, foot = false): WayKind {
+  // On foot every sidewalk comes as «footway» (7), and bike lanes (6) are just streets to walk by.
+  if (foot) return waytype === 4 || waytype === 5 ? 'sendero' : waytype === 1 || waytype === 2 ? 'avenida' : waytype === 0 ? 'otro' : 'calle';
   switch (waytype) {
     case 6: return 'bicisenda';
     case 3: return 'calle';
@@ -170,7 +172,7 @@ export function analyzeRoute(route: RawRoute, parks: Park[], speedKmh: number = 
   const segments: RouteAnalysis['segments'] = [];
   let covered = 0;
   for (const [from, to, v] of route.waytype) {
-    const kind = wayKind(v);
+    const kind = wayKind(v, foot);
     const len = lengthOf(from, to);
     meters[kind] += len;
     covered += len;
@@ -204,7 +206,7 @@ export function analyzeRoute(route: RawRoute, parks: Park[], speedKmh: number = 
   if (foot) {
     // On foot, bike lanes do not matter; paths and parks do (and a dirt path is a plus for running).
     if (park_share >= 0.4) tags.push('Mayormente por parques');
-    if (shares.sendero >= 0.3) tags.push(pct(shares.sendero) + ' por senderos y caminos peatonales');
+    if (shares.sendero >= 0.3) tags.push(pct(shares.sendero) + ' por senderos');
   } else {
     if (shares.bicisenda >= 0.5) tags.push('Mayormente por bicisenda');
     else if (shares.bicisenda >= 0.15) tags.push(pct(shares.bicisenda) + ' por bicisenda');

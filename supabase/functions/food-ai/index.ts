@@ -278,7 +278,7 @@ async function buildPlan(sb: any, body: any) {
     'Sos un nutricionista argentino. Armá un plan de comidas de 7 días con comida casera argentina, variada, rica y fácil. ' +
     'Usá SOLO alimentos de la lista (por su número) con gramos según diga el nombre (crudo o cocido). ' +
     'Cada día tiene estas comidas: ' + slots.map((s) => SLOT_ES[s]).join(', ') + '. ' +
-    'Acercate a las kcal y proteínas de cada día (después afinamos las cantidades). Repetí ingredientes entre días para que la compra sea simple ' +
+    'Acercate a las kcal y proteínas de cada día (después afinamos las cantidades). Repetí ingredientes entre días para que la compra sea simple, y usá una sola versión de cada producto (una leche, un aceite, un yogur, un pan) ' +
     'y aprovechá sobras (lo que sobra de una cena puede ser el almuerzo del día siguiente; el primer día no hay sobras). ' +
     'Repartí la proteína entre las comidas. Los días de fuerza, más carbohidratos. ' +
     'Los días de evento, comidas livianas fuera del evento. ' + prefsText(p) +

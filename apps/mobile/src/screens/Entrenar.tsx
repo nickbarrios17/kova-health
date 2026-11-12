@@ -41,7 +41,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32, gap: 16 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
+    <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 20, paddingBottom: 32, gap: 16 }} refreshControl={<RefreshControl refreshing={q.loading} onRefresh={q.reload} tintColor={c.accent} />}>
       <Row style={{ justifyContent: 'space-between' }}>
         <T size={22} w="medium">Rutinas</T>
         <Button variant="secondary" label="Nueva rutina" icon={Plus} onPress={() => setEditing(emptyDraft())} />

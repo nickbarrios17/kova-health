@@ -58,7 +58,7 @@ export function ReportSheet({ visible, onClose, screen = 'other', context }: {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <KeyboardRoom style={{ justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <View style={{ backgroundColor: c.surface, borderTopLeftRadius: rad.card, borderTopRightRadius: rad.card, maxHeight: '90%' }}>
-          <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }} keyboardShouldPersistTaps="handled">
+          <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 20, gap: 12 }} keyboardShouldPersistTaps="handled">
             <T size={18} w="medium">Reportar un problema</T>
             {sent ? (
               <>

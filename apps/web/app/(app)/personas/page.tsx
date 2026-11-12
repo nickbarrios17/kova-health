@@ -185,12 +185,12 @@ export default function PersonasPage() {
           )}
           {!coach && students.length === 0 && friends.length === 0 && (
             <EmptyState icon="ph ph-users-three" title="Todavía no tenés coach ni amigos">
-              Invita a un alumno para armarle las rutinas y ver cómo entrena, o a un amigo para ver los entrenamientos del otro.
+              Invitá a un alumno para armarle las rutinas y ver cómo entrena, o a un amigo para ver los entrenamientos del otro.
             </EmptyState>
           )}
         </>
       )}
-      <span style={muted}>Tus datos son tuyos: un coach o un amigo solo ve lo que el vínculo permite, y deja de verlo apenas lo cortas.</span>
+      <span style={muted}>Tus datos son tuyos: un coach o un amigo solo ve lo que el vínculo permite, y deja de verlo apenas lo cortás.</span>
     </div>
   );
 }
