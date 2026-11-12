@@ -71,7 +71,7 @@ export function ExerciseDetail({ exerciseId, name, catalog, onClose }: {
         {q.loading && !q.data ? <Loading /> : q.error ? (
           <View style={{ padding: 16 }}><ErrorNote message={q.error} onRetry={q.reload} /></View>
         ) : ex ? (
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}>
             {anim ? (
               <View style={{ gap: 4 }}>
                 <MannequinView spec={anim} />

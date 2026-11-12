@@ -172,7 +172,7 @@ function Review({ items, unclear, day, deviceId, onClose, onSaved }: {
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Revisá antes de guardar</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }} keyboardShouldPersistTaps="handled">
+        <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }} keyboardShouldPersistTaps="handled">
           {unclear ? <Banner tone="info" glyph="?" text={unclear} /> : null}
           {rows.map((r, i) => {
             const v = values(r);
@@ -327,7 +327,7 @@ function BarcodeFlow({ day, deviceId, onClose, onSaved }: { day: string; deviceI
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Código de barras</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }} keyboardShouldPersistTaps="handled">
+        <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }} keyboardShouldPersistTaps="handled">
           {!shown && !missing ? (
             <>
               {Platform.OS !== 'web' ? (
@@ -421,7 +421,7 @@ function MenuSheet({ options, day, deviceId, onClose, onSaved }: { options: Menu
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}><X size={22} color={c.text} /></Pressable>
           <T size={17} w="semibold" style={{ flex: 1 }}>Lo que mejor te queda hoy</T>
         </Row>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }}>
+        <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12 }}>
           {options.map((o, k) => (
             <View key={k} style={{ padding: 14, borderRadius: rad.card, backgroundColor: c.surface, gap: 6 }}>
               <T size={16} w="semibold">{o.name}</T>

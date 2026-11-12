@@ -362,7 +362,7 @@ export function Sheet({ visible, onClose, title, children }: { visible: boolean;
         <Pressable accessibilityViewIsModal style={{ maxHeight: Math.max(240, height - kb - 48), backgroundColor: c.raised, borderTopLeftRadius: rad.sheet, borderTopRightRadius: rad.sheet, borderWidth: 1, borderColor: c.divider, paddingTop: 20, paddingHorizontal: 20, paddingBottom: kb ? 12 : 32, gap: 12 }}>
           <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: c.n700, marginBottom: 4 }} />
           <T size={19} w="semibold" accessibilityRole="header">{title}</T>
-          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 12 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView disableScrollViewPanResponder style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 12 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {children}
           </ScrollView>
         </Pressable>

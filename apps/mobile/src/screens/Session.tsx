@@ -101,7 +101,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
         <Button variant="text" label="Terminar" onPress={() => setConfirming(true)} />
       </Row>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 24, gap: 16 }} keyboardShouldPersistTaps="handled">
+      <ScrollView disableScrollViewPanResponder contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 24, gap: 16 }} keyboardShouldPersistTaps="handled">
         <SyncBanners during="session" />
         {live.pausedAt ? (
           <Banner tone="warn" glyph="‖" text="Sesión en pausa"
@@ -246,7 +246,7 @@ export function SessionSummary({ summary, onDone }: { summary: Summary; onDone: 
   const { prefs } = useSession();
   const units = prefs!.weight_unit;
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 20 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" disableScrollViewPanResponder style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 20 }}>
       <View style={{ gap: 6 }}>
         <T size={13} w="medium" color={c.ok}>✓ Sesión completada</T>
         <T size={26} w="semibold" style={{ lineHeight: 30 }}>{summary.name}</T>
