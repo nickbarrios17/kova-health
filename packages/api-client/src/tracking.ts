@@ -211,6 +211,14 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
     },
     remove: (id: string) =>
       call(sb.from('health_observations').update({ deleted_at: now() }).eq('id', id).select().single()),
+    /** What the watch measured on a day (totals, average pulse, latest vitals and body composition). */
+    day: async (day: string) =>
+      ((await rpc<Array<{ metric: string; value: number | string; extra: Record<string, unknown> | null; at: string }>>('health_day', { p_day: day })) ?? [])
+        .map((r) => ({ ...r, value: Number(r.value) })),
+    /** Workouts recorded by the watch's own app on a day. */
+    watchWorkouts: async (day: string) =>
+      (await call(sb.from('health_observations').select('id, value, start_at, end_at, details, source_app').eq('metric', 'exercise_session')
+        .is('deleted_at', null).eq('local_date', day).order('start_at'))) as Array<{ id: string; value: number; start_at: string; end_at: string; details: Record<string, unknown>; source_app: string | null }>,
   };
 
   const goals = {
@@ -341,6 +349,9 @@ export function createTracking({ sb, call, rpc, idempotent, parse }: TrackingDep
         goal: p.weight_goal as WeightGoal, pace: (p.goal_pace as GoalPace | null) ?? null,
         steps: n(todayRow?.steps), avgSteps7d: past.length ? past.reduce((a, b) => a + b, 0) / past.length : null,
         workoutMinutes: (n(todayRow?.workout_active_s) ?? 0) / 60,
+        watch: {
+          kcal: n(todayRow?.watch_kcal), unmeasuredMinutes: (n(todayRow?.watch_unmeasured_s) ?? 0) / 60, minutes: (n(todayRow?.watch_active_s) ?? 0) / 60,
+        },
       });
       return { mode: 'dynamic', plan, kcal: day.kcal, proteinG: day.proteinG, carbsG: day.carbsG, fatG: day.fatG, rmr, bodyFat, day };
     },

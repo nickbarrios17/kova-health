@@ -195,8 +195,24 @@ Dos caminos, decididos solos por GitHub Actions (`.github/workflows/mobile-relea
 
 ## 7. Health Connect (móvil) y Health Services (reloj)
 
-**Móvil:** `react-native-health-connect` 4.1, que trae su plugin de Expo (filtro de intención y alias para la pantalla de privacidad), con `expo-build-properties` para `minSdkVersion 26`. Pide permisos de **solo lectura**: `READ_STEPS`, `READ_SLEEP`, `READ_WEIGHT`, `READ_RESTING_HEART_RATE` y `READ_HEART_RATE_VARIABILITY` (`app.json`).
+**Móvil:** `react-native-health-connect` 4.1, que trae su plugin de Expo (filtro de intención y alias para la pantalla de privacidad), con `expo-build-properties` para `minSdkVersion 26`. Pide permisos de **solo lectura** (`app.json`) para todo lo que Samsung Health y otras apps dejan en Health Connect:
+  - **Actividad:** pasos, distancia, pisos, calorías activas y totales, y **entrenos** (`ExerciseSession`).
+  - **Corazón:** pulso, pulso en reposo y HRV.
+  - **Sueño.**
+  - **Cuerpo:** peso, % de grasa, masa magra, agua corporal, masa ósea, metabolismo basal y altura.
+  - **Signos:** presión, glucosa, oxígeno en sangre, respiración, VO2 máx, temperatura corporal y de la piel.
+  - **Agua tomada.**
+
+  No lee las comidas de otras apps (se contarían dos veces con lo que anotás en Kova) ni datos reproductivos o sexuales.
 - `src/health.ts` lee los últimos días, valida cada fila con los esquemas Zod de la API y llama a `record_observations` y `record_body_measurements` con `external_id` = id del registro en Health Connect y `source_app` = app de origen. Así es idempotente y no cuenta dos veces los pasos de dos fuentes (el resumen diario usa la mayor).
+- **Entrenos del reloj:**
+  - Cada `ExerciseSession` se guarda como `exercise_session`: minutos, tipo y, en `details.kcal`, las calorías activas medidas dentro de la sesión.
+  - Si solo hay calorías totales, se les resta ~1,1 kcal/min de reposo y se marca `kcal_from_total`.
+  - `daily_summaries` los suma a `workouts_completed`, salvo los que se superponen con una sesión de Kova: el mismo entreno grabado dos veces cuenta una sola vez.
+  - La meta del día suma esas calorías. Los entrenos sin calorías se estiman por minutos, como los de fuerza.
+- **Pulso:** una fila por registro de Health Connect (promedio, mínimo, máximo y cantidad de muestras), no una por muestra.
+- **Del reloj, en Hoy:** `health_day` da los totales del día, el pulso promedio y la última lectura (≤ 30 días) de los signos y la composición corporal.
+- Cada tipo se lee por separado: si un Health Connect viejo no tiene uno (por ejemplo, la temperatura de la piel), los demás se importan igual.
 - Sueño: los minutos dormidos son la suma de las fases SLEEPING, LIGHT, DEEP y REM, sin los despertares. Las fases se guardan en `details.stages_min`. Si no hay fases, cuenta la sesión completa.
 - La primera conexión importa 30 días. Después se sincronizan 7 días cada vez que la app pasa a primer plano.
 - Para publicar en Google Play hay que declarar el acceso a datos de salud en la Play Console. La aprobación tarda varios días.
