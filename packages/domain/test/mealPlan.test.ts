@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { footFuel, postWorkoutProtein, rideFuel, waterGoalMl, slotsFor, weekStartOf, weekTargets, workoutFuelTips } from '../src/mealPlan.js';
+import { footFuel, mealsLeft, postWorkoutProtein, rideFuel, waterGoalMl, slotsFor, weekStartOf, weekTargets, workoutFuelTips } from '../src/mealPlan.js';
 
 const base = { weekStart: '2026-11-09', baseKcal: 2200, proteinG: 150, fatG: 70, trainingDays: [1, 4], trainingKcal: 200, events: [], floorKcal: 1500 };
 const total = (d: Array<{ kcal: number }>) => d.reduce((a, x) => a + x.kcal, 0);
@@ -64,5 +64,33 @@ describe('meal plan helpers', () => {
     expect(footFuel(10000, 3600, 70, 'run')).toEqual({ kcal: 700, carbsG: 0, waterMl: 500, suggestion: null });
     expect(footFuel(5000, 3600, 70, 'walk').kcal).toBe(180);
     expect(footFuel(21000, 7200, 70, 'run').suggestion).toBe('3 geles');
+  });
+});
+
+describe('mealsLeft', () => {
+  const left = { kcal: 2000, proteinG: 140, carbsG: 220, fatG: 60 };
+  it('splits the whole day when nothing is logged in the morning', () => {
+    const m = mealsLeft({ mealsPerDay: 4, logged: [], left, hour: 8 });
+    expect(m.map((x) => x.slot)).toEqual(['breakfast', 'lunch', 'afternoon_snack', 'dinner']);
+    expect(m.reduce((a, x) => a + x.kcal, 0)).toBeGreaterThanOrEqual(1998);
+    expect(m[1]!.kcal).toBeGreaterThan(m[0]!.kcal);
+  });
+  it('only the dinner is left at night', () => {
+    const m = mealsLeft({ mealsPerDay: 4, logged: ['breakfast', 'lunch', 'afternoon_snack'], left: { ...left, kcal: 700, proteinG: 50 }, hour: 20 });
+    expect(m).toEqual([{ slot: 'dinner', kcal: 700, proteinG: 50, carbsG: 220, fatG: 60 }]);
+  });
+  it('a skipped lunch gives its part to the meals ahead', () => {
+    const m = mealsLeft({ mealsPerDay: 3, logged: ['breakfast'], left, hour: 17 });
+    expect(m.map((x) => x.slot)).toEqual(['lunch', 'dinner']);
+    const late = mealsLeft({ mealsPerDay: 3, logged: ['breakfast'], left, hour: 20 });
+    expect(late.map((x) => x.slot)).toEqual(['dinner']);
+    expect(late[0]!.kcal).toBe(2000);
+  });
+  it('one meal never makes up a whole day', () => {
+    const m = mealsLeft({ mealsPerDay: 4, logged: [], left: { kcal: 2300, proteinG: 150, carbsG: 240, fatG: 70 }, hour: 21, goalKcal: 2300 });
+    expect(m).toEqual([{ slot: 'dinner', kcal: 920, proteinG: 60, carbsG: 96, fatG: 28 }]);
+  });
+  it('nothing when the day is closed', () => {
+    expect(mealsLeft({ mealsPerDay: 4, logged: [], left: { ...left, kcal: 80 }, hour: 22 })).toEqual([]);
   });
 });

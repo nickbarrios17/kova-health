@@ -75,6 +75,11 @@ export interface ShoppingList { id: string; title: string; plan_id: string | nul
 export interface Pantry { id: string; name: string; grams: number | null; source: string; created_at: string }
 export interface MealEvent { id: string; local_date: string; kind: 'asado' | 'salida' | 'cumple' | 'otro'; note: string | null }
 export interface ImageInput { mime: string; data: string }
+/** «¿Qué como ahora?»: one suggested meal, with grams already tuned to its target. */
+export interface NowMeal {
+  slot: 'breakfast' | 'lunch' | 'afternoon_snack' | 'dinner' | 'snack'; title: string; minutes: number; steps: string | null; kcal: number; protein_g: number; carbs_g: number; fat_g: number;
+  ingredients: Array<{ food_id: string; grams: number; name: string; home: boolean }>;
+}
 
 interface FoodDeps {
   sb: SupabaseClient;
@@ -212,6 +217,9 @@ export function createFood({ sb, call, toKovaError }: FoodDeps) {
       join: (code: string) => call(sb.rpc('join_household', { p_code: code.trim().toUpperCase() })),
       leave: () => call(sb.rpc('leave_household')),
     },
+    /** The meals left today from what you have (`have`, plus what is noted «En casa»). */
+    now: (have: string, meals: Array<{ slot: string; kcal: number; protein_g: number }>) =>
+      invoke<{ note: string | null; meals: NowMeal[] }>('food-ai', { mode: 'now', have: have.trim().slice(0, 600) || undefined, meals }),
     /** A photo of a restaurant menu → the dishes that best fit what is left of the day. */
     menu: async (img: ImageInput, left: { kcal: number | null; proteinG: number | null }) =>
       (await invoke<{ options: Array<{ name: string; why: string; kcal_low: number; kcal_high: number; protein_g: number }> }>('food-ai', {
