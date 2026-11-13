@@ -22,6 +22,8 @@ export const NEWS: NewsDay[] = [
   {
     date: '2026-11-13',
     items: [
+      { title: 'Tus entrenos de Samsung Health', body: 'Los entrenos que grabás con el reloj (pesas, correr, bici…) ahora cuentan como entreno y suman sus calorías a tu meta del día. Si también lo hiciste con Kova, cuenta una sola vez.', preview: true },
+      { title: 'Todo lo de tu reloj', body: 'En Hoy, «Del reloj» muestra lo que midió: calorías, distancia, pisos, pulso, presión, oxígeno, agua corporal y más. Para traerlo, tocá «Traer todo lo del reloj» en Hoy.', preview: true },
       { title: '¿Qué como ahora?', body: 'En Comida, contale qué tenés y te armo las comidas que te faltan hoy para llegar a tu meta: todo el día si recién arrancás, o solo la cena. Cada plato te dice sus calorías y macros, y qué te faltaría comprar. Sin atracones: ninguna comida se pasa de lo razonable.', preview: true },
     ],
   },

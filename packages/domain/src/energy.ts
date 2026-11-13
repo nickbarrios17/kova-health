@@ -210,8 +210,13 @@ export interface DailyTargetInput {
   steps: number | null;
   /** Average of the last 7 days with data, used when today's steps are missing. */
   avgSteps7d: number | null;
-  /** Active minutes of workouts completed today. */
+  /** Active minutes of workouts completed today in Kova. */
   workoutMinutes: number;
+  /**
+   * Workouts recorded by the watch's own app (Samsung Health…): the active calories it measured, the
+   * minutes of the ones without calories (estimated like strength training) and all their minutes.
+   */
+  watch?: { kcal: number | null; unmeasuredMinutes: number; minutes: number } | null;
   /** Fixed protein/fat to use instead of the computed ones; carbs flex with the day. */
   proteinG?: number | null;
   fatG?: number | null;
@@ -241,7 +246,9 @@ export function dailyTarget(i: DailyTargetInput): DailyTarget {
   const steps = Math.max(0, Math.round(i.steps ?? i.avgSteps7d ?? 0));
   const base = i.restingKcal * D.baseFactor;
   const stepsKcal = Math.max(0, steps - D.stepAllowance) * i.weightKg * D.kcalPerKgStep;
-  const workoutKcal = (D.strengthMet - 1) * i.weightKg * (Math.max(0, i.workoutMinutes) / 60);
+  const watch = i.watch ?? { kcal: null, unmeasuredMinutes: 0, minutes: 0 };
+  const workoutKcal = (D.strengthMet - 1) * i.weightKg * ((Math.max(0, i.workoutMinutes) + Math.max(0, watch.unmeasuredMinutes)) / 60)
+    + Math.max(0, watch.kcal ?? 0);
   const activityKcal = Math.min(D.maxActivityKcal, (stepsKcal + workoutKcal) * D.credit);
   const adjust = goalAdjust(i.goal, i.pace);
   const raw = Math.round(((base + activityKcal) * (1 + adjust)) / 50) * 50;
@@ -251,7 +258,7 @@ export function dailyTarget(i: DailyTargetInput): DailyTarget {
   const fatG = i.fatG ?? def.fatG;
   return {
     kcal, base: Math.round(base), stepsKcal: Math.round(stepsKcal), workoutKcal: Math.round(workoutKcal), activityKcal: Math.round(activityKcal),
-    steps, stepsEstimated, workoutMinutes: Math.round(Math.max(0, i.workoutMinutes)), adjust, proteinG, fatG,
+    steps, stepsEstimated, workoutMinutes: Math.round(Math.max(0, i.workoutMinutes) + Math.max(0, watch.minutes)), adjust, proteinG, fatG,
     carbsG: Math.max(0, Math.round((kcal - proteinG * 4 - fatG * 9) / 4)), floored: kcal > raw,
   };
 }

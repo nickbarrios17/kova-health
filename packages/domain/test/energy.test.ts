@@ -177,3 +177,19 @@ describe('body recomposition goal', () => {
     expect(goalAdjust('gain', null)).toBe(0);
   });
 });
+
+describe('dailyTarget with the watch', () => {
+  const base = { sex: 'male' as const, restingKcal: 1700, weightKg: 80, heightCm: 178, goal: 'maintain' as const, pace: null, steps: 6000, avgSteps7d: null, workoutMinutes: 0 };
+  it('adds the calories the watch measured in its workouts', () => {
+    const without = dailyTarget(base);
+    const withWatch = dailyTarget({ ...base, watch: { kcal: 400, unmeasuredMinutes: 0, minutes: 55 } });
+    expect(withWatch.workoutKcal).toBe(400);
+    expect(withWatch.workoutMinutes).toBe(55);
+    expect(withWatch.kcal).toBeGreaterThan(without.kcal);
+  });
+  it('estimates the minutes of a watch workout without calories like strength training', () => {
+    const a = dailyTarget({ ...base, watch: { kcal: null, unmeasuredMinutes: 60, minutes: 60 } });
+    const b = dailyTarget({ ...base, workoutMinutes: 60 });
+    expect(a.workoutKcal).toBe(b.workoutKcal);
+  });
+});

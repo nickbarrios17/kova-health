@@ -8,7 +8,7 @@ import { c } from '../theme';
 import { useAsync } from '../useAsync';
 import { Button, Card, Notice, Row, T } from '../ui';
 
-/** Health Connect connection + manual sync. Read-only access to 5 data types. */
+/** Health Connect connection + manual sync. Read-only: everything Samsung Health and other apps leave there. */
 export function HealthCard({ onSynced }: { onSynced: () => void }) {
   const { prefs, deviceId } = useSession();
   const [busy, setBusy] = useState(false);
@@ -52,7 +52,7 @@ export function HealthCard({ onSynced }: { onSynced: () => void }) {
         </View>
       ) : granted === 0 ? (
         <View style={{ gap: 8 }}>
-          <T size={13} color={c.n400}>Importa pasos, sueño, peso, % de grasa corporal, frecuencia cardíaca en reposo y HRV desde tu reloj o tus apps de salud. Solo lectura: Kova Health no escribe en Health Connect.</T>
+          <T size={13} color={c.n400}>Trae todo lo que mide tu reloj (Samsung Health u otras apps): entrenos y sus calorías, pasos, distancia, sueño, pulso, presión, oxígeno, peso y composición corporal, y más. Solo lectura: Kova Health no escribe en Health Connect.</T>
           <Button label="Conectar" icon={Link} busy={busy} onPress={() => run(async () => {
             const n = await hc.connect();
             if (n === 0) return 'No diste permiso a ningún dato. Podés cambiarlo cuando quieras.';
@@ -65,7 +65,7 @@ export function HealthCard({ onSynced }: { onSynced: () => void }) {
           <T size={13} color={c.n400}>Conectado · {granted} de {hc.PERMISSION_COUNT} tipos de datos · Última sincronización: {last ? ago(last).toLowerCase() : 'nunca'}</T>
           {granted < hc.PERMISSION_COUNT ? (
             <>
-              <Notice text="Hay datos nuevos para importar, como el % de grasa de tu reloj: mejoran el cálculo de tu meta diaria." />
+              <Notice text="Hay datos nuevos para traer de tu reloj, como los entrenos de Samsung Health y sus calorías: cuentan como entreno y ajustan tu meta del día." />
               <Button label="Permitir los datos que faltan" icon={Link} busy={busy} onPress={() => run(async () => {
                 const n = await hc.connect();
                 await hc.sync(prefs!.time_zone, deviceId, 30);

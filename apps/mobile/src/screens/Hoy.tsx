@@ -12,6 +12,7 @@ import type { LiveSession } from '../workout';
 import { Button, ConfidenceBadge, Empty, ErrorNote, IconButton, Loading, ReadinessRing, Row, Seg, T } from '../ui';
 import { SyncChip } from '../sync';
 import { HealthCard } from './HealthCard';
+import { WatchCard } from './WatchCard';
 import { Ajustes } from './Ajustes';
 import { Metric } from './Metric';
 import { useReportTarget } from '../report';
@@ -182,6 +183,7 @@ export function Hoy({ live, onOpenLive, onStart, onCreateRoutine }: {
           ))}
         </View>
       </View>
+      <WatchCard today={today} onSynced={q.reload} />
     </ScrollView>
   );
 }
