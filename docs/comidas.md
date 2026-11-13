@@ -160,6 +160,12 @@ Al guardar, tilda en la lista lo comprado y lo pasa a «En casa». Lo que no es 
 - Reloj: aviso antes de entrenar y agua desde la muñeca.
 - Temperatura en la meta de agua.
 
+### ¿Qué como ahora?
+- En Comida, «¿Qué como ahora?» toma lo que te falta del día (meta de hoy menos lo anotado) y las comidas que te quedan según tu configuración (3, 4 o 5) y la hora: las ya anotadas cuentan como hechas y las que pasaron sin anotar le dejan su parte a las que quedan (`mealsLeft` en `packages/domain/src/mealPlan.ts`).
+- Ninguna comida pasa del 40 % de la meta del día: si a la noche no comiste nada, te arma una cena completa, no una de 2.300 kcal.
+- Escribís lo que tenés (y suma lo anotado «En casa»). `food-ai` en modo `now` le pide a Gemini un plato por comida con alimentos del catálogo, marcando lo que habría que comprar, y Kova ajusta los gramos para que cada uno llegue a sus kcal y proteína.
+- «Lo comí» anota los ingredientes en esa comida.
+
 ## Qué hace falta de tu lado
 
 1. **Clave de Gemini:**

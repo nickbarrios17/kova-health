@@ -333,21 +333,31 @@ export const DataOriginSchema = z.enum(['manual', 'health_connect', 'healthkit',
 export const BodyMetricSchema = z.enum([
   'weight_kg', 'body_fat_pct', 'muscle_mass_kg', 'lean_mass_kg',
   'waist_cm', 'hip_cm', 'chest_cm', 'arm_cm', 'thigh_cm', 'neck_cm',
+  'body_water_kg', 'bone_mass_kg', 'height_cm', 'bmr_kcal',
 ]);
 export const HealthMetricSchema = z.enum([
   'sleep_session', 'resting_hr_bpm', 'hrv_rmssd_ms', 'steps', 'distance_m',
   'active_energy_kcal', 'active_minutes', 'mood', 'stress',
+  'exercise_session', 'total_energy_kcal', 'floors', 'heart_rate_bpm', 'blood_pressure_mmhg', 'blood_glucose_mgdl',
+  'spo2_pct', 'respiratory_rate', 'vo2max', 'hydration_ml', 'skin_temp_delta_c', 'body_temp_c',
 ]);
 
 const BODY_RANGE: Record<z.infer<typeof BodyMetricSchema>, [number, number]> = {
   weight_kg: [20, 400], body_fat_pct: [2, 75], muscle_mass_kg: [5, 150], lean_mass_kg: [10, 250],
   waist_cm: [10, 250], hip_cm: [10, 250], chest_cm: [10, 250], arm_cm: [10, 250], thigh_cm: [10, 250], neck_cm: [10, 250],
+  body_water_kg: [5, 200], bone_mass_kg: [0.5, 15], height_cm: [50, 250], bmr_kcal: [500, 5000],
 };
 const HEALTH_RANGE: Record<z.infer<typeof HealthMetricSchema>, [number, number, boolean?]> = {
   sleep_session: [0, 1440], resting_hr_bpm: [20, 250], hrv_rmssd_ms: [1, 400], steps: [0, 200_000, true],
   distance_m: [0, 500_000], active_energy_kcal: [0, 20_000], active_minutes: [0, 1440], mood: [1, 5, true], stress: [0, 100],
+  exercise_session: [0, 1440], total_energy_kcal: [0, 30_000], floors: [0, 2000], heart_rate_bpm: [20, 250],
+  blood_pressure_mmhg: [50, 260], blood_glucose_mgdl: [10, 1000], spo2_pct: [50, 100], respiratory_rate: [3, 80], vo2max: [5, 100],
+  hydration_ml: [0, 10_000], skin_temp_delta_c: [-10, 10], body_temp_c: [30, 45],
 };
-const INTERVAL_METRICS = new Set(['sleep_session', 'steps', 'distance_m', 'active_energy_kcal', 'active_minutes']);
+const INTERVAL_METRICS = new Set([
+  'sleep_session', 'steps', 'distance_m', 'active_energy_kcal', 'active_minutes',
+  'exercise_session', 'total_energy_kcal', 'floors', 'heart_rate_bpm', 'hydration_ml', 'skin_temp_delta_c',
+]);
 
 const provenance = {
   source: DataOriginSchema.default('manual'),
@@ -377,6 +387,11 @@ export const HealthObservationSchema = z
     return o.value >= min && o.value <= max && (!integer || Number.isInteger(o.value));
   }, { message: 'Value out of range for this metric' })
   .refine((o) => !INTERVAL_METRICS.has(o.metric) || o.end_at != null, { message: 'This metric needs end_at' })
+  .refine((o) => {
+    if (o.metric === 'blood_pressure_mmhg') { const d = o.details.diastolic; return typeof d === 'number' && d >= 20 && d <= 200; }
+    if (o.metric === 'exercise_session') { const k = o.details.kcal; return k == null || (typeof k === 'number' && k >= 0 && k <= 10_000); }
+    return true;
+  }, { message: 'Invalid details for this metric' })
   .refine((o) => o.end_at == null || Date.parse(o.end_at) > Date.parse(o.start_at), { message: 'end_at must be after start_at' })
   .refine(
     (o) => o.metric !== 'sleep_session' || o.end_at == null ||

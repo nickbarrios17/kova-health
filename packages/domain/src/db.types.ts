@@ -3004,6 +3004,10 @@ export type Database = {
         | "arm_cm"
         | "thigh_cm"
         | "neck_cm"
+        | "body_water_kg"
+        | "bone_mass_kg"
+        | "height_cm"
+        | "bmr_kcal"
       data_origin:
         | "manual"
         | "health_connect"
@@ -3040,6 +3044,18 @@ export type Database = {
         | "active_minutes"
         | "mood"
         | "stress"
+        | "exercise_session"
+        | "total_energy_kcal"
+        | "floors"
+        | "heart_rate_bpm"
+        | "blood_pressure_mmhg"
+        | "blood_glucose_mgdl"
+        | "spo2_pct"
+        | "respiratory_rate"
+        | "vo2max"
+        | "hydration_ml"
+        | "skin_temp_delta_c"
+        | "body_temp_c"
       link_kind: "coach" | "friend"
       meal_event_kind: "asado" | "salida" | "cumple" | "otro"
       meal_slot: "breakfast" | "lunch" | "afternoon_snack" | "dinner" | "snack"
@@ -3207,6 +3223,10 @@ export const Constants = {
         "arm_cm",
         "thigh_cm",
         "neck_cm",
+        "body_water_kg",
+        "bone_mass_kg",
+        "height_cm",
+        "bmr_kcal",
       ],
       data_origin: [
         "manual",
@@ -3247,6 +3267,18 @@ export const Constants = {
         "active_minutes",
         "mood",
         "stress",
+        "exercise_session",
+        "total_energy_kcal",
+        "floors",
+        "heart_rate_bpm",
+        "blood_pressure_mmhg",
+        "blood_glucose_mgdl",
+        "spo2_pct",
+        "respiratory_rate",
+        "vo2max",
+        "hydration_ml",
+        "skin_temp_delta_c",
+        "body_temp_c",
       ],
       link_kind: ["coach", "friend"],
       meal_event_kind: ["asado", "salida", "cumple", "otro"],
