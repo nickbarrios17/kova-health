@@ -1,0 +1,42 @@
+# Copies Nicolás's data from the official database to the test one every hour, so what he logs in
+# «Kova Health» is also in «Kova Health Prueba» (scripts/sync-my-data.mjs). One way only; the official
+# data is never written. Every night at 03:17 UTC, and when run by hand, it copies everything.
+# The repository is public: the script prints counts only.
+name: Copiar mis datos a Prueba
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Copiar todo (no solo lo de las últimas horas)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: sync-my-data
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Copy
+        env:
+          SOURCE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+          SOURCE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TARGET_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          TARGET_SERVICE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+          SYNC_EMAIL: ${{ secrets.SYNC_EMAIL }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full && '1' || '0' }}
+        run: |
+          if [ "$(date -u +%H)" = "03" ]; then export FULL=1; fi
+          node scripts/sync-my-data.mjs
