@@ -20,6 +20,13 @@ export interface NewsDay {
 
 export const NEWS: NewsDay[] = [
   {
+    date: '2026-11-17',
+    items: [
+      { title: 'Tu coach del entreno', body: 'Al terminar una sesión, Kova mira tus series y te dice si llegaste cansado a los últimos ejercicios, dónde ya podés subir peso y qué grupo muscular te faltó esta semana, con ejercicios para sumar. También qué estirar ahora y cómo calentar la próxima.', preview: true },
+      { title: 'Pesos guardados en la web', body: 'En la versión web del celular, los pesos y repeticiones que escribías en una sesión no se guardaban. Ya está arreglado.', preview: true },
+    ],
+  },
+  {
     date: '2026-11-13',
     items: [
       { title: 'Tus entrenos de Samsung Health', body: 'Los entrenos que grabás con el reloj (pesas, correr, bici…) ahora cuentan como entreno y suman sus calorías a tu meta del día. Si también lo hiciste con Kova, cuenta una sola vez.' },

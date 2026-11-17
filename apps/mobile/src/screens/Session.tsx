@@ -2,7 +2,7 @@
 import { animationFor, clock, dayMonth, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, KovaError, type WeightUnit } from '@kova/domain';
 import { CaretDown, Check, CheckCircle, Info, Pause, Play, Plus, Trophy } from 'phosphor-react-native';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useSession } from '../session';
 import { c, font, rad } from '../theme';
 import { Banner, Button, Card, Confirm, Notice, Row, Seg, T } from '../ui';
@@ -13,6 +13,16 @@ import { useAsync } from '../useAsync';
 import { ExerciseDetail } from './ExerciseDetail';
 import { addSet, elapsedS, fillForward, saveLive, summarize, toggleSet, transition, type LiveSession, type Summary } from '../workout';
 import { ReportButton, useOpenReport, useReportTarget } from '../report';
+import { WorkoutCoachCard } from './WorkoutCoach';
+
+/**
+ * When a set's field is done being edited. React Native Web has no onEndEditing, so in the browser the
+ * typed weight and reps were never saved: there it is the blur.
+ */
+const onEdited = (fn: (text: string) => void) =>
+  Platform.OS === 'web'
+    ? { onBlur: (e: { target?: unknown; nativeEvent?: unknown }) => fn(String((e.target as { value?: string } | undefined)?.value ?? '')) }
+    : { onEndEditing: (e: { nativeEvent: { text: string } }) => fn(e.nativeEvent.text) };
 
 const parseNum = (s: string) => {
   const v = Number(s.replace(',', '.'));
@@ -161,10 +171,10 @@ export function Session({ live, setLive, onClose, onFinished }: {
                   <T w="semibold" color={s.done ? c.a400 : c.text} style={{ width: 40 }}>{j + 1}</T>
                   <T size={13} color={c.n500} style={{ flex: 1 }}>{ex.prevKg != null ? formatWeight(ex.prevKg, units) : '—'}</T>
                   <TextInput key={'w' + s.id + s.w} editable={!s.done} keyboardType="decimal-pad" defaultValue={disp(s.w)} accessibilityLabel={'Peso serie ' + (j + 1)}
-                    onEndEditing={(e) => { const v = parseNum(e.nativeEvent.text); update(fillForward(live, live.cur, j, 'w', v == null ? null : fromDisplayWeight(v, units))); }}
+                    {...onEdited((text) => { const v = parseNum(text); update(fillForward(live, live.cur, j, 'w', v == null ? null : fromDisplayWeight(v, units))); })}
                     style={inputStyle(72, s.done)} />
                   <TextInput key={'r' + s.id + s.reps} editable={!s.done} keyboardType="number-pad" defaultValue={s.reps == null ? '' : String(s.reps)} accessibilityLabel={'Repeticiones serie ' + (j + 1)}
-                    onEndEditing={(e) => { const v = parseNum(e.nativeEvent.text); update(fillForward(live, live.cur, j, 'reps', v == null ? null : Math.round(v))); }}
+                    {...onEdited((text) => { const v = parseNum(text); update(fillForward(live, live.cur, j, 'reps', v == null ? null : Math.round(v))); })}
                     style={[inputStyle(56, s.done), { marginLeft: 8 }]} />
                   <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: s.done, disabled: !!live.pausedAt }}
                     accessibilityLabel={s.done ? 'Serie ' + (j + 1) + ' hecha. Tocá para deshacer' : 'Marcar serie ' + (j + 1) + ' como hecha'}
@@ -270,6 +280,7 @@ export function SessionSummary({ summary, onDone }: { summary: Summary; onDone: 
           </Row>
         ))}
       </Card>
+      <WorkoutCoachCard summary={summary} />
       <Notice text="Sin reloj conectado no estimamos calorías: preferimos no mostrar un número inventado." />
       <Button large label="Listo" icon={CheckCircle} onPress={onDone} />
     </ScrollView>

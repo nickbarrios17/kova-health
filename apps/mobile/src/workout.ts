@@ -23,6 +23,10 @@ export interface LiveExercise {
   prevKg: number | null;
   bestKg: number | null; // for PR detection
   sets: LiveSet[];
+  // The routine's targets, for the coach after the session (absent in sessions started before).
+  targetMin?: number | null;
+  targetMax?: number | null;
+  plannedSets?: number;
 }
 
 export interface LiveSession {
@@ -84,6 +88,7 @@ export async function startFromRoutine(
       rest_s: it.target_rest_s ?? 90,
       prevKg: lastKg.get(it.exercise_id) ?? null,
       bestKg: bestKg.get(it.exercise_id) ?? null,
+      targetMin: it.target_reps_min, targetMax: it.target_reps_max, plannedSets: it.target_sets,
       sets: Array.from({ length: it.target_sets }, () => ({ id: newId(), w, reps: it.target_reps_min, done: false })),
     };
   });
@@ -197,6 +202,9 @@ export interface Summary {
   sets: number;
   rows: Array<{ name: string; topKg: number | null; reps: number | null; pr: boolean }>;
   date: string;
+  sessionId: string;
+  /** Every exercise with its done sets and targets, for the coach. */
+  detail: Array<{ exerciseId: string; name: string; sets: Array<{ kg: number | null; reps: number | null }>; targetMin: number | null; targetMax: number | null; plannedSets: number | null }>;
 }
 
 export function summarize(s: LiveSession, timeZone: string): Summary {
@@ -207,5 +215,9 @@ export function summarize(s: LiveSession, timeZone: string): Summary {
     const top = done.reduce<LiveSet | null>((m, x) => (x.w != null && (!m || x.w > (m.w ?? -1)) ? x : m), null);
     return { name: e.name, topKg: top?.w ?? null, reps: top?.reps ?? null, pr: top?.w != null && e.bestKg != null && top.w > e.bestKg };
   });
-  return { name: s.name, durationS: elapsedS(s), volumeKg: volume, sets, rows, date: localDate(new Date(), timeZone) };
+  const detail = s.exercises.map((e) => ({
+    exerciseId: e.exercise_id, name: e.name, sets: e.sets.filter((x) => x.done).map((x) => ({ kg: x.w, reps: x.reps })),
+    targetMin: e.targetMin ?? null, targetMax: e.targetMax ?? null, plannedSets: e.plannedSets ?? null,
+  }));
+  return { name: s.name, durationS: elapsedS(s), volumeKg: volume, sets, rows, date: localDate(new Date(), timeZone), sessionId: s.id, detail };
 }
