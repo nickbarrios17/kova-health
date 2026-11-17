@@ -184,6 +184,10 @@ export function createKovaClient(opts: KovaClientOptions) {
     },
     get: (id: string) =>
       call(sb.from('exercises').select('*, exercise_muscles(muscle_code, role), exercise_equipment(equipment_code)').eq('id', id).single()),
+    /** Strength exercises the user can see, with their muscles (for the coach's balance and suggestions). */
+    withMuscles: async () =>
+      (await call(sb.from('exercises').select('id, name, category, exercise_muscles(muscle_code, role)').is('archived_at', null)
+        .order('name').limit(1000))) as Array<{ id: string; name: string; category: string; exercise_muscles: Array<{ muscle_code: string; role: 'primary' | 'secondary' }> }>,
     /** Every exercise the user can see (system catalog + own, not archived): names and media refs, for lookups. */
     catalog: async () => {
       const out: Array<{ id: string; name: string; short_name: string | null; owner_id: string | null; media: unknown }> = [];
