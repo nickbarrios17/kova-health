@@ -85,3 +85,10 @@ describe('workoutCoach', () => {
     expect(exerciseStatus(ex('X', ['chest'], [[50, 10], [50, 10]], { targetMin: null, targetMax: null, plannedSets: null })).struggled).toBe(false);
   });
 });
+
+describe('stretchesFor', () => {
+  it('the most worked muscles first, at most n', async () => {
+    const { stretchesFor } = await import('../src/workoutCoach.js');
+    expect(stretchesFor({ quads: 6, chest: 2, calves: 4, unknown: 9, abs: 0 }, 2).map((s) => s.muscle)).toEqual(['quads', 'calves']);
+  });
+});

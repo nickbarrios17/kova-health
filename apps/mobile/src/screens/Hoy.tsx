@@ -13,6 +13,7 @@ import { Button, ConfidenceBadge, Empty, ErrorNote, IconButton, Loading, Readine
 import { SyncChip } from '../sync';
 import { HealthCard } from './HealthCard';
 import { WatchCard } from './WatchCard';
+import { TodayStretchCard } from './WorkoutCoach';
 import { Ajustes } from './Ajustes';
 import { Metric } from './Metric';
 import { useReportTarget } from '../report';
@@ -183,6 +184,7 @@ export function Hoy({ live, onOpenLive, onStart, onCreateRoutine }: {
           ))}
         </View>
       </View>
+      <TodayStretchCard today={today} />
       <WatchCard today={today} onSynced={q.reload} />
     </ScrollView>
   );

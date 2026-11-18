@@ -53,3 +53,22 @@ export function watchRows(values: WatchValue[], today: string): Array<{ key: str
     return [{ key, label, value: fmt(Number(v.value), v.extra), when: isTotal || day === today ? null : day.slice(8, 10) + '/' + day.slice(5, 7) }];
   });
 }
+
+/**
+ * What a workout from the watch's own app works, by its Health Connect type (it brings no exercises or
+ * sets): enough to suggest stretches. Yoga, pilates and stretching need none.
+ */
+const LEGS = { quads: 2, hamstrings: 2, calves: 2, glutes: 1 };
+const TYPE_MUSCLES: Array<[number[], Record<string, number>]> = [
+  [[56, 57, 79, 37], LEGS], // correr, cinta, caminata, trekking
+  [[8, 9], { quads: 2, glutes: 2, hamstrings: 1, calves: 1 }], // bici
+  [[73, 74], { lats: 2, delts: 2, chest: 1, triceps: 1 }], // natación
+  [[53, 54, 46], { upper_back: 2, lats: 2, biceps: 1, hamstrings: 1 }], // remo
+  [[25, 68, 69], { quads: 2, glutes: 2, calves: 1 }], // elíptico, escaleras
+  [[64, 5, 76, 66, 2, 35, 55, 78], { quads: 2, hamstrings: 2, calves: 1, adductors: 1 }], // deportes
+  [[36, 10, 26, 41, 11, 44], { quads: 1, glutes: 1, chest: 1, delts: 1, calves: 1 }], // HIIT, clases, boxeo
+  [[0, 13, 70, 81], { chest: 1, upper_back: 1, quads: 1, hamstrings: 1, delts: 1 }], // fuerza sin detalle
+];
+export function exerciseTypeMuscles(type: number | null | undefined): Record<string, number> {
+  return TYPE_MUSCLES.find(([types]) => types.includes(type ?? 0))?.[1] ?? {};
+}

@@ -12,6 +12,7 @@ import { Button, Card, Empty, ErrorNote, Loading, Row, T } from '../ui';
 import { ExerciseDetail } from './ExerciseDetail';
 import { RoutineEditor } from './RoutineEditor';
 import { Ciclismo } from './Ciclismo';
+import { SessionCoach } from './WorkoutCoach';
 import { useReportTarget } from '../report';
 
 export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (routineId: string, data: TrainingData) => void }) {
@@ -27,6 +28,7 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
   const [howTo, setHowTo] = useState<{ id: string; name: string } | null>(null);
   const [bike, setBike] = useState(false);
   const [foot, setFoot] = useState(false);
+  const [coach, setCoach] = useState<{ id: string; name: string; date: string; durationS: number } | null>(null);
 
   // Back closes the routine editor without saving, like «Cancelar».
 
@@ -101,6 +103,8 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
       <ExerciseDetail exerciseId={howTo?.id ?? null} name={howTo?.name ?? ''} catalog={training.catalog} onClose={() => setHowTo(null)} />
 
       <T size={16} w="medium" style={{ marginTop: 8 }}>Historial</T>
+      {done.length ? <T size={12} color={c.n500} style={{ marginTop: -10 }}>Tocá una sesión para ver su coach: fatiga, cuándo subir peso, qué estirar.</T> : null}
+      {coach ? <SessionCoach session={coach} onClose={() => setCoach(null)} /> : null}
       {done.length === 0 ? (
         <Empty icon={ClockCounterClockwise} title="Sin sesiones todavía">Tus sesiones completadas aparecerán aquí con su duración y volumen.</Empty>
       ) : (
@@ -108,13 +112,16 @@ export function Entrenar({ hasLive, onStart }: { hasLive: boolean; onStart: (rou
           {done.map((s, i) => {
             const vol = Number(s.volume_kg);
             return (
-              <Row key={String(s.session_id)} style={{ paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.borderSubtle }}>
+              <Pressable key={String(s.session_id)} accessibilityRole="button" accessibilityHint="Abre el coach de esta sesión"
+                onPress={() => setCoach({ id: String(s.session_id), name: String(s.name), date: String(s.local_date), durationS: Number(s.active_duration_s) })}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.borderSubtle }}>
                 <View style={{ flex: 1 }}>
                   <T size={14}>{String(s.name)}</T>
                   <T size={12} color={c.n400}>{dayMonth(String(s.local_date))} · {dur(Number(s.active_duration_s))}</T>
                 </View>
                 <T size={13} color={c.n300}>{nf(units === 'kg' ? vol : toDisplayWeight(vol, 'lb'), 0)} {units}</T>
-              </Row>
+                <CaretRight size={14} color={c.n500} />
+              </Pressable>
             );
           })}
         </Card>

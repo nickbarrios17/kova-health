@@ -334,6 +334,24 @@ export function createKovaClient(opts: KovaClientOptions) {
     history: (exerciseId: string, limit = 200) =>
       call(sb.from('exercise_history').select('*').eq('exercise_id', exerciseId).order('completed_at', { ascending: false }).limit(limit)),
     personalRecords: () => call(sb.from('personal_records').select('*')),
+    /**
+     * A finished session as the coach reads it: each exercise in order with its done sets and the
+     * targets copied from the routine when it started.
+     */
+    coachDetail: async (sessionId: string) => {
+      const [exs, sets] = await Promise.all([
+        call(sb.from('workout_session_exercises').select('id, exercise_id, position, planned_sets, planned_reps_min, planned_reps_max, exercises(name)')
+          .eq('session_id', sessionId).order('position')),
+        call(sb.from('workout_sets').select('session_exercise_id, set_index, weight_kg, reps').eq('session_id', sessionId)
+          .is('deleted_at', null).not('completed_at', 'is', null).order('set_index')),
+      ]) as [Array<Record<string, any>>, Array<Record<string, any>>];
+      const num = (v: unknown) => (v == null ? null : Number(v));
+      return exs.map((e) => ({
+        exerciseId: String(e.exercise_id), name: String((Array.isArray(e.exercises) ? e.exercises[0] : e.exercises)?.name ?? 'Ejercicio'),
+        sets: sets.filter((s) => s.session_exercise_id === e.id).map((s) => ({ kg: num(s.weight_kg), reps: num(s.reps) })),
+        targetMin: num(e.planned_reps_min), targetMax: num(e.planned_reps_max), plannedSets: num(e.planned_sets),
+      })).filter((e) => e.sets.length);
+    },
     /** Latest working sets across exercises (e.g. "last weight used" per exercise). */
     recentHistory: (limit = 500) =>
       call(sb.from('exercise_history').select('*').order('completed_at', { ascending: false }).limit(Math.min(limit, 1000))),
