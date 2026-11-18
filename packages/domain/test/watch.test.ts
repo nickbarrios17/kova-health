@@ -21,3 +21,12 @@ describe('watch', () => {
     expect(rows[0]!.when).toBeNull();
   });
 });
+
+describe('exerciseTypeMuscles', () => {
+  it('a run works the legs, a swim the back and shoulders, yoga needs nothing', async () => {
+    const { exerciseTypeMuscles } = await import('../src/watch.js');
+    expect(Object.keys(exerciseTypeMuscles(56))).toEqual(['quads', 'hamstrings', 'calves', 'glutes']);
+    expect(exerciseTypeMuscles(74).lats).toBe(2);
+    expect(exerciseTypeMuscles(83)).toEqual({});
+  });
+});

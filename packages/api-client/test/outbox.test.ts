@@ -87,6 +87,30 @@ describe('Outbox', () => {
     expect(await outbox.pendingCount()).toBe(0);
   });
 
+  it('never loses a set marked while sending or two marked at once (slow storage, like the phone)', async () => {
+    // AsyncStorage-like: every load and save takes a while and works on a copy.
+    let stored = '[]';
+    const tick = () => new Promise((r) => setTimeout(r, 5));
+    const storage = {
+      load: async () => { await tick(); return JSON.parse(stored); },
+      save: async (e: unknown[]) => { await tick(); stored = JSON.stringify(e); },
+    };
+    const sent: number[] = [];
+    const outbox = new Outbox(async (op) => {
+      await new Promise((r) => setTimeout(r, 20));
+      sent.push((op.input as { set_index: number }).set_index);
+    }, storage);
+    await outbox.enqueue(setOp(0));
+    const flushing = outbox.flush();
+    await new Promise((r) => setTimeout(r, 12));
+    // While the first one is on its way, two more sets are marked at the same time.
+    await Promise.all([outbox.enqueue(setOp(1)), outbox.enqueue(setOp(2))]);
+    await flushing;
+    await outbox.flush();
+    expect(sent.sort()).toEqual([0, 1, 2]);
+    expect(await outbox.state()).toMatchObject({ pending: 0, failed: 0 });
+  });
+
   it('does not run two flushes concurrently (no double send)', async () => {
     const send = vi.fn(async () => new Promise<void>((r) => setTimeout(r, 5)));
     const outbox = new Outbox(send);

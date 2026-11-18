@@ -26,3 +26,4 @@ export * from './foodAi.js';
 export * from './mealPlan.js';
 export * from './shopping.js';
 export * from './watch.js';
+export * from './workoutCoach.js';
