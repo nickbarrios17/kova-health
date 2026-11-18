@@ -113,6 +113,32 @@ async function mapMeals(rows) {
   }
 }
 
+// Health Connect rows the test app imported itself have the same (source, external_id) under other ids:
+// the copy updates those rows instead of colliding with them.
+async function externalIds(t) {
+  const have = await all(() => dst.from(t).select('id, source, external_id').eq('user_id', dstUser).not('external_id', 'is', null).order('id'));
+  return new Map(have.map((r) => [r.source + '|' + r.external_id, r.id]));
+}
+
+// Why rows were skipped: the error code and constraint only (the repository is public, no values).
+const reasons = new Map();
+const why = (e) => {
+  const c = (e.message ?? '').match(/constraint "([^"]+)"/)?.[1];
+  const k = (e.code ?? '?') + (c ? ' ' + c : '');
+  reasons.set(k, (reasons.get(k) ?? 0) + 1);
+};
+
+/** Upserts rows; a batch that fails is split in halves until the bad rows are alone (and skipped). */
+async function put(t, rows, on) {
+  if (!rows.length) return { ok: 0, bad: 0 };
+  const { error } = await dst.from(t).upsert(rows, { onConflict: on });
+  if (!error) return { ok: rows.length, bad: 0 };
+  if (rows.length === 1) { why(error); return { ok: 0, bad: 1 }; }
+  const mid = Math.ceil(rows.length / 2);
+  const a = await put(t, rows.slice(0, mid), on), b = await put(t, rows.slice(mid), on);
+  return { ok: a.ok + b.ok, bad: a.bad + b.bad };
+}
+
 let total = 0, skipped = 0;
 for (const spec of TABLES) {
   let rows = await all(() => {
@@ -123,24 +149,22 @@ for (const spec of TABLES) {
   if (!rows.length) continue;
   if (spec.t === 'meals') await mapMeals(rows);
   const cols = await columns(spec.t);
+  const ext = spec.t === 'health_observations' || spec.t === 'body_measurements' ? await externalIds(spec.t) : null;
   rows = rows.map((r) => {
     let x = { ...r, [spec.by]: dstUser };
     if (spec.fix) x = spec.fix(x);
     if (spec.t === 'meals' && mealIds.has(x.id)) return null; // already there under its own id
     if (spec.t === 'meal_items' && mealIds.has(x.meal_id)) x.meal_id = mealIds.get(x.meal_id);
+    if (ext && x.external_id != null) x.id = ext.get(x.source + '|' + x.external_id) ?? x.id;
     if (cols) for (const k of Object.keys(x)) if (!cols.has(k)) delete x[k];
     return x;
   }).filter(Boolean);
   let ok = 0;
   for (let i = 0; i < rows.length; i += 500) {
-    const batch = rows.slice(i, i + 500);
-    const { error } = await dst.from(spec.t).upsert(batch, { onConflict: spec.on ?? 'id' });
-    if (!error) { ok += batch.length; continue; }
     // One bad row (the test app already has the same thing under another id) must not stop the rest.
-    for (const r of batch) {
-      const { error: e } = await dst.from(spec.t).upsert(r, { onConflict: spec.on ?? 'id' });
-      if (e) skipped++; else ok++;
-    }
+    const r = await put(spec.t, rows.slice(i, i + 500), spec.on ?? 'id');
+    ok += r.ok;
+    skipped += r.bad;
   }
   total += ok;
   console.log(spec.t.padEnd(26) + ok + ' de ' + rows.length);
@@ -156,4 +180,5 @@ if (prof) {
   console.log('profiles'.padEnd(26) + (error ? 'no se pudo' : '1'));
 }
 
+for (const [k, n] of reasons) console.log('  salteadas por ' + k + ': ' + n);
 console.log((FULL ? 'Copia completa' : 'Cambios desde hace ' + (process.env.SINCE_HOURS || 3) + ' h') + ': ' + total + ' filas copiadas' + (skipped ? ', ' + skipped + ' salteadas (ya existían de otra forma en Prueba)' : '') + '.');
