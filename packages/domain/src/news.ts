@@ -22,16 +22,16 @@ export const NEWS: NewsDay[] = [
   {
     date: '2026-11-18',
     items: [
-      { title: 'El coach de cualquier entreno', body: 'En Entrenar, tocá una sesión del historial y ves su coach: fatiga, cuándo subir peso, qué faltó en la semana y qué estirar. También sirve para lo que entrenás con el reloj.', preview: true },
-      { title: 'Estirá hoy', body: 'Los días que entrenás, Hoy te muestra qué estirar según lo que hiciste, incluidos los entrenos de Samsung Health.', preview: true },
-      { title: 'Ninguna serie se pierde', body: 'Si marcabas dos series seguidas, o mientras la anterior se enviaba con mala señal, alguna podía no guardarse. Ya está arreglado.', preview: true },
+      { title: 'El coach de cualquier entreno', body: 'En Entrenar, tocá una sesión del historial y ves su coach: fatiga, cuándo subir peso, qué faltó en la semana y qué estirar. También sirve para lo que entrenás con el reloj.' },
+      { title: 'Estirá hoy', body: 'Los días que entrenás, Hoy te muestra qué estirar según lo que hiciste, incluidos los entrenos de Samsung Health.' },
+      { title: 'Ninguna serie se pierde', body: 'Si marcabas dos series seguidas, o mientras la anterior se enviaba con mala señal, alguna podía no guardarse. Ya está arreglado.' },
     ],
   },
   {
     date: '2026-11-17',
     items: [
-      { title: 'Tu coach del entreno', body: 'Al terminar una sesión, Kova mira tus series y te dice si llegaste cansado a los últimos ejercicios, dónde ya podés subir peso y qué grupo muscular te faltó esta semana, con ejercicios para sumar. También qué estirar ahora y cómo calentar la próxima.', preview: true },
-      { title: 'Pesos guardados en la web', body: 'En la versión web del celular, los pesos y repeticiones que escribías en una sesión no se guardaban. Ya está arreglado.', preview: true },
+      { title: 'Tu coach del entreno', body: 'Al terminar una sesión, Kova mira tus series y te dice si llegaste cansado a los últimos ejercicios, dónde ya podés subir peso y qué grupo muscular te faltó esta semana, con ejercicios para sumar. También qué estirar ahora y cómo calentar la próxima.' },
+      { title: 'Pesos guardados en la web', body: 'En la versión web del celular, los pesos y repeticiones que escribías en una sesión no se guardaban. Ya está arreglado.' },
     ],
   },
   {
