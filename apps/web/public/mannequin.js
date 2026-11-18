@@ -87,8 +87,9 @@ function lerpPose(a,b,f){
 }
 
 /* ---------- props ---------- */
-var C={frame:[62,65,86],pad:[56,59,82],steel:[190,194,210],plate:[46,48,64],rim:[145,132,217],band:[145,132,217],
-  cable:[205,208,224],ball:[83,75,140],kb:[72,75,96],wall:[36,38,54],rope:[90,92,116]};
+var C={frame:[70,74,98],pad:[64,67,92],steel:[190,194,210],plate:[46,48,64],rim:[145,132,217],band:[145,132,217],
+  cable:[205,208,224],ball:[83,75,140],kb:[72,75,96],wall:[36,38,54],rope:[90,92,116],
+  mach:[112,117,150],cushion:[88,80,146],stack:[64,67,90]};
 function box(c,s,rot,col,under){return{t:'box',c:c,s:s,rot:rot||0,col:col||C.frame,under:under!==false};}
 function capP(a,b,r,col,under){return{t:'cap',a:a,b:b,r:r,col:col||C.frame,under:!!under};}
 function sphP(c,r,col,under){return{t:'sph',c:c,r:r,col:col,under:!!under};}
@@ -108,6 +109,48 @@ function frontPad(P,l){
   return[box(c,[.34,l||.9,.08],P.pitch,C.pad),box([0,(c[1]-.06)/2,c[2]],[.14,Math.max(.05,c[1]-.06),.4])];
 }
 function seatP(withBack){var o=[box([0,.45,.05],[.36,.08,.42],0,C.pad),box([0,.21,.05],[.12,.42,.3])];if(withBack)o.push(box([0,.82,-.17],[.36,.6,.08],0,C.pad));return o;}
+/* Weight stack standing at (x, z): its top plates rise with ph (0..1, how far into the rep) and the
+   cable runs over the top pulley, down the back of the stack to the height of `to`, then across to it. */
+function stackP(x,z,ph,to){
+  var top=1.45,lift=clamp(ph,0,1)*.24,out=[];
+  out.push(capP([x,0,z-.13],[x,top,z-.13],.026,C.mach,true),capP([x,0,z+.13],[x,top,z+.13],.026,C.mach,true),
+    capP([x,top,z-.15],[x,top,z+.15],.03,C.mach,true),box([x,.02,z],[.2,.04,.4],0,C.mach),sphP([x,top,z],.04,C.rim,true));
+  for(var i=0;i<9;i++){var up=i>=6;out.push(box([x,.08+i*.055+(up?lift:0),z],[.12,.045,.22],0,up?C.mach:C.stack));}
+  var ty=.08+8*.055+lift+.03,low=[x,clamp(to[1],.1,top),z-.15];
+  out.push(lineP([x,ty,z],[x,top,z],1.6,C.cable),lineP([x,top,z-.15],low,1.6,C.cable),lineP(low,to,1.6,C.cable),sphP(low,.035,C.rim,true));
+  return out;
+}
+/* A machine driven by the shins (leg curl, leg extension): the lever turns on an axle at the knee and
+   its arms reach the ankle roller (o.pad: roller offset along the foot; o.stack: [x, z] of the stack). */
+function legLever(J,ph,o){
+  var l=J.side.l,r=J.side.r,K=mix(l.K,r.K,.5),A=mix(l.A,r.A,.5),w=.26,out=[];
+  var R=add(A,mul(nrm(sub(l.toe,l.A)),o.pad));
+  out.push(capP(add(K,[-w-.05,0,0]),add(K,[w+.05,0,0]),.028,C.steel));
+  [1,-1].forEach(function(s){out.push(capP(add(K,[s*w,0,0]),add(R,[s*w,0,0]),.026,C.mach),sphP(add(K,[s*w,0,0]),.055,C.rim));});
+  out.push(capP(add(R,[-w,0,0]),add(R,[w,0,0]),.06,C.cushion));
+  return out.concat(stackP(o.stack[0],o.stack[1],ph,add(K,[o.stack[0]>0?w:-w,0,0])));
+}
+/* A machine driven by the arms: each hand holds a handle (or presses a vertical pad, o.pads) at the end
+   of an arm that turns about a pivot: o.pivot [x,y,z] mirrored per side, on a post from the floor, or
+   the elbow itself (o.elbow, for curl and triceps machines). o.stack: [x, z] of the weight stack. */
+function armLever(J,ph,o){
+  var out=[],pr=null;
+  ['l','r'].forEach(function(k){
+    var sd=J.side[k],off=o.elbow?[sd.s*.075,0,0]:[0,0,0],g=add(add(sd.W,mul(sd.hd,.035)),off);
+    var pv=o.elbow?add(sd.E,off):[sd.s*o.pivot[0],o.pivot[1],o.pivot[2]];
+    if(k==='r')pr=pv;
+    out.push(capP(pv,g,.024,C.mach),sphP(pv,.05,C.rim));
+    if(!o.elbow&&pv[1]>.35)out.push(capP([pv[0],0,pv[2]],pv,.035,C.mach,true));
+    if(o.pads)out.push(capP(add(sd.W,[0,-.13,0]),add(sd.W,[0,.13,0]),.05,C.cushion));
+    else out.push(capP(sub(g,mul(sd.ax,.08)),add(g,mul(sd.ax,.08)),.022,C.steel));
+  });
+  return o.stack?out.concat(stackP(o.stack[0],o.stack[1],ph,pr)):out;
+}
+/* Seat (and back) of a machine: cushions and a metal post. */
+function seatM(withBack){return seatP(withBack).map(function(p){return X(p,{col:p.col===C.pad?C.cushion:C.mach});});}
+/* Shoulder pads of a standing machine (calf raise, hack squat), resting on the shoulders. */
+function shoulderPads(J){var o=[];['l','r'].forEach(function(k){var S=J.side[k].S,b=mv(J.Rt,[0,0,1]);o.push(capP(add(add(S,[0,.08,0]),mul(b,-.1)),add(add(S,[0,.08,0]),mul(b,.12)),.05,C.cushion));});return o;}
+function handles(pts){var o=[];pts.forEach(function(p){o.push(capP(add(p,[-.07,0,0]),add(p,[.07,0,0]),.022,C.steel));});return o;}
 function pullBar(y,z,w){w=w||.75;return[capP([-w,y,z],[w,y,z],.018,C.steel),capP([-w,0,z],[-w,y+.05,z],.035),capP([w,0,z],[w,y+.05,z],.035)];}
 function dipBars(y){var o=[];[1,-1].forEach(function(s){o.push(capP([s*.26,y,-.45],[s*.26,y,.45],.025,C.steel),capP([s*.26,0,-.4],[s*.26,y,-.4],.03),capP([s*.26,0,.4],[s*.26,y,.4],.03));});return o;}
 function stepBox(c,s){return box(c,s,0,C.frame);}
@@ -168,6 +211,12 @@ def('squat','Sentadilla',function(o){
   var props=[];
   if(o.box){b.root=[0,.64,-.18];props.push(stepBox([0,.23,-.32],[.4,.46,.4]));}
   if(o.ball)props.push(sphP([0,.18,.0],.18,C.ball,true));
+  if(o.eq==='lever'||o.eq==='machine'){
+    props.push(capP([.3,0,-.55],[.3,1.75,-.05],.035,C.mach,true),capP([-.3,0,-.55],[-.3,1.75,-.05],.035,C.mach,true),box([0,.03,.12],[.6,.06,.5],0,C.mach));
+    return{keys:[a,b],one:one,cam:X(CAM_STAND,{yo:.9}),props:props,
+      dyn:function(J){var u=mv(J.Rt,[0,1,0]),c=add(mix(J.L,J.N,.45),mul(mv(J.Rt,[0,0,1]),-.15));
+        return[box(c,[.4,.75,.07],Math.atan2(u[2],u[1])/D,C.cushion,false)].concat(shoulderPads(J));}};
+  }
   return{keys:[a,b],one:one,cam:CAM_STAND,props:props,anc:[0,.03,.03]};
 });
 def('jumpsquat','Sentadilla con salto',function(o){
@@ -299,23 +348,31 @@ def('legpress','Prensa de piernas',function(o){
 def('legext','Extensión de cuádriceps',function(o){
   var a=X(SEAT({lumb:-12,hf:'r'}),H(.24,-.04,.05),F(.12,.12,.5));
   var b=X(a,F(.12,.55,.89));
-  return{keys:[a,b],props:[box([0,.25,.12],[.42,.5,.55],0,C.frame),box([0,.48,.12],[.42,.06,.55],0,C.pad),box([0,.88,-.2],[.42,.65,.08],-12,C.pad)],
-    dyn:function(J){var c=mix(J.side.l.A,J.side.r.A,.5),d=nrm(sub(J.side.l.toe,J.side.l.A));c=add(c,mul(d,.06));return[capP(add(c,[-.22,0,0]),add(c,[.22,0,0]),.05,C.pad)];},
-    cam:X(CAM_STAND,{ty:.7,yo:.9})};
+  return{keys:[a,b],props:[box([0,.25,.12],[.16,.5,.4],0,C.mach),box([0,.48,.12],[.42,.07,.55],0,C.cushion),box([0,.88,-.2],[.42,.65,.08],-12,C.cushion)]
+      .concat(handles([[.27,.56,.12],[-.27,.56,.12]])),
+    dyn:function(J,ph){return legLever(J,ph,{pad:.07,stack:[-.62,-.25]});},
+    cam:X(CAM_STAND,{ty:.7,yo:.9,pitch:.12})};
 });
 def('legcurl','Curl femoral tumbado',function(o){
   var a=X({root:[0,.66,0],pitch:90,hf:'w'},H(.2,.5,.72),F(.1,.62,-.9));
   var b=X(a,F(.1,1.02,-.36));
-  return{keys:[a,b],props:[box([0,.265,-.05],[.42,.53,1.25],0,C.frame),box([0,.51,-.05],[.42,.05,1.25],0,C.pad)],
-    dyn:function(J){var c=mix(J.side.l.A,J.side.r.A,.5),d=nrm(sub(J.side.l.toe,J.side.l.A));c=add(c,mul(d,-.07));return[capP(add(c,[-.2,0,0]),add(c,[.2,0,0]),.05,C.pad)];},
-    cam:CAM_LOW};
+  // Bench pad ends just above the knees; frame legs instead of a solid block; handles under the chest end.
+  return{keys:[a,b],props:[box([0,.52,.08],[.42,.08,1.0],0,C.cushion),box([0,.38,.08],[.12,.12,.95],0,C.mach),
+      capP([0,0,.5],[0,.44,.5],.04,C.mach),capP([0,0,-.35],[0,.44,-.35],.04,C.mach),capP([-.25,.01,.5],[.25,.01,.5],.03,C.mach),capP([-.25,.01,-.35],[.25,.01,-.35],.03,C.mach),
+      capP([.2,.47,.56],[.2,.5,.72],.02,C.mach),capP([-.2,.47,.56],[-.2,.5,.72],.02,C.mach)]
+      .concat(handles([[.2,.5,.72],[-.2,.5,.72]])),
+    dyn:function(J,ph){return legLever(J,ph,{pad:-.07,stack:[-.62,-.55]});},
+    cam:X(CAM_LOW,{pitch:.3})};
 });
 def('legcurl_seated','Curl femoral sentado',function(o){
   var a=X(SEAT({lumb:-10,hf:'r'}),H(.24,-.04,.05),F(.12,.52,.89));
   var b=X(a,F(.12,.12,.32));
-  return{keys:[a,b],props:seatP(true).concat([capP([-.22,.66,.3],[.22,.66,.3],.05,C.pad)]),
-    dyn:function(J){var c=mix(J.side.l.A,J.side.r.A,.5),d=nrm(sub(J.side.l.toe,J.side.l.A));c=add(c,mul(d,-.07));return[capP(add(c,[-.22,0,0]),add(c,[.22,0,0]),.05,C.pad)];},
-    cam:X(CAM_STAND,{ty:.7,yo:.9})};
+  // Thigh pad holds the knees down; the roller sits behind the ankles and is pushed under the seat.
+  return{keys:[a,b],props:[box([0,.45,.05],[.36,.08,.42],0,C.cushion),box([0,.21,.05],[.14,.42,.3],0,C.mach),box([0,.82,-.17],[.36,.6,.08],0,C.cushion),
+      capP([-.22,.68,.3],[.22,.68,.3],.055,C.cushion),capP([.26,.45,.3],[.26,.68,.3],.022,C.mach),capP([-.26,.45,.3],[-.26,.68,.3],.022,C.mach)]
+      .concat(handles([[.27,.56,.05],[-.27,.56,.05]])),
+    dyn:function(J,ph){return legLever(J,ph,{pad:-.07,stack:[-.62,-.25]});},
+    cam:X(CAM_STAND,{ty:.7,yo:.9,pitch:.12})};
 });
 def('legcurl_standing','Curl femoral de pie',function(o){
   var a=X({hf:'w',lumb:8},H(.22,1.1,.45),F(.12,.08,.02),{kpw:[0,-1,.15]});
@@ -334,13 +391,20 @@ def('calf','Elevación de talones',function(o){
   var a=X(h,{root:[0,.99,0]},F(.12,.09,0),TO(.12,.01,.15));
   var b=X(a,{root:[0,1.08,0]},F(.12,.18,-.01),TO(.12,.01,.13));
   var spec={keys:[a,b],cam:CAM_STAND};
+  if(o.eq==='lever'||o.eq==='machine'){spec.props=[box([0,.0,.08],[.5,.02,.3],0,C.mach)];
+    spec.dyn=function(J,ph){var out=shoulderPads(J),y=J.side.l.S[1]+.08;[1,-1].forEach(function(s){out.push(capP([s*.24,y,-.02],[s*.24,y,-.45],.026,C.mach));});
+      return out.concat([capP([.24,y,-.45],[-.24,y,-.45],.03,C.mach)],stackP(-.72,-.45,ph,[-.24,y,-.45]));};}
   if(o.single){a.fl=[.1,.45,-.25];a.tl=null;b.fl=[.1,.45,-.25];b.tl=null;}
   return spec;
 });
 def('calf_seated','Elevación de talones sentado',function(o){
   var a=X(SEAT({hf:'w'}),H(.17,.6,.42),F(.14,.09,.44),TO(.14,.01,.6));
   var b=X(a,F(.14,.17,.44),TO(.14,.01,.58));
-  return{keys:[a,b],props:seatP(false),dyn:function(J){var c=mix(J.side.l.K,J.side.r.K,.5);return[capP(add(c,[-.26,.08,0]),add(c,[.26,.08,0]),.05,C.pad)];},cam:X(CAM_STAND,{ty:.6,yo:.6})};
+  return{keys:[a,b],props:seatM(false).concat([box([0,.04,.56],[.45,.08,.22],0,C.mach)]),cam:X(CAM_STAND,{ty:.6,yo:.6}),
+    dyn:function(J,ph){var c=add(mix(J.side.l.K,J.side.r.K,.5),[0,.08,0]),out=[capP(add(c,[-.26,0,0]),add(c,[.26,0,0]),.055,C.cushion)];
+      // the lever turns under the front of the seat and presses the pad onto the knees
+      [1,-1].forEach(function(s){var pv=[s*.3,.3,.08];out.push(capP(pv,add(c,[s*.3,0,0]),.026,C.mach),sphP(pv,.045,C.rim),capP([s*.3,0,.08],pv,.03,C.mach,true));});
+      return out;}};
 });
 def('calf_donkey','Elevación de talones burro',function(o){
   var a=X({hf:'w',root:[0,1.0,-.1],lumb:80,thor:5,neck:-20},H(.2,1.02,.55),F(.12,.09,0),TO(.12,.01,.15));
@@ -446,7 +510,7 @@ def('crunch_stand','Crunch de pie',function(o){
 def('crunch_seated','Crunch sentado en máquina',function(o){
   var a=X(SEAT({hf:'t',ep:[.4,-.2,1]}),H(-.12,.15,.15));
   var b=X(a,{lumb:40,thor:15});
-  return{keys:[a,b],props:seatP(false),cam:X(CAM_STAND,{ty:.7,yo:.9})};
+  return{keys:[a,b],props:seatM(false),dyn:function(J,ph){return armLever(J,ph,{pivot:[.32,.85,-.12],stack:[-.72,-.4]});},cam:X(CAM_STAND,{ty:.7,yo:.9})};
 });
 def('situp','Abdominal completo',function(o){
   var arms=o.overheadArms?H(0,.5,0):H(-.2,-.06,.13);
@@ -535,7 +599,10 @@ def('abd_seated','Abducción de cadera sentado',function(o){
   var a=X(SEAT({hf:'r'}),H(.25,-.03,.05),F(.14,.08,.44),{kp:[.3,0,1]});
   var b=X(a,F(.32,.08,.4),{kp:[1,0,.5]});
   if(o.add){var t=a;a=b;b=t;}
-  return{keys:[a,b],props:seatP(true),dyn:function(J){return['l','r'].map(function(k){var K=J.side[k].K,s=J.side[k].s;return capP(add(K,[s*.09,.02,-.12]),add(K,[s*.09,.02,.08]),.045,C.pad);});},cam:X(CAM_STAND,{ty:.7})};
+  return{keys:[a,b],props:seatM(true),cam:X(CAM_STAND,{ty:.7}),
+    dyn:function(J,ph){var out=[];['l','r'].forEach(function(k){var K=J.side[k].K,s=J.side[k].s,p=add(K,[s*.09,.02,-.02]),pv=[s*.05,.42,.62];
+      out.push(capP(add(K,[s*.09,.02,-.12]),add(K,[s*.09,.02,.08]),.05,C.cushion),capP(pv,p,.024,C.mach),sphP(pv,.045,C.rim));});
+      return out.concat(stackP(-.72,-.3,ph,[-.05,.42,.62]));}};
 });
 def('abd_stand','Abducción de cadera de pie',function(o){
   var a=X({hf:'w'},H(.22,1.1,.4),F(.12,.08,.02));
@@ -557,7 +624,7 @@ def('bench','Press de banca',function(o){
   var kind=supKind(o),x=o.close?.08:o.wide?.34:(o.eq==='dumbbell'||o.eq==='kettlebell')?.22:.24;
   if(o.seatMachine){
     var s0=X(SEAT({hf:'t',lumb:-5}),H(x,-.05,.12)),s1=X(s0,H(x,-.02,.55));
-    return{keys:[s0,s1],props:seatP(true),cam:X(CAM_STAND,{ty:.85,yo:.7})};
+    return{keys:[s0,s1],props:seatM(true),dyn:function(J,ph){return armLever(J,ph,{pivot:[.36,1.45,-.32],stack:[-.72,-.35]});},cam:X(CAM_STAND,{ty:.85,yo:.7})};
   }
   if(o.standing){
     var t0=X({hf:'t'},H(x,-.06,.14),{fl:[.12,.08,.22],fr:[.12,.08,-.22]}),t1=X(t0,H(x,-.02,.55));
@@ -576,7 +643,7 @@ def('fly','Aperturas',function(o){
     var s1=X(s0,lo?H(.05,.15,.42):H(.02,-.22,.42));
     return{keys:[s0,s1],anc:lo?[.95,.12,-.2]:[.95,2.05,-.25],cam:CAM_STAND};
   }
-  if(o.seatMachine){var m0=X(SEAT({hf:'t',ep:[0,-1,0]}),H(.52,0,.02));return{keys:[m0,X(m0,H(.05,0,.4))],props:seatP(true),cam:X(CAM_STAND,{ty:.85})};}
+  if(o.seatMachine){var m0=X(SEAT({hf:'t',ep:[0,-1,0]}),H(.52,0,.02));return{keys:[m0,X(m0,H(.05,0,.4))],props:seatM(true),dyn:function(J,ph){return armLever(J,ph,{pivot:[.2,1.55,-.12],pads:true,stack:[-.72,-.35]});},cam:X(CAM_STAND,{ty:.85})};}
   var kind=supKind(o);
   var a=supBase(kind,X({ep:[.7,0,-1]},H(.6,.02,.1)));
   var b=X(a,H(.1,0,.5));
@@ -640,11 +707,13 @@ def('benchdip','Fondos en banco',function(o){
 });
 function standOrSeat(o,x){return o.seated?SEAT(X({hf:'s'},x)):X({hf:'s'},F(.14,.08,.02),x);}
 def('ohp','Press de hombros',function(o){
-  var db=o.eq==='dumbbell'||o.eq==='kettlebell'||o.eq==='band',a,b;
+  var db=o.eq==='dumbbell'||o.eq==='kettlebell'||o.eq==='band',a,b,mach=o.eq==='lever'||o.eq==='machine';
+  if(mach)o.seated=true;
   if(o.arnold){a=standOrSeat(o,X({ep:[.3,-1,1]},H(-.05,.03,.15)));b=X(a,H(.04,.56,0),{ep:[.9,-1,.2]});}
   else if(o.behind){a=standOrSeat(o,X({ep:[.5,-1,-.2]},H(.1,.05,-.1)));b=X(a,H(.08,.56,0));}
   else if(db){a=standOrSeat(o,X({ep:[.9,-1,.2]},H(.14,.06,.07)));b=X(a,H(.04,.56,0));}
   else{a=standOrSeat(o,X({ep:[.5,-1,.6]},H(.07,.04,.15)));b=X(a,H(.07,.56,.02));}
+  if(mach)return{keys:[a,b],props:seatM(true),dyn:function(J,ph){return armLever(J,ph,{pivot:[.36,.9,-.5],stack:[-.72,-.45]});},cam:X(CAM_STAND,{ty:.95})};
   return{keys:[a,b],props:o.seated?seatP(true):[],cam:o.seated?X(CAM_STAND,{ty:.95}):X(CAM_STAND,{ty:1.05})};
 });
 def('lateral','Elevación lateral',function(o){
@@ -664,7 +733,8 @@ def('yraise','Y-raise',function(o){
 });
 def('reardelt','Apertura posterior',function(o){
   var a,props=[];
-  if(o.seatMachine){a=X(SEAT({hf:'t'}),H(.05,0,.5));return{keys:[a,X(a,H(.55,0,.05))],props:seatP(false).concat([box([0,.95,.3],[.34,.5,.08],0,C.pad)]),cam:X(CAM_STAND,{ty:.85,yo:.4})};}
+  if(o.seatMachine){a=X(SEAT({hf:'t'}),H(.05,0,.5));return{keys:[a,X(a,H(.55,0,.05))],props:seatM(false).concat([box([0,.95,.3],[.34,.5,.08],0,C.cushion),box([0,.6,.3],[.1,.2,.06],0,C.mach)]),
+    dyn:function(J,ph){return armLever(J,ph,{pivot:[.2,1.55,.3],pads:true,stack:[-.72,.45]});},cam:X(CAM_STAND,{ty:.85,yo:.4})};}
   if(o.standing&&o.eq==='cable'){a=X({hf:'s'},H(-.05,-.02,.5),F(.14,.08,.02));return{keys:[a,X(a,H(.55,0,.05))],anc:[-.9,1.55,.7],cam:CAM_STAND};}
   if(o.prone){a=X({root:[0,.78,0],pitch:42,hf:'s'},H(.03,-.54,.04),F(.15,.08,-.55));props=frontPad(a);}
   else if(o.seated){a=SEAT({lumb:60,thor:8,hf:'s'});a=X(a,H(.02,-.48,.08));props=seatP(false);}
@@ -708,7 +778,8 @@ def('row_one','Remo a una mano',function(o){
 });
 def('row_seated','Remo sentado',function(o){
   if(o.machine){var m0=X(SEAT({hf:'s'}),H(.15,-.05,.55)),m1=X(m0,H(.18,-.12,.04));
-    return{keys:[m0,m1],props:seatP(false).concat([box([0,1.0,.36],[.34,.5,.08],0,C.pad)]),cam:X(CAM_STAND,{ty:.85,yo:.8})};}
+    return{keys:[m0,m1],props:seatM(false).concat([box([0,1.0,.36],[.34,.5,.08],0,C.cushion),box([0,.62,.36],[.1,.3,.06],0,C.mach)]),
+      dyn:function(J,ph){return armLever(J,ph,{pivot:[.3,.3,.95],stack:[-.72,.55]});},cam:X(CAM_STAND,{ty:.85,yo:.8})};}
   var a=X({root:[0,.5,0],lumb:28,neck:-5,hf:'s'},H(.1,-.08,.55),F(.12,.3,.78));
   var b=X(a,{lumb:-5,neck:0},H(.12,-.26,.06));
   return{keys:[a,b],anc:[0,.42,1.35],cableBar:true,props:[box([0,.2,-.05],[.32,.4,.8],0,C.pad),box([0,.25,.88],[.5,.5,.06])],cam:X(CAM_STAND,{ty:.6,yo:1.1})};
@@ -717,6 +788,8 @@ def('row_high','Remo alto',function(o){
   var a=X(SEAT({hf:'s',ep:[1,-.4,-.4]}),H(.22,.4,.42));
   var b=X(a,H(.25,-.08,0));
   if(o.kneel){a=X(KNEEL({hf:'s',ep:[1,-.4,-.4]}),H(.22,.4,.42));b=X(a,H(.25,-.08,0));return{keys:[a,b],anc:[0,2.2,.8],cam:X(CAM_STAND,{yo:.7})};}
+  if(o.eq==='lever'||o.eq==='machine')return{keys:[a,b],props:seatM(false).concat([box([0,1.0,.36],[.34,.5,.08],0,C.cushion),box([0,.62,.36],[.1,.3,.06],0,C.mach)]),
+    dyn:function(J,ph){return armLever(J,ph,{pivot:[.3,1.95,.7],stack:[-.72,.55]});},cam:X(CAM_STAND,{yo:.7})};
   return{keys:[a,b],anc:[0,2.2,.8],props:seatP(false),cam:X(CAM_STAND,{yo:.7})};
 });
 def('row_incline','Remo con apoyo en banco inclinado',function(o){
@@ -769,6 +842,13 @@ def('sapd','Jalón con brazos rectos',function(o){
 });
 def('curl','Curl de bíceps',function(o){
   var x=o.wide?.1:o.close?-.04:.02;
+  if(o.eq==='lever'||o.eq==='machine'){
+    // upper arms rest forward-down on the pad; only the forearms move
+    var m0=X(SEAT({hf:'t',lumb:6,ep:[0,-1,.7]}),H(-.01,-.36,.42)),m1=X(m0,H(-.01,-.02,.17));
+    return{keys:[m0,m1],props:seatM(false),cam:X(CAM_STAND,{ty:.85,yo:.8}),
+      dyn:function(J,ph){var e=mix(J.side.l.E,J.side.r.E,.5),n=mv(rx(-40),[0,1,0]),c=add(e,add(mul(n,-.07),[0,0,-.06]));
+        return[box(c,[.6,.05,.36],-40,C.cushion,false),capP([0,0,c[2]],add(c,[0,-.05,0]),.035,C.mach,true)].concat(armLever(J,ph,{elbow:true,stack:[-.72,.3]}));}};
+  }
   var a=standOrSeat(o,X({ep:[.1,-.3,-1]},H(x,-.55,.06)));
   var b=X(a,H(x,-.12,.22));
   if(o.drag){a.ep=[.1,0,-1];b=X(a,H(x,-.18,.05));}
@@ -827,7 +907,7 @@ def('wristroll','Enrollador de muñeca',function(o){
 def('pushdown','Extensión de tríceps en polea',function(o){
   var a=X({hf:'s',lumb:12,ep:[.1,-.2,-1]},H(.03,-.12,.24),F(.14,.08,.02));
   var b=X(a,H(.03,-.52,.13));
-  if(o.seated){a=X(SEAT({hf:'s',ep:[.1,-.2,-1]}),H(.03,-.12,.24));b=X(a,H(.03,-.52,.13));return{keys:[a,b],props:seatP(true),cam:X(CAM_STAND,{ty:.85})};}
+  if(o.seated){a=X(SEAT({hf:'s',ep:[.1,-.2,-1]}),H(.03,-.12,.24));b=X(a,H(.03,-.52,.13));return{keys:[a,b],props:seatM(true),dyn:function(J,ph){return armLever(J,ph,{elbow:true,stack:[-.72,-.35]});},cam:X(CAM_STAND,{ty:.85})};}
   return{keys:[a,b],anc:[0,2.15,.45],cableBar:true,cam:X(CAM_STAND,{yo:.7})};
 });
 def('ohext','Extensión de tríceps sobre la cabeza',function(o){
@@ -1304,6 +1384,7 @@ function poseAt(spec,u){
     if(spec.ease==='sine')f=(1-Math.cos(u*2*Math.PI))/2;
     else f=u<.08?0:u<.5?sm((u-.08)/.42):u<.58?1:1-sm((u-.58)/.42);
     Pz=lerpPose(K[0],K[1],f);
+    Pz.ph=f;
     if(spec.hop){var h=spec.hop*Math.sin(Math.PI*f);Pz.root=[Pz.root[0],Pz.root[1]+h,Pz.root[2]];if(Pz.ff==='w'){Pz.fl=[Pz.fl[0],Pz.fl[1]+h,Pz.fl[2]];Pz.fr=[Pz.fr[0],Pz.fr[1]+h,Pz.fr[2]];}}
   }
   return Pz;
@@ -1551,8 +1632,8 @@ class GymMannequinEl extends HTMLElement{
     if(this.cv.width!==w||this.cv.height!==h){this.cv.width=w;this.cv.height=h;}
     var spec=this.spec,Pz=framePose(spec,this.t),J=solve(Pz);
     var view=this.getAttribute('view')||'34',yaw=(VIEWS[view]!=null?VIEWS[view]:.62)+(spec.cam.yo||0)*(view==='34'?1:0)+this.dyaw;
-    var cam=new Camera(w,h,yaw,.13+this.dpitch,spec.cam.ty,spec.cam.d/this.zoom,0);
-    var prims=bodyPrims(J,spec.act,this.getAttribute('layer')||'normal').concat(gear(spec,J),spec.props||[],spec.dyn?spec.dyn(J):[]);
+    var cam=new Camera(w,h,yaw,.13+(spec.cam.pitch||0)+this.dpitch,spec.cam.ty,spec.cam.d/this.zoom,0);
+    var prims=bodyPrims(J,spec.act,this.getAttribute('layer')||'normal').concat(gear(spec,J),spec.props||[],spec.dyn?spec.dyn(J,Pz.ph||0):[]);
     drawScene(this.ctx,w,h,cam,prims,J,dpr);
   }
 }

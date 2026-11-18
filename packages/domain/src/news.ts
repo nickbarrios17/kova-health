@@ -25,6 +25,7 @@ export const NEWS: NewsDay[] = [
       { title: 'El coach de cualquier entreno', body: 'En Entrenar, tocá una sesión del historial y ves su coach: fatiga, cuándo subir peso, qué faltó en la semana y qué estirar. También sirve para lo que entrenás con el reloj.' },
       { title: 'Estirá hoy', body: 'Los días que entrenás, Hoy te muestra qué estirar según lo que hiciste, incluidos los entrenos de Samsung Health.' },
       { title: 'Ninguna serie se pierde', body: 'Si marcabas dos series seguidas, o mientras la anterior se enviaba con mala señal, alguna podía no guardarse. Ya está arreglado.' },
+      { title: 'Máquinas que se entienden', body: 'En el modelo 3D, los ejercicios con máquina ahora muestran la máquina de verdad: la palanca y dónde gira, el rodillo o las manijas, el asiento y la pila de pesas que sube con cada repetición. Por ejemplo el curl femoral, la extensión, el pec deck, los remos y los gemelos.', preview: true },
     ],
   },
   {
