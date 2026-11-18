@@ -1,7 +1,7 @@
 /** "Sesión en vivo" + "Resumen de sesión" from the prototype, persisted and offline-capable. */
 import { animationFor, clock, dayMonth, dur, formatWeight, fromDisplayWeight, nf, toDisplayWeight, KovaError, type WeightUnit } from '@kova/domain';
 import { CaretDown, Check, CheckCircle, Info, Pause, Play, Plus, Trophy } from 'phosphor-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useSession } from '../session';
 import { c, font, rad } from '../theme';
@@ -56,27 +56,38 @@ export function Session({ live, setLive, onClose, onFinished }: {
   const doneSets = live.exercises.reduce((a, e) => a + e.sets.filter((x) => x.done).length, 0);
   const totalSets = live.exercises.reduce((a, e) => a + e.sets.length, 0);
   const restLeft = live.restEndsAt ? Math.max(0, (Date.parse(live.restEndsAt) - now) / 1000) : 0;
-  const update = (s: LiveSession) => {
+  // Taps can come faster than React re-renders (two sets checked in a row): every action starts from
+  // the newest session, not the one this render saw, and they run one after the other.
+  const latest = useRef(live);
+  latest.current = live;
+  const chain = useRef<Promise<unknown>>(Promise.resolve());
+  const commit = (s: LiveSession | null) => {
+    if (s) latest.current = s;
     setLive(s);
+  };
+  const update = (s: LiveSession) => {
+    commit(s);
     saveLive(s).catch(() => undefined);
   };
-  const run = async (fn: () => Promise<void>) => {
+  const run = (fn: () => Promise<void>) => {
     setError(null);
-    try {
-      await fn();
-    } catch (e) {
+    const next = chain.current.then(fn).catch((e) => {
       setError(e instanceof KovaError ? e.message : 'Algo salió mal.');
-    }
+    });
+    chain.current = next;
+    return next;
   };
   const disp = (kg: number | null) => (kg == null ? '' : String(units === 'kg' ? kg : toDisplayWeight(kg, 'lb')).replace('.', ','));
 
   const series = (n: number) => n + (n === 1 ? ' serie' : ' series');
   const finish = () => run(async () => {
     setConfirming(false);
-    const sum = summarize(live, prefs!.time_zone);
-    await transition(live, doneSets ? 'complete' : 'abandon');
+    const cur = latest.current;
+    const done = cur.exercises.some((e) => e.sets.some((x) => x.done));
+    const sum = summarize(cur, prefs!.time_zone);
+    await transition(cur, done ? 'complete' : 'abandon');
     setLive(null);
-    if (doneSets) onFinished(sum);
+    if (done) onFinished(sum);
     else onClose();
   });
 
@@ -94,7 +105,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
 
   const markNext = () => {
     if (nextIdx < 0) return;
-    run(async () => setLive(await toggleSet(live, live.cur, nextIdx, deviceId)));
+    run(async () => { const cur = latest.current; const i = cur.exercises[cur.cur]!.sets.findIndex((x) => !x.done); if (i >= 0) commit(await toggleSet(cur, cur.cur, i, deviceId)); });
   };
 
   return (
@@ -115,7 +126,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
         <SyncBanners during="session" />
         {live.pausedAt ? (
           <Banner tone="warn" glyph="‖" text="Sesión en pausa"
-            action={{ label: 'Continuar', onPress: () => run(async () => { const s = await transition(live, 'resume'); if (s) setLive(s); }) }} />
+            action={{ label: 'Continuar', onPress: () => run(async () => { const s = await transition(latest.current, 'resume'); if (s) commit(s); }) }} />
         ) : null}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -171,15 +182,15 @@ export function Session({ live, setLive, onClose, onFinished }: {
                   <T w="semibold" color={s.done ? c.a400 : c.text} style={{ width: 40 }}>{j + 1}</T>
                   <T size={13} color={c.n500} style={{ flex: 1 }}>{ex.prevKg != null ? formatWeight(ex.prevKg, units) : '—'}</T>
                   <TextInput key={'w' + s.id + s.w} editable={!s.done} keyboardType="decimal-pad" defaultValue={disp(s.w)} accessibilityLabel={'Peso serie ' + (j + 1)}
-                    {...onEdited((text) => { const v = parseNum(text); update(fillForward(live, live.cur, j, 'w', v == null ? null : fromDisplayWeight(v, units))); })}
+                    {...onEdited((text) => { const v = parseNum(text); update(fillForward(latest.current, latest.current.cur, j, 'w', v == null ? null : fromDisplayWeight(v, units))); })}
                     style={inputStyle(72, s.done)} />
                   <TextInput key={'r' + s.id + s.reps} editable={!s.done} keyboardType="number-pad" defaultValue={s.reps == null ? '' : String(s.reps)} accessibilityLabel={'Repeticiones serie ' + (j + 1)}
-                    {...onEdited((text) => { const v = parseNum(text); update(fillForward(live, live.cur, j, 'reps', v == null ? null : Math.round(v))); })}
+                    {...onEdited((text) => { const v = parseNum(text); update(fillForward(latest.current, latest.current.cur, j, 'reps', v == null ? null : Math.round(v))); })}
                     style={[inputStyle(56, s.done), { marginLeft: 8 }]} />
                   <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: s.done, disabled: !!live.pausedAt }}
                     accessibilityLabel={s.done ? 'Serie ' + (j + 1) + ' hecha. Tocá para deshacer' : 'Marcar serie ' + (j + 1) + ' como hecha'}
                     disabled={!!live.pausedAt}
-                    onPress={() => run(async () => setLive(await toggleSet(live, live.cur, j, deviceId)))}
+                    onPress={() => run(async () => { const cur = latest.current; commit(await toggleSet(cur, cur.cur, j, deviceId)); })}
                     style={{ width: 44, height: 44, marginLeft: 8, borderRadius: 12, borderWidth: queued ? 2 : 1,
                       borderColor: queued ? c.warn : s.done ? c.a700 : c.divider, backgroundColor: s.done ? c.a700 : 'transparent', alignItems: 'center', justifyContent: 'center', opacity: live.pausedAt ? 0.5 : 1 }}>
                     <Check size={18} weight="bold" color={s.done ? c.white : c.n500} />
@@ -189,7 +200,7 @@ export function Session({ live, setLive, onClose, onFinished }: {
               </View>
             );
           })}
-          <Button variant="text" label="Agregar serie" icon={Plus} onPress={() => update(addSet(live, live.cur))} style={{ alignSelf: 'flex-start' }} />
+          <Button variant="text" label="Agregar serie" icon={Plus} onPress={() => update(addSet(latest.current, latest.current.cur))} style={{ alignSelf: 'flex-start' }} />
         </View>
 
         {exDone ? (
@@ -197,9 +208,9 @@ export function Session({ live, setLive, onClose, onFinished }: {
         ) : null}
 
         {!live.pausedAt ? (
-          <Button variant="secondary" label="Pausar sesión" icon={Pause} onPress={() => run(async () => { const s = await transition(live, 'pause'); if (s) setLive(s); })} />
+          <Button variant="secondary" label="Pausar sesión" icon={Pause} onPress={() => run(async () => { const s = await transition(latest.current, 'pause'); if (s) commit(s); })} />
         ) : (
-          <Button variant="secondary" label="Continuar sesión" icon={Play} onPress={() => run(async () => { const s = await transition(live, 'resume'); if (s) setLive(s); })} />
+          <Button variant="secondary" label="Continuar sesión" icon={Play} onPress={() => run(async () => { const s = await transition(latest.current, 'resume'); if (s) commit(s); })} />
         )}
         <Notice text="Las series se guardan en el teléfono al instante y se envían cuando hay conexión." />
       </ScrollView>

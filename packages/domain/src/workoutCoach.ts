@@ -198,8 +198,8 @@ export function workoutCoach(i: CoachInput): CoachResult {
     for (const m of e.primary) today[m] = (today[m] ?? 0) + n;
     for (const m of e.secondary) today[m] = (today[m] ?? 0) + n / 2;
   }
-  const worked = Object.entries(today).filter(([m]) => STRETCH[m]).sort((a, b) => b[1] - a[1]).map(([m]) => m);
-  const stretches = worked.slice(0, 5).map((m) => STRETCH[m]!);
+  const worked = workedMuscles(today);
+  const stretches = stretchesFor(today);
 
   // ── Warm-up for next time: mobility for those muscles, then ramp-up sets of the first loaded exercises ──
   const warmup: WarmupStep[] = [];
@@ -222,4 +222,13 @@ export function setsPerMuscle(rows: Array<{ primary: string[]; secondary: string
     for (const m of r.secondary) out[m] = (out[m] ?? 0) + r.sets / 2;
   }
   return out;
+}
+
+/** Muscles from most to least worked (only those with a stretch). */
+const workedMuscles = (score: Record<string, number>) =>
+  Object.entries(score).filter(([m, v]) => STRETCH[m] && v > 0).sort((a, b) => b[1] - a[1]).map(([m]) => m);
+
+/** The stretches for the muscles worked the most (score: sets, or any weight per muscle code). */
+export function stretchesFor(score: Record<string, number>, n = 5): CoachStretch[] {
+  return workedMuscles(score).slice(0, n).map((m) => STRETCH[m]!);
 }

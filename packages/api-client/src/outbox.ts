@@ -86,20 +86,33 @@ export interface OutboxState {
 export class Outbox {
   private flushing: Promise<FlushResult> | null = null;
   private listeners = new Set<() => void>();
+  // Every read-change-write of the stored queue runs one at a time. Without this, a set marked while
+  // a flush was sending (or two sets marked in a row) was lost: each wrote back the list it had read.
+  private lock: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly send: OutboxSender,
     private readonly storage: OutboxStorage = new MemoryOutboxStorage(),
   ) {}
 
+  /** Loads the queue, lets `fn` change it, saves it: atomically with respect to every other change. */
+  private mutate<T>(fn: (entries: OutboxEntry[]) => T): Promise<T> {
+    const run = this.lock.then(async () => {
+      const entries = await this.storage.load();
+      const out = fn(entries);
+      await this.storage.save(entries);
+      return out;
+    });
+    this.lock = run.catch(() => undefined);
+    return run;
+  }
+
   /** Validate and persist an operation before attempting to send it. */
   async enqueue(op: OutboxOp): Promise<OutboxEntry> {
     const parsed = SCHEMA[op.kind].safeParse(op.input);
     if (!parsed.success) throw new KovaError('INVALID_INPUT', 'Algún dato no es válido.');
-    const entries = await this.storage.load();
     const entry: OutboxEntry = { id: newId(), op, status: 'pending', attempts: 0, enqueued_at: new Date().toISOString() };
-    entries.push(entry);
-    await this.storage.save(entries);
+    await this.mutate((entries) => { entries.push(entry); });
     this.emit();
     return entry;
   }
@@ -130,22 +143,26 @@ export class Outbox {
    * server never accepted them, so nothing on the server is deleted.
    */
   async discard(id: string): Promise<boolean> {
-    const entries = await this.storage.load();
-    const next = entries.filter((e) => !(e.id === id && e.status === 'failed'));
-    if (next.length === entries.length) return false;
-    await this.storage.save(next);
-    this.emit();
-    return true;
+    const removed = await this.mutate((entries) => {
+      const i = entries.findIndex((e) => e.id === id && e.status === 'failed');
+      if (i < 0) return false;
+      entries.splice(i, 1);
+      return true;
+    });
+    if (removed) this.emit();
+    return removed;
   }
 
   /** Puts failed operations back in the queue, keeping their place (after resolving what blocked them). */
   async retry(ids: string[]): Promise<number> {
-    const entries = await this.storage.load();
-    let n = 0;
-    for (const e of entries) {
-      if (e.status === 'failed' && ids.includes(e.id)) { e.status = 'pending'; delete e.error; n++; }
-    }
-    if (n) { await this.storage.save(entries); this.emit(); }
+    const n = await this.mutate((entries) => {
+      let k = 0;
+      for (const e of entries) {
+        if (e.status === 'failed' && ids.includes(e.id)) { e.status = 'pending'; delete e.error; k++; }
+      }
+      return k;
+    });
+    if (n) this.emit();
     return n;
   }
 
@@ -174,31 +191,42 @@ export class Outbox {
 
   /** Drop confirmed entries (call after the UI has reconciled with the server). */
   async prune(): Promise<void> {
-    await this.storage.save((await this.storage.load()).filter((e) => e.status !== 'confirmed'));
+    await this.mutate((entries) => {
+      const keep = entries.filter((e) => e.status !== 'confirmed');
+      entries.splice(0, entries.length, ...keep);
+    });
     this.emit();
   }
 
   private async doFlush(): Promise<FlushResult> {
-    const entries = await this.storage.load();
-    for (const entry of entries) {
-      if (entry.status !== 'pending') continue;
-      entry.attempts++;
+    // One entry at a time, re-reading the queue each time: what is queued while sending is sent too,
+    // and its status is written on the stored entry (never on a stale copy of the whole list).
+    const tried = new Set<string>();
+    for (;;) {
+      const next = await this.mutate((entries) => {
+        const e = entries.find((x) => x.status === 'pending' && !tried.has(x.id));
+        if (e) e.attempts++;
+        return e ? { id: e.id, op: e.op } : null;
+      });
+      if (!next) break;
+      tried.add(next.id);
+      let status: OutboxEntry['status'] = 'confirmed', code: string | undefined, stop = false;
       try {
-        await this.send(entry.op);
-        entry.status = 'confirmed';
-        delete entry.error;
+        await this.send(next.op);
       } catch (err) {
         const e = err instanceof KovaError ? err : new KovaError('INTERNAL');
-        if (e.retryable) {
-          entry.error = e.code;
-          await this.storage.save(entries);
-          break;
-        }
-        entry.status = 'failed';
-        entry.error = e.code;
+        code = e.code;
+        if (e.retryable) { status = 'pending'; stop = true; } else status = 'failed';
       }
-      await this.storage.save(entries);
+      await this.mutate((entries) => {
+        const e = entries.find((x) => x.id === next.id);
+        if (!e) return;
+        e.status = status;
+        if (code) e.error = code as OutboxEntry['error']; else delete e.error;
+      });
+      if (stop) break;
     }
+    const entries = await this.storage.load();
     return {
       confirmed: entries.filter((e) => e.status === 'confirmed').length,
       failed: entries.filter((e) => e.status === 'failed').length,

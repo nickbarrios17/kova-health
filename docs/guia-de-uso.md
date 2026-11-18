@@ -131,6 +131,8 @@ No se leen archivos .xls (Excel antiguo): guárdalos como .xlsx o .csv.
    - **Balance de la semana:** si en 7 días no trabajaste un grupo grande (espalda, cuádriceps, pecho…) o hiciste mucho más empuje que tirón, te recomienda ejercicios del catálogo para completarlo. Primero los que ya hiciste alguna vez.
    - **Estirá ahora:** estiramientos para los músculos que más trabajaste.
    - **Para la próxima, calentá así:** movilidad y series de aproximación (50 %, 70 % y 85 % de tu peso de trabajo).
+8. **El coach de una sesión pasada:** en Entrenar → Historial, tocá cualquier sesión (también las del reloj). Ves sus series y el mismo coach, leído contra la semana de ese día.
+9. **Estirá hoy:** los días que entrenás aparece en Hoy, con los estiramientos para lo que trabajaste. Junta las sesiones de Kova del celular y del reloj; los entrenos de Samsung Health suman según su tipo (correr, bici, natación…).
 
 Puedes salir de la sesión con la flecha ⌄: queda una barra «Volver» abajo. Si el teléfono se apaga o cierras la app, la sesión **se recupera** al volver a abrirla.
 
